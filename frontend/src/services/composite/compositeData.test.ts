@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { loadBundles, loadPriceMap, loadOpenPriceMeta, resetCompositeCaches } from './compositeData'
+import { loadBundles, loadOpenPriceMeta, resetCompositeCaches } from './compositeData'
 
 vi.mock('../livability/livabilityData', () => ({
   loadLivabilityGrid: vi.fn().mockResolvedValue({
@@ -41,23 +41,6 @@ vi.mock('../cityCore/cityCoreData', () => ({
       // 'bbb' has no city core entry → should get empty props
     ],
   }),
-}))
-
-vi.mock('../idealista/idealistaRawData', () => ({
-  loadIdealistaFeatures: vi.fn().mockResolvedValue([
-    {
-      type: 'Feature',
-      geometry: { type: 'Point', coordinates: [2.17, 41.39] },
-      properties: { price: 350_000 },
-    },
-  ]),
-}))
-
-// aggregateToH3 needs h3-js which isn't available in test env — stub it
-vi.mock('../../components/IdealistaPricesLayer/h3Index', () => ({
-  aggregateToH3: vi.fn().mockReturnValue([
-    { h3Index: 'aaa', medianPrice: 350_000, count: 1 },
-  ]),
 }))
 
 describe('loadBundles', () => {
@@ -111,24 +94,6 @@ describe('loadBundles', () => {
   it('caches the result on second call', async () => {
     const a = await loadBundles()
     const b = await loadBundles()
-    expect(a).toBe(b)
-  })
-})
-
-describe('loadPriceMap', () => {
-  beforeEach(() => {
-    resetCompositeCaches()
-  })
-
-  it('returns a map from h3 index to median price', async () => {
-    const map = await loadPriceMap()
-    expect(map.get('aaa')).toBe(350_000)
-    expect(map.get('bbb')).toBeUndefined()
-  })
-
-  it('caches the result on second call', async () => {
-    const a = await loadPriceMap()
-    const b = await loadPriceMap()
     expect(a).toBe(b)
   })
 })

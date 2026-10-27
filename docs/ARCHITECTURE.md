@@ -236,7 +236,7 @@ H3 hex grid coloured by a **4-factor composite index**: walkability (POI access)
 Scraped Idealista listing price dots overlaid on the map as a supplementary reference layer.
 
 - **Data**: captured via HAR (`scripts/har_to_geojson.py`) → `frontend/public/data/idealista-raw.geojson`. Each feature: `{ price, priceByArea }`.
-- **Client**: `IdealistaPricesLayer` renders dots coloured by EUR/m² (`priceColors.ts`). `h3Index.ts` aggregates dots to H3 median prices (used in composite + hover card).
+- **Client**: `IdealistaPricesLayer` renders dots coloured by EUR/m² (`priceColors.ts`). `h3Index.ts` aggregates dots to H3 median prices for this layer. The data file is gitignored (local dev only), so the layer is not deployed.
 - **State**: `idealistaPricesVisible`, `idealistaPriceRange`, `idealistaPriceBounds` in Zustand store.
 
 ## Transit layers (feature 020)

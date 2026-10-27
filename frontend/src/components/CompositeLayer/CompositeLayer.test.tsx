@@ -35,7 +35,6 @@ vi.mock('../../services/composite/compositeData', () => ({
       climate: { flood_t10: 1, flood_t100: 1, flood_t500: 1, fire_wui: 0, fire_hazard: 0 },
     },
   ]),
-  loadPriceMap: vi.fn().mockResolvedValue(new Map([['aaa', 400_000]])),
   loadOpenPriceMeta: vi.fn().mockResolvedValue({ p5: 2088, p95: 5816 }),
 }))
 

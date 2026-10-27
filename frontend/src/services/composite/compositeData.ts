@@ -1,8 +1,6 @@
 import type { Polygon } from 'geojson'
 import { loadLivabilityGrid } from '../livability/livabilityData'
 import { loadCityCoreGrid, type CityCoreCellProps } from '../cityCore/cityCoreData'
-import { loadIdealistaFeatures } from '../idealista/idealistaRawData'
-import { aggregateToH3 } from '../../components/IdealistaPricesLayer/h3Index'
 import type { OpenPriceBounds } from './compositeScore'
 import type { ClimateRiskProps } from '../climateRisk/climateRisk'
 
@@ -26,8 +24,6 @@ const CLIMATE_KEYS = [
 
 /** Populated after loadBundles() resolves — keyed by h3 index for O(1) card lookups. */
 export const hexBundleMap = new Map<string, CellBundle>()
-/** Populated after loadPriceMap() resolves — Idealista median price per h3. */
-export const hexPriceMap = new Map<string, number>()
 /** Populated after loadOpenPriceMeta() resolves — INCASOL normalisation bounds. */
 export let hexOpenPriceBounds: OpenPriceBounds | null = null
 
@@ -78,31 +74,6 @@ export function loadBundles(): Promise<CellBundle[]> {
   return bundleCache
 }
 
-let priceMapCache: Promise<Map<string, number>> | null = null
-
-/**
- * Loads Idealista features and aggregates to H3 res-9 median price map.
- * All listings included (no price filter) — normalization happens in computeComposite.
- */
-export function loadPriceMap(): Promise<Map<string, number>> {
-  if (priceMapCache) return priceMapCache
-  priceMapCache = loadIdealistaFeatures()
-    .then((features) => {
-      const cells = aggregateToH3(features, 1, Number.MAX_SAFE_INTEGER)
-      const map = new Map<string, number>()
-      for (const cell of cells) {
-        map.set(cell.h3Index, cell.medianPrice)
-        hexPriceMap.set(cell.h3Index, cell.medianPrice)
-      }
-      return map
-    })
-    .catch((err) => {
-      priceMapCache = null
-      throw err
-    })
-  return priceMapCache
-}
-
 let openPriceMetaCache: Promise<OpenPriceBounds> | null = null
 
 /** Loads precomputed p5/p95 normalisation bounds for INCASOL open price data. */
@@ -124,9 +95,7 @@ export function loadOpenPriceMeta(): Promise<OpenPriceBounds> {
 
 export function resetCompositeCaches(): void {
   bundleCache = null
-  priceMapCache = null
   openPriceMetaCache = null
   hexBundleMap.clear()
-  hexPriceMap.clear()
   hexOpenPriceBounds = null
 }
