@@ -69,7 +69,7 @@ function lerpColor(c1: string, c2: string, t: number): string {
   return `#${r}${g}${b}`
 }
 
-/** Color for composite score — remapped to current score range, matching the map. */
+/** Color for composite score — on the map's colour scale (fitted to the visible hexes, TODO-032). */
 function scoreColorForRange(score: number, min: number, max: number): string {
   const ramp = SCORE_RAMP
   if (max <= min) return scoreColor(score)
@@ -142,7 +142,7 @@ export function HexDetailCard() {
   const setSelectedHexH3 = useStore((s) => s.setSelectedHexH3)
   const weights = useStore((s) => s.compositeWeights)
   const enabledLandmarkIds = useStore((s) => s.enabledLandmarkIds)
-  const scoreRange = useStore((s) => s.compositeScoreRange)
+  const [sMin, sMax] = useStore((s) => s.compositeColorRange)
   const riskStrengths = useStore((s) => s.compositeRiskStrengths)
 
   useEffect(() => {
@@ -159,7 +159,6 @@ export function HexDetailCard() {
   if (!bundle) return null
 
   const bounds = hexOpenPriceBounds ?? { p5: 0, p95: 0 }
-  const [sMin, sMax] = scoreRange
   const { score, baseScore, components, penalties } = computeComposite(
     bundle,
     weights,
@@ -183,7 +182,6 @@ export function HexDetailCard() {
     .sort((a, b) => a.minutes - b.minutes)
 
   const compositeColor = scoreColorForRange(score, sMin, sMax)
-  const barPct = sMax > sMin ? Math.max(0, Math.min(100, ((score - sMin) / (sMax - sMin)) * 100)) : score
 
   const fmtNum = (n: number) =>
     new Intl.NumberFormat('en-ES', { maximumFractionDigits: 0 }).format(n)
@@ -220,7 +218,7 @@ export function HexDetailCard() {
             <div
               style={{
                 height: '100%',
-                width: `${barPct}%`,
+                width: `${score}%`,
                 background: compositeColor,
                 transition: 'width 0.3s ease',
               }}

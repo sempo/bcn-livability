@@ -11,7 +11,7 @@ import { buildIdealistaUrl } from '../services/idealista'
 
 /**
  * Best zones (feature 038) for the captured viewport. Derived state: changing weights, risks,
- * landmarks, score range or the isochrone/exclusion restriction recomputes them from scratch; changing
+ * landmarks or the isochrone/exclusion restriction recomputes them from scratch; changing
  * only strictness keeps them sticky.
  * `ready` is false until the score data has loaded (so "no zones" isn't shown prematurely).
  */
@@ -21,7 +21,6 @@ export function useBestZones(): { zones: Polygon[]; urls: string[]; labels: numb
   const weights = useStore((s) => s.compositeWeights)
   const enabledLandmarkIds = useStore((s) => s.enabledLandmarkIds)
   const riskStrengths = useStore((s) => s.compositeRiskStrengths)
-  const scoreRange = useStore((s) => s.compositeScoreRange)
   const baseUrl = useIdealistaBaseUrlStore((s) => s.baseUrl)
   const restrict = useStore((s) => s.bestZonesRestrict)
   const isochrone = useStore((s) => s.resultPolygon)
@@ -51,13 +50,13 @@ export function useBestZones(): { zones: Polygon[]; urls: string[]; labels: numb
   // Everything but strictness. While it stays the same, the zones of the last fresh computation
   // (the anchor) are handed over as sticky — moving the strictness slider narrows/widens zones in
   // place instead of swapping them, and coming back to a strictness gives the same zones again.
-  const key = JSON.stringify([bounds, weights, enabledLandmarkIds, riskStrengths, scoreRange])
+  const key = JSON.stringify([bounds, weights, enabledLandmarkIds, riskStrengths])
   const anchor = useRef<{ key: string; allowed: typeof allowed; cells: string[][] } | null>(null)
   const same = anchor.current?.key === key && anchor.current.allowed === allowed
   const sticky = same ? anchor.current!.cells : undefined
   const cells = useMemo(
-    () => (bounds && scores ? findZoneCells({ scores, bounds, scoreRange, topPct, sticky, allowed }) : []),
-    [bounds, scores, scoreRange, topPct, sticky, allowed],
+    () => (bounds && scores ? findZoneCells({ scores, bounds, topPct, sticky, allowed }) : []),
+    [bounds, scores, topPct, sticky, allowed],
   )
   useEffect(() => {
     if (scores && !same) anchor.current = { key, allowed, cells }

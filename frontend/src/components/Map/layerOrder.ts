@@ -11,6 +11,7 @@ export const LAYER_Z_ORDER: readonly string[] = [
   'city-core-shapes-fill',
   'city-core-shapes-line',
   'poi-access-fill',
+  'composite-fill-b',
   'composite-fill',
   'composite-gap-outline',
   'composite-hover-outline',

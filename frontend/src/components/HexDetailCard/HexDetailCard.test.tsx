@@ -73,6 +73,18 @@ describe('HexDetailCard', () => {
     expect(screen.getByText('Livability')).toBeInTheDocument()
   })
 
+  it("colours the Livability score on the map's colour scale (TODO-032)", () => {
+    useStore.setState({ selectedHexH3: 'abc123', compositeColorRange: [0, 1] })
+    const { unmount } = renderCard()
+    const scoreEl = () => screen.getByText('/ 100').parentElement!
+    expect(scoreEl().style.color).toBe('rgb(26, 152, 80)') // above the visible range → green end
+    unmount()
+
+    useStore.setState({ compositeColorRange: [99, 100] })
+    renderCard()
+    expect(scoreEl().style.color).toBe('rgb(215, 48, 39)') // below it → red end
+  })
+
   it('shows Walkability section', () => {
     useStore.setState({ selectedHexH3: 'abc123' })
     renderCard()

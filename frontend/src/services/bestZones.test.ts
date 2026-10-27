@@ -75,7 +75,7 @@ describe('allowedCells', () => {
 })
 
 describe('findBestZones', () => {
-  const base = { bounds: WHOLE, scoreRange: [0, 100] as [number, number], topPct: 3 }
+  const base = { bounds: WHOLE, topPct: 3 }
 
   it('returns [] for empty input or an empty viewport', () => {
     expect(findBestZones({ ...base, scores: new Map() })).toEqual([])
@@ -105,11 +105,12 @@ describe('findBestZones', () => {
     })
 
     it('falls back to the best area that fits when the strict core is boxed in', () => {
-      // Best 2 hexes, but their neighbours are outside the score range → the core can't grow to 5.
+      // Best 2 hexes, but their neighbours are not allowed → the core can't grow to 5.
       const scores = grid([[...SPIKE, 1, 50], [...SPIKE, 0, 95], [...A, 3, 61]])
       const [nb] = gridDisk(latLngToCell(SPIKE[0], SPIKE[1], RES), 1).filter((h) => h !== latLngToCell(SPIKE[0], SPIKE[1], RES))
       scores.set(nb, 95)
-      const zones = findBestZones({ ...base, topPct: 2, scoreRange: [60, 100], scores }) // only the boxed hex passes
+      const allowed = (h: string) => scores.get(h)! >= 60 // only the boxed hexes pass
+      const zones = findBestZones({ ...base, topPct: 2, scores, allowed })
       expect(zones).toHaveLength(1)
       // Grown from one of A's (equally good) hexes — so it lies within A, away from the boxed spike.
       for (const [lng, lat] of zones[0].coordinates[0]) expect(Math.hypot(lng - A[1], lat - A[0])).toBeLessThan(0.015)
@@ -183,14 +184,6 @@ describe('findBestZones', () => {
     expect(zones.length).toBeGreaterThan(0)
     const BUFFER_SLACK = 0.001 // outward buffer: 0.0006° of arc ≈ 0.0008° of longitude at 41°N
     for (const [lng] of zones[0].coordinates[0]) expect(lng).toBeGreaterThanOrEqual(halfA[0] - BUFFER_SLACK)
-  })
-
-  it('only looks at cells inside the score range', () => {
-    const zones = findBestZones({
-      ...base, topPct: 50, scoreRange: [85, 100], scores: grid([[...A, 2, 90], [...B, 1, 80]]),
-    })
-    expect(contains(zones[0], ...A)).toBe(true)
-    expect(zones.some((z) => contains(z, ...B))).toBe(false)
   })
 
   it('never puts a zone on a disallowed hex', () => {

@@ -36,7 +36,7 @@ describe('CompositeControls', () => {
     useStore.setState({
       compositeVisible: false,
       compositeWeights: { ...DEFAULT_COMPOSITE_WEIGHTS },
-      compositeScoreRange: [0, 100],
+      compositeColorRange: [0, 100],
       idealistaPriceBounds: null,
       enabledLandmarkIds: ['sagrada', 'barceloneta'],
       compositeRiskStrengths: { flood: 5, fire: 5, street: 5 },
@@ -70,11 +70,13 @@ describe('CompositeControls', () => {
     expect(useStore.getState().compositeWeights.noise).toBe(0)
   })
 
-  it('shows score range slider when visible', () => {
-    useStore.setState({ compositeVisible: true })
+  it('legend shows the colour range of the visible area; no score range slider (TODO-032)', () => {
+    useStore.setState({ compositeVisible: true, compositeColorRange: [58, 84] })
     renderControls()
-    expect(screen.getByText('Score range')).toBeTruthy()
-    expect(screen.getByLabelText('Score range filter')).toBeTruthy()
+    expect(screen.getByText('58')).toBeTruthy()
+    expect(screen.getByText('84')).toBeTruthy()
+    expect(screen.getByText('Colours relative to the visible area')).toBeTruthy()
+    expect(screen.queryByText('Score range')).toBeNull()
   })
 
   it('shows gear button for City Core when enabled', () => {

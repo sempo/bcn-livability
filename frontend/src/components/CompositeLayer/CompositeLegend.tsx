@@ -1,12 +1,10 @@
 import { Group, Text } from '@mantine/core'
+import { useStore } from '../../store'
 import { SCORE_RAMP } from './scoreRamp'
 
-interface CompositeLegendProps {
-  scoreRange?: [number, number]
-}
-
-export function CompositeLegend({ scoreRange = [0, 100] }: CompositeLegendProps) {
-  const [min, max] = scoreRange
+/** Colour scale of the map: the score range of the visible hexes (TODO-032). */
+export function CompositeLegend() {
+  const [min, max] = useStore((s) => s.compositeColorRange)
   const gradient = `linear-gradient(to right, ${SCORE_RAMP.map((s) => s.color).join(', ')})`
   return (
     <div>
@@ -18,6 +16,7 @@ export function CompositeLegend({ scoreRange = [0, 100] }: CompositeLegendProps)
         <Text size="9px" c="dimmed">{min}</Text>
         <Text size="9px" c="dimmed">{max}</Text>
       </Group>
+      <Text size="xs" c="dimmed">Colours relative to the visible area</Text>
     </div>
   )
 }

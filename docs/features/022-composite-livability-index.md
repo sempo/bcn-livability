@@ -87,8 +87,7 @@ Livability Index ℹ  [toggle]
   [✓] Noise         ███████░  7
   [✓] City Core ⚙   ████████  8   ← gear → landmark modal
   [✓] Market Price  ██████████ 10
-  Score range  [===========]
-  [legend]
+  [legend]           ← colour range of the visible area (TODO-032; the Score range slider was removed)
 ```
 
 ### Deleted components
@@ -180,7 +179,7 @@ function computeComposite(
 compositeVisible: boolean
 compositeWeights: { poiAccess: number; noise: number; cityCore: number; openPrice: number }
 // defaults: { poiAccess: 6, noise: 7, cityCore: 8, openPrice: 10 }
-compositeScoreRange: [number, number]  // default [0, 100]
+compositeColorRange: [number, number]  // colour scale fitted to the visible hexes (TODO-032; replaced compositeScoreRange)
 selectedHexH3: string | null           // feature 025
 ```
 
@@ -205,7 +204,7 @@ Clicking ℹ next to "Livability Index" opens a modal explaining:
 - [x] `CompositeControls` — unit tests: checkbox toggle, slider, weight reset/restore, gear modals.
 - [x] `LandmarksLayer` — renders pins for enabled landmarks when composite is active.
 - [x] ~~Hover tooltip shows livability score + per-component breakdown~~ — removed in 038; breakdown lives in the click card (025).
-- [x] Score range filter: RangeSlider hides cells outside range; legend remaps colour scale.
+- [x] ~~Score range filter: RangeSlider hides cells outside range; legend remaps colour scale.~~ — removed in 032: the scale fits the visible hexes.
 - [x] Hover white-border highlight on hex.
 - [x] Click hex → `HexDetailCard` with full breakdown (feature 025).
 - [x] "Composite Index" renamed to "Livability Index" with ℹ info modal.

@@ -40,7 +40,8 @@ export interface AppState {
   // Composite Index layer — feature 022
   compositeVisible: boolean
   compositeWeights: CompositeWeights
-  compositeScoreRange: [number, number]
+  /** Colour scale of the map, fitted to the visible hexes (TODO-032); set by CompositeLayer. */
+  compositeColorRange: [number, number]
   // Climate risk penalties + view layers — feature 036
   compositeRiskStrengths: RiskStrengths
   floodLayerVisible: boolean
@@ -66,7 +67,7 @@ export interface AppState {
   setIdealistaPriceBounds: (bounds: [number, number]) => void
   setCompositeVisible: (visible: boolean) => void
   setCompositeWeights: (weights: CompositeWeights) => void
-  setCompositeScoreRange: (range: [number, number]) => void
+  setCompositeColorRange: (range: [number, number]) => void
   setCompositeRiskStrengths: (strengths: RiskStrengths) => void
   setFloodLayerVisible: (visible: boolean) => void
   setWildfireLayerVisible: (visible: boolean) => void
@@ -100,7 +101,6 @@ const NOISE_LAYER_KEY = 'bcn_noise_layer_visible'
 const CITY_CORE_LANDMARKS_KEY = 'bcn_city_core_landmarks'
 const COMPOSITE_VISIBLE_KEY = 'bcn_composite_visible'
 const COMPOSITE_WEIGHTS_KEY = 'bcn_composite_weights'
-const COMPOSITE_SCORE_RANGE_KEY = 'bcn_composite_score_range'
 const COMPOSITE_RISK_STRENGTHS_KEY = 'bcn_composite_risk_strengths'
 const FLOOD_LAYER_KEY = 'bcn_flood_layer_visible'
 const WILDFIRE_LAYER_KEY = 'bcn_wildfire_layer_visible'
@@ -244,15 +244,7 @@ export const useStore = create<AppState>((set) => {
     setIdealistaPriceBounds: (idealistaPriceBounds) => set({ idealistaPriceBounds }),
     compositeVisible: loadBoolKey(COMPOSITE_VISIBLE_KEY, true),
     compositeWeights: loadCompositeWeights(),
-    compositeScoreRange: (() => {
-      try {
-        const raw = localStorage.getItem(COMPOSITE_SCORE_RANGE_KEY)
-        if (!raw) return [0, 100] as [number, number]
-        const parsed = JSON.parse(raw) as unknown
-        if (Array.isArray(parsed) && parsed.length === 2) return parsed as [number, number]
-      } catch { /* ignore */ }
-      return [0, 100] as [number, number]
-    })(),
+    compositeColorRange: [0, 100],
     setCompositeVisible: (visible) => {
       try { localStorage.setItem(COMPOSITE_VISIBLE_KEY, String(visible)) } catch { /* ignore */ }
       set({ compositeVisible: visible })
@@ -261,10 +253,7 @@ export const useStore = create<AppState>((set) => {
       try { localStorage.setItem(COMPOSITE_WEIGHTS_KEY, JSON.stringify(weights)) } catch { /* ignore */ }
       set({ compositeWeights: weights })
     },
-    setCompositeScoreRange: (range) => {
-      try { localStorage.setItem(COMPOSITE_SCORE_RANGE_KEY, JSON.stringify(range)) } catch { /* ignore */ }
-      set({ compositeScoreRange: range })
-    },
+    setCompositeColorRange: (compositeColorRange) => set({ compositeColorRange }),
     compositeRiskStrengths: loadRiskStrengths(),
     setCompositeRiskStrengths: (strengths) => {
       try { localStorage.setItem(COMPOSITE_RISK_STRENGTHS_KEY, JSON.stringify(strengths)) } catch { /* ignore */ }

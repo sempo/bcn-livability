@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, act } from '@testing-library/react'
+import { render, act, screen } from '@testing-library/react'
+import { MantineProvider } from '@mantine/core'
 import { MapContext } from '../Map/MapContext'
 import { useStore } from '../../store'
 import { DEFAULT_COMPOSITE_WEIGHTS } from '../../store'
@@ -38,12 +39,19 @@ vi.mock('../../services/composite/compositeData', () => ({
   loadOpenPriceMeta: vi.fn().mockResolvedValue({ p5: 2088, p95: 5816 }),
 }))
 
-import { CompositeLayer, SOURCE_ID, FILL_LAYER_ID, GAP_LAYER_ID, HOVER_LAYER_ID } from './CompositeLayer'
+import { CompositeLayer, SOURCE_ID, FILL_LAYER_ID, FILL_B_LAYER_ID, GAP_LAYER_ID, HOVER_LAYER_ID } from './CompositeLayer'
+import { CompositeLegend } from './CompositeLegend'
+import { buildScoreFillColorForRange, fitScoreRange } from './scoreRamp'
 
 function makeFakeMap() {
   const sources = new Map<string, { data: unknown; setData: ReturnType<typeof vi.fn> }>()
   const layers = new Map<string, unknown>()
+  // Visible longitudes; latitudes 0–1. Hex 'aaa' is centred at lng 0.5, 'flooded' at lng 1.5.
+  const view = { west: 0, east: 2 }
   return {
+    view,
+    getContainer: () => ({ getBoundingClientRect: () => ({ left: 0, top: 0, width: 100, height: 100 }) }),
+    unproject: ([x, y]: [number, number]) => ({ lng: view.west + (x / 100) * (view.east - view.west), lat: 1 - y / 100 }),
     getSource: (id: string) => sources.get(id),
     addSource: (id: string, src: { data: unknown }) =>
       sources.set(id, { data: src.data, setData: vi.fn((d: unknown) => { sources.get(id)!.data = d }) }),
@@ -63,6 +71,13 @@ function makeFakeMap() {
 
 type FakeMap = ReturnType<typeof makeFakeMap>
 
+const scoreOf = (map: FakeMap, h3: string) => {
+  const fc = map.getSource(SOURCE_ID)!.data as GeoJSON.FeatureCollection
+  return fc.features.find((f) => f.properties!.h3 === h3)!.properties!.score as number
+}
+const moveEnd = (map: FakeMap) => act(() => map.on.mock.calls.find(([e]) => e === 'moveend')![1]())
+const colorFor = (range: [number, number]) => buildScoreFillColorForRange(range[0], range[1], 'score')
+
 function renderLayer(map: FakeMap | null) {
   return render(
     <MapContext.Provider value={map as unknown as maplibregl.Map}>
@@ -78,7 +93,8 @@ describe('CompositeLayer', () => {
     useStore.setState({
       compositeVisible: false,
       compositeWeights: DEFAULT_COMPOSITE_WEIGHTS,
-      compositeScoreRange: [0, 100],
+      compositeColorRange: [0, 100],
+      compositeRiskStrengths: { flood: 5, fire: 5, street: 5 },
     })
   })
 
@@ -100,7 +116,16 @@ describe('CompositeLayer', () => {
 
     expect(map.getSource(SOURCE_ID)).toBeDefined()
     expect(map.getLayer(FILL_LAYER_ID)).toBeDefined()
+    expect(map.getLayer(FILL_B_LAYER_ID)).toBeDefined()
     expect(map.getLayer(GAP_LAYER_ID)).toBeDefined()
+  })
+
+  it('shows every hex — no score filter on the fill layers (TODO-032)', async () => {
+    useStore.setState({ compositeVisible: true })
+    const map = makeFakeMap()
+    await act(async () => { renderLayer(map) })
+    expect((map.getLayer(FILL_LAYER_ID) as { filter?: unknown }).filter).toBeUndefined()
+    expect((map.getLayer(FILL_B_LAYER_ID) as { filter?: unknown }).filter).toBeUndefined()
   })
 
   it('hides layers when visibility toggled off', async () => {
@@ -110,6 +135,7 @@ describe('CompositeLayer', () => {
 
     act(() => useStore.setState({ compositeVisible: false }))
     expect(map.setLayoutProperty).toHaveBeenCalledWith(FILL_LAYER_ID, 'visibility', 'none')
+    expect(map.setLayoutProperty).toHaveBeenCalledWith(FILL_B_LAYER_ID, 'visibility', 'none')
     expect(map.setLayoutProperty).toHaveBeenCalledWith(GAP_LAYER_ID, 'visibility', 'none')
   })
 
@@ -196,14 +222,81 @@ describe('CompositeLayer', () => {
     expect(source.setData).toHaveBeenCalled()
   })
 
-  it('updates fill-color and filters when score range changes', async () => {
+  it('fits the colour scale to the visible hexes and crossfades when the view changes (TODO-032)', async () => {
     useStore.setState({ compositeVisible: true })
     const map = makeFakeMap()
     await act(async () => { renderLayer(map) })
+    const whole = fitScoreRange([scoreOf(map, 'aaa'), scoreOf(map, 'flooded')])!
+    expect(useStore.getState().compositeColorRange).toEqual(whole)
+    expect(map.setPaintProperty).toHaveBeenCalledWith(FILL_LAYER_ID, 'fill-color', colorFor(whole))
 
-    act(() => useStore.setState({ compositeScoreRange: [30, 80] }))
-    expect(map.setLayoutProperty).toHaveBeenCalledWith(FILL_LAYER_ID, 'visibility', 'visible')
-    // setPaintProperty and setFilter are called
-    expect(map.setLayoutProperty).toHaveBeenCalled()
+    // Zoom in on 'aaa': the hidden layer B gets the new colours and fades in, A fades out.
+    map.setPaintProperty.mockClear()
+    map.view.east = 1
+    moveEnd(map)
+    const zoomed = fitScoreRange([scoreOf(map, 'aaa')])!
+    expect(zoomed).not.toEqual(whole)
+    expect(useStore.getState().compositeColorRange).toEqual(zoomed)
+    expect(map.setPaintProperty).toHaveBeenCalledWith(FILL_B_LAYER_ID, 'fill-color', colorFor(zoomed))
+    expect(map.setPaintProperty).toHaveBeenCalledWith(FILL_B_LAYER_ID, 'fill-opacity', 0.6)
+    expect(map.setPaintProperty).toHaveBeenCalledWith(FILL_LAYER_ID, 'fill-opacity', 0)
+
+    // Back out: the roles swap again.
+    map.setPaintProperty.mockClear()
+    map.view.east = 2
+    moveEnd(map)
+    expect(map.setPaintProperty).toHaveBeenCalledWith(FILL_LAYER_ID, 'fill-color', colorFor(whole))
+    expect(map.setPaintProperty).toHaveBeenCalledWith(FILL_LAYER_ID, 'fill-opacity', 0.6)
+    expect(map.setPaintProperty).toHaveBeenCalledWith(FILL_B_LAYER_ID, 'fill-opacity', 0)
+  })
+
+  it('a weight change refits the scale at once — no crossfade (TODO-032)', async () => {
+    useStore.setState({ compositeVisible: true })
+    const map = makeFakeMap()
+    await act(async () => { renderLayer(map) })
+    map.setPaintProperty.mockClear()
+
+    act(() => useStore.setState({ compositeWeights: { poiAccess: 10, noise: 0, cityCore: 0, openPrice: 0, price: 0 } }))
+    const range = fitScoreRange([scoreOf(map, 'aaa'), scoreOf(map, 'flooded')])!
+    expect(useStore.getState().compositeColorRange).toEqual(range)
+    expect(map.setPaintProperty).toHaveBeenCalledWith(FILL_LAYER_ID, 'fill-color', colorFor(range))
+    expect(map.setPaintProperty).not.toHaveBeenCalledWith(expect.anything(), 'fill-opacity', expect.anything())
+  })
+
+  it('keeps the scale when no hex is in view', async () => {
+    useStore.setState({ compositeVisible: true })
+    const map = makeFakeMap()
+    await act(async () => { renderLayer(map) })
+    const before = useStore.getState().compositeColorRange
+    map.setPaintProperty.mockClear()
+    map.view.west = 10
+    map.view.east = 12
+    moveEnd(map)
+    expect(useStore.getState().compositeColorRange).toEqual(before)
+    expect(map.setPaintProperty).not.toHaveBeenCalled()
+  })
+
+  it('legend follows the visible area (integration, TODO-032)', async () => {
+    useStore.setState({ compositeVisible: true })
+    const map = makeFakeMap()
+    await act(async () => {
+      render(
+        <MantineProvider>
+          <MapContext.Provider value={map as unknown as maplibregl.Map}>
+            <CompositeLayer />
+          </MapContext.Provider>
+          <CompositeLegend />
+        </MantineProvider>,
+      )
+    })
+    const [lo, hi] = fitScoreRange([scoreOf(map, 'aaa'), scoreOf(map, 'flooded')])!
+    expect(screen.getByText(String(lo))).toBeTruthy()
+    expect(screen.getByText(String(hi))).toBeTruthy()
+
+    map.view.east = 1
+    moveEnd(map)
+    const [zLo, zHi] = fitScoreRange([scoreOf(map, 'aaa')])!
+    expect(screen.getByText(String(zLo))).toBeTruthy()
+    expect(screen.getByText(String(zHi))).toBeTruthy()
   })
 })

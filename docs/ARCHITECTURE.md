@@ -96,6 +96,7 @@ src/
 │   │   ├── MapContext.ts        # React context exposing the MapLibre map instance
 │   │   ├── MapContextMenu.tsx   # right-click context menu (set workplace, add pin)
 │   │   ├── layerOrder.ts        # canonical z-order for all MapLibre layers
+│   │   ├── visibleBounds.ts     # viewport minus side panels — best zones + colour scale fit to it
 │   │   └── googleMapsUrl.ts     # builds Google Maps URL for a coordinate
 │   ├── IsochroneLayer/  # GeoJSON fill + outer mask layer
 │   ├── NoiseLayer/      # PMTiles vector fill layer (Lden) + legend + info modal
@@ -104,7 +105,7 @@ src/
 │   ├── WildfireLayer/   # wildfire hazard 2024 classes + WUI outline (PMTiles) + legend + info modal
 │   ├── WalkabilityLayer/  # H3 hex choropleth (walkability only) + legend
 │   ├── CompositeLayer/    # H3 hex choropleth (4-factor composite index) + legend; hover outline, click → detail card
-│   │   └── scoreRamp.ts         # shared RdYlGn colour ramp for hex layers
+│   │   └── scoreRamp.ts         # shared RdYlGn colour ramp; fitScoreRange (scale fitted to the view, TODO-032)
 │   ├── MetroLayer/      # TMB metro lines + station dots (API: api.tmb.cat)
 │   ├── FgcLayer/        # FGC suburban rail lines + stations (static GeoJSON)
 │   ├── PoiLayer/        # POI dots from barcelona_poi.pmtiles
@@ -229,7 +230,7 @@ H3 hex grid coloured by a **4-factor composite index**: walkability (POI access)
 - **Score**: `computeComposite(bundle, weights, enabledLandmarkIds, priceBounds, riskStrengths)` → weighted average (missing data = 0, see feature 022), then climate-risk penalties.
 - **Climate-risk penalties (036, 037)**: `score = base × (1 − sFlood/10 · floodRisk) × (1 − sFire/10 · fireRisk) × (1 − sStreet/10 · streetFloodRisk)` — safe cells keep their score. Raw exposure (`flood_t10/t100/t500`, `fire_wui`, `fire_hazard`, `fire_class`, `fire_dist_m`, `street_t10/t100` — Barcelona only, null elsewhere) is baked into `livability-h3.geojson` by `scripts/climate_risk.py`; risks and penalties are computed in `services/climateRisk`. ENV: `VITE_FLOOD_PENALTY_T10/T100/T500`, `VITE_RISK_STRENGTH_FLOOD/FIRE/STREET`, `VITE_STREET_FLOOD_SATURATION`.
 - **Client**: `CompositeLayer` renders the choropleth; `HexDetailCard` shows per-factor breakdown and the climate-risk explanation on click. `FilterPanel/CompositeControls` hosts the layer toggle + per-factor weight sliders + risk-penalty strengths + landmark selection. `FilterPanel/ClimateLayerControls` toggles the River flood zones / Street flooding / Wildfire hazard view layers.
-- **State**: `compositeVisible`, `compositeWeights`, `compositeScoreRange`, `compositeRiskStrengths`, `floodLayerVisible`, `wildfireLayerVisible`, `streetFloodingLayerVisible`, `streetFloodingReturnPeriod`, `selectedHexH3`, `enabledLandmarkIds` in Zustand store.
+- **State**: `compositeVisible`, `compositeWeights`, `compositeColorRange` (colour scale of the visible hexes, set by `CompositeLayer`), `compositeRiskStrengths`, `floodLayerVisible`, `wildfireLayerVisible`, `streetFloodingLayerVisible`, `streetFloodingReturnPeriod`, `selectedHexH3`, `enabledLandmarkIds` in Zustand store.
 
 ## Idealista Prices layer (feature 019)
 

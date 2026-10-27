@@ -120,8 +120,6 @@ export interface BestZonesInput {
   /** Final composite score per H3 cell. */
   scores: Map<string, number>
   bounds: Bounds
-  /** Only cells inside the Livability score-range filter count (= what the user sees). */
-  scoreRange: [number, number]
   /** Strictness: zones spread over the top `topPct`% of visible cells (small ones grow to MIN_CELLS). */
   topPct: number
   /** Saved Idealista filter URL — the URL budget is checked against it. */
@@ -160,12 +158,11 @@ export function growZone(core: string[], free: (h: string) => boolean, score: (h
 }
 
 /** Hexes of the best zones in the viewport, best first. Algorithm: docs/features/038-best-zones.md. */
-export function findZoneCells({ scores, bounds, scoreRange, topPct, sticky = [], allowed }: BestZonesInput): string[][] {
+export function findZoneCells({ scores, bounds, topPct, sticky = [], allowed }: BestZonesInput): string[][] {
   const smooth = smoothScores(scores)
   const score = (h: string) => smooth.get(h)!
-  const [min, max] = scoreRange
   const candidates = new Set([...scores]
-    .filter(([h, s]) => s >= min && s <= max && inBounds(h, bounds) && (!allowed || allowed(h))).map(([h]) => h))
+    .filter(([h]) => inBounds(h, bounds) && (!allowed || allowed(h))).map(([h]) => h))
   if (candidates.size === 0) return []
 
   const sorted = [...candidates].map(score).sort((a, b) => a - b)

@@ -1,5 +1,4 @@
 import { useEffect } from 'react'
-import type * as maplibregl from 'maplibre-gl'
 import { ActionIcon, Button, Checkbox, Group, Paper, Popover, Slider, Text } from '@mantine/core'
 import { IconSettings, IconX } from '@tabler/icons-react'
 import { useMap } from '../Map/MapContext'
@@ -7,32 +6,12 @@ import { useStore } from '../../store'
 import { useBestZones } from '../../hooks/useBestZones'
 import { BestZonesLayer } from './BestZonesLayer'
 import { BaseUrlInput } from './BaseUrlInput'
-import type { Bounds } from '../../services/bestZones'
+import { visibleBounds } from '../Map/visibleBounds'
 import { features } from '../../features'
 
 // Strictness steps as "top X% of visible hexes" — slider left = loose, right = strict.
 // Above ~25% the good areas merge into one city-wide blob, so the loose end stops there.
 const TOP_PCT_STEPS = [25, 20, 15, 10, 7, 5]
-
-/**
- * Visible part of the map: the viewport minus the left filter panel and the right hex detail card
- * (when open) — zones should never hide under them.
- */
-function viewOf(map: maplibregl.Map): Bounds {
-  const box = map.getContainer().getBoundingClientRect()
-  const mid = box.left + box.width / 2
-  let left = 0
-  let right = box.width
-  const panel = document.querySelector('.top-panel')?.getBoundingClientRect()
-  if (panel && panel.right < mid) left = Math.max(0, panel.right - box.left)
-  const card = document.querySelector('.hex-detail-overlay')?.getBoundingClientRect()
-  if (card && card.left > mid) right = Math.min(box.width, card.left - box.left)
-  const corners = [[left, 0], [right, 0], [right, box.height], [left, box.height]]
-    .map(([x, y]) => map.unproject([x, y]))
-  const lngs = corners.map((c) => c.lng)
-  const lats = corners.map((c) => c.lat)
-  return [Math.min(...lngs), Math.min(...lats), Math.max(...lngs), Math.max(...lats)]
-}
 
 function stepIndex(topPct: number): number {
   const i = TOP_PCT_STEPS.findIndex((p) => p <= topPct)
@@ -58,7 +37,7 @@ export function BestZones() {
   // While zones are on, they follow the map: every pan/zoom redraws them for the new view.
   useEffect(() => {
     if (!map) return
-    const onMoveEnd = () => { if (useStore.getState().bestZonesBounds) setBounds(viewOf(map)) }
+    const onMoveEnd = () => { if (useStore.getState().bestZonesBounds) setBounds(visibleBounds(map)) }
     map.on('moveend', onMoveEnd)
     return () => { map.off('moveend', onMoveEnd) }
   }, [map, setBounds])
@@ -83,7 +62,7 @@ export function BestZones() {
               Clear zones
             </Button>
           ) : (
-            <Button size="xs" onClick={() => setBounds(viewOf(map!))} disabled={!map}
+            <Button size="xs" onClick={() => setBounds(visibleBounds(map!))} disabled={!map}
               style={{ flex: 1, backgroundColor: '#F06965' }}>
               Draw best zones
             </Button>

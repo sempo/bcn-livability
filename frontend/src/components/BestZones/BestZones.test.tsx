@@ -91,7 +91,7 @@ describe('BestZones', () => {
   beforeEach(() => {
     map = makeMap()
     popup.setDOMContent.mockClear()
-    useStore.setState({ compositeVisible: true, bestZonesBounds: null, bestZonesTopPct: 3, compositeScoreRange: [0, 100] })
+    useStore.setState({ compositeVisible: true, bestZonesBounds: null, bestZonesTopPct: 3 })
     useIdealistaBaseUrlStore.setState({ baseUrl: null })
   })
 
@@ -180,7 +180,7 @@ describe('BestZones', () => {
   })
 
   it('says so when nothing qualifies', async () => {
-    useStore.setState({ compositeScoreRange: [95, 100] })
+    map.view = [10, 10, 10.1, 10.1] // no hexes in view
     renderBar()
     fireEvent.click(screen.getByRole('button', { name: /draw best zones/i }))
     expect(await screen.findByText('No zones fit this view — zoom out')).toBeInTheDocument()

@@ -1,18 +1,27 @@
-import { useContext, useEffect, useRef, useState } from 'react'
+import { useCallback, useContext, useEffect, useRef, useState } from 'react'
 import type * as maplibregl from 'maplibre-gl'
 import { MapContext } from '../Map/MapContext'
 import { useStore } from '../../store'
 import { loadBundles, loadOpenPriceMeta, type CellBundle } from '../../services/composite/compositeData'
 import { computeComposite, type OpenPriceBounds } from '../../services/composite/compositeScore'
 import type { RiskStrengths } from '../../services/climateRisk/climateRisk'
-import { buildScoreFillColorForRange } from './scoreRamp'
+import { buildScoreFillColorForRange, fitScoreRange } from './scoreRamp'
 import { addLayerOrdered } from '../Map/layerOrder'
+import { visibleBounds } from '../Map/visibleBounds'
 import { FILL_LAYER_ID as BEST_ZONES_FILL_LAYER_ID } from '../BestZones/BestZonesLayer'
 
 export const SOURCE_ID = 'composite-h3'
 export const FILL_LAYER_ID = 'composite-fill'
+/** Second fill layer on the same source: the colour scale crossfades between the two (TODO-032). */
+export const FILL_B_LAYER_ID = 'composite-fill-b'
 export const GAP_LAYER_ID = 'composite-gap-outline'
 export const HOVER_LAYER_ID = 'composite-hover-outline'
+
+const FILL_OPACITY = 0.6
+const FADE_MS = 1000
+
+/** Hex centre (bbox middle of its ring) and score — what the colour scale is fitted to. */
+interface ScoredCell { lng: number; lat: number; score: number }
 
 interface ScoredFeature {
   type: 'Feature'
@@ -66,19 +75,17 @@ function buildGeoJSON(
   return { type: 'FeatureCollection', features }
 }
 
-function scoreRangeFilter(min: number, max: number): maplibregl.FilterSpecification {
-  return ['all',
-    ['>=', ['get', 'score'], min],
-    ['<=', ['get', 'score'], max],
-  ] as maplibregl.FilterSpecification
-}
-
-function gapFilter(min: number, max: number): maplibregl.FilterSpecification {
-  return ['all',
-    ['==', ['get', 'hasGap'], true],
-    ['>=', ['get', 'score'], min],
-    ['<=', ['get', 'score'], max],
-  ] as maplibregl.FilterSpecification
+function scoredCells(fc: GeoJSON.FeatureCollection): ScoredCell[] {
+  return (fc.features as unknown as ScoredFeature[]).map((f) => {
+    const ring = f.geometry.coordinates[0]
+    const lngs = ring.map((p) => p[0])
+    const lats = ring.map((p) => p[1])
+    return {
+      lng: (Math.min(...lngs) + Math.max(...lngs)) / 2,
+      lat: (Math.min(...lats) + Math.max(...lats)) / 2,
+      score: f.properties.score,
+    }
+  })
 }
 
 /** Inside a drawn best zone the zone owns hover and click (feature 038), not the hex underneath. */
@@ -92,13 +99,40 @@ export function CompositeLayer() {
   const visible = useStore((s) => s.compositeVisible)
   const weights = useStore((s) => s.compositeWeights)
   const enabledLandmarkIds = useStore((s) => s.enabledLandmarkIds)
-  const scoreRange = useStore((s) => s.compositeScoreRange)
   const riskStrengths = useStore((s) => s.compositeRiskStrengths)
   const setSelectedHexH3 = useStore((s) => s.setSelectedHexH3)
 
   const bundlesRef = useRef<CellBundle[] | null>(null)
   const openPriceMetaRef = useRef<OpenPriceBounds | null>(null)
   const [dataLoaded, setDataLoaded] = useState(false)
+  const cellsRef = useRef<ScoredCell[]>([])
+  // The fill layer that currently shows the colours; the other one waits at opacity 0.
+  const frontRef = useRef(FILL_LAYER_ID)
+
+  /**
+   * Fits the colour scale to the visible hexes. With `fade`, crossfades to it like wikibarrio.es: the
+   * hidden layer gets the new colours and fades in while the shown one fades out. MapLibre doesn't
+   * transition data-driven colours, and changing them every frame would re-tile the source.
+   */
+  const recolor = useCallback((fade: boolean) => {
+    if (!map || !map.getLayer(FILL_LAYER_ID)) return
+    const [w, s, e, n] = visibleBounds(map)
+    const range = fitScoreRange(cellsRef.current
+      .filter((c) => c.lng >= w && c.lng <= e && c.lat >= s && c.lat <= n).map((c) => c.score))
+    const [curMin, curMax] = useStore.getState().compositeColorRange
+    if (!range || (range[0] === curMin && range[1] === curMax)) return
+    useStore.getState().setCompositeColorRange(range)
+    const color = buildScoreFillColorForRange(range[0], range[1], 'score')
+    if (!fade) {
+      map.setPaintProperty(frontRef.current, 'fill-color', color)
+      return
+    }
+    const back = frontRef.current === FILL_LAYER_ID ? FILL_B_LAYER_ID : FILL_LAYER_ID
+    map.setPaintProperty(back, 'fill-color', color)
+    map.setPaintProperty(back, 'fill-opacity', FILL_OPACITY)
+    map.setPaintProperty(frontRef.current, 'fill-opacity', 0)
+    frontRef.current = back
+  }, [map])
 
   // Lazy-load all data sources the first time the layer is enabled.
   useEffect(() => {
@@ -126,30 +160,35 @@ export function CompositeLayer() {
       riskStrengths,
     )
 
+    cellsRef.current = scoredCells(data)
+
     const source = map.getSource(SOURCE_ID) as maplibregl.GeoJSONSource | undefined
     if (source) {
       source.setData(data)
+      recolor(false) // weights / criteria changed: colours change at once anyway, no crossfade
     } else {
-      const [sMin, sMax] = scoreRange
+      const [cMin, cMax] = useStore.getState().compositeColorRange
       map.addSource(SOURCE_ID, { type: 'geojson', data })
 
-      addLayerOrdered(map, {
-        id: FILL_LAYER_ID,
-        type: 'fill',
-        source: SOURCE_ID,
-        filter: scoreRangeFilter(sMin, sMax),
-        layout: { visibility: visible ? 'visible' : 'none' },
-        paint: {
-          'fill-color': buildScoreFillColorForRange(sMin, sMax, 'score'),
-          'fill-opacity': 0.6,
-        },
-      }, FILL_LAYER_ID)
+      for (const id of [FILL_B_LAYER_ID, FILL_LAYER_ID]) {
+        addLayerOrdered(map, {
+          id,
+          type: 'fill',
+          source: SOURCE_ID,
+          layout: { visibility: visible ? 'visible' : 'none' },
+          paint: {
+            'fill-color': buildScoreFillColorForRange(cMin, cMax, 'score'),
+            'fill-opacity': id === frontRef.current ? FILL_OPACITY : 0,
+            'fill-opacity-transition': { duration: FADE_MS, delay: 0 },
+          },
+        }, id)
+      }
 
       addLayerOrdered(map, {
         id: GAP_LAYER_ID,
         type: 'line',
         source: SOURCE_ID,
-        filter: gapFilter(sMin, sMax),
+        filter: ['==', ['get', 'hasGap'], true] as maplibregl.FilterSpecification,
         layout: { visibility: visible ? 'visible' : 'none' },
         paint: { 'line-color': '#000', 'line-width': 1.5, 'line-opacity': 0.7 },
       }, GAP_LAYER_ID)
@@ -162,28 +201,25 @@ export function CompositeLayer() {
         layout: { visibility: visible ? 'visible' : 'none' },
         paint: { 'line-color': '#ffffff', 'line-width': 2, 'line-opacity': 0.9 },
       }, HOVER_LAYER_ID)
+      recolor(false)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [map, dataLoaded, weights, enabledLandmarkIds, riskStrengths])
 
-  // Update fill-color expression + filters when score range changes.
+  // Refit the colour scale once the map stops moving — colours don't change mid-pan.
   useEffect(() => {
-    if (!map || !map.getLayer(FILL_LAYER_ID)) return
-    const [sMin, sMax] = scoreRange
-    map.setPaintProperty(
-      FILL_LAYER_ID,
-      'fill-color',
-      buildScoreFillColorForRange(sMin, sMax, 'score'),
-    )
-    map.setFilter(FILL_LAYER_ID, scoreRangeFilter(sMin, sMax))
-    map.setFilter(GAP_LAYER_ID, gapFilter(sMin, sMax))
-  }, [map, scoreRange, dataLoaded])
+    if (!map) return
+    const onMoveEnd = () => recolor(true)
+    map.on('moveend', onMoveEnd)
+    return () => { map.off('moveend', onMoveEnd) }
+  }, [map, recolor])
 
   // Visibility toggle without removing layers.
   useEffect(() => {
     if (!map || !map.getLayer(FILL_LAYER_ID)) return
     const vis = visible ? 'visible' : 'none'
     map.setLayoutProperty(FILL_LAYER_ID, 'visibility', vis)
+    map.setLayoutProperty(FILL_B_LAYER_ID, 'visibility', vis)
     map.setLayoutProperty(GAP_LAYER_ID, 'visibility', vis)
     if (map.getLayer(HOVER_LAYER_ID)) map.setLayoutProperty(HOVER_LAYER_ID, 'visibility', vis)
     if (!visible) setSelectedHexH3(null)
@@ -233,6 +269,7 @@ export function CompositeLayer() {
       if (map.getLayer(HOVER_LAYER_ID)) map.removeLayer(HOVER_LAYER_ID)
       if (map.getLayer(GAP_LAYER_ID)) map.removeLayer(GAP_LAYER_ID)
       if (map.getLayer(FILL_LAYER_ID)) map.removeLayer(FILL_LAYER_ID)
+      if (map.getLayer(FILL_B_LAYER_ID)) map.removeLayer(FILL_B_LAYER_ID)
       if (map.getSource(SOURCE_ID)) map.removeSource(SOURCE_ID)
     }
   }, [map])

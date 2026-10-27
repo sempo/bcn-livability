@@ -1,18 +1,10 @@
 import { useState } from 'react'
-import { ActionIcon, Checkbox, Group, Modal, RangeSlider, Slider, Stack, Switch, Text } from '@mantine/core'
+import { ActionIcon, Checkbox, Group, Modal, Slider, Stack, Switch, Text } from '@mantine/core'
 import { IconSettings, IconInfoCircle } from '@tabler/icons-react'
 import { useStore, DEFAULT_COMPOSITE_WEIGHTS, type CompositeWeights } from '../../store'
 import { LANDMARKS, ALL_LANDMARK_IDS } from '../../services/cityCore/landmarks'
 import { DEFAULT_RISK_STRENGTHS, type RiskStrengths } from '../../services/climateRisk/climateRisk'
 import { CompositeLegend } from '../CompositeLayer/CompositeLegend'
-
-const SCORE_MARKS = [
-  { value: 0, label: '0' },
-  { value: 25, label: '25' },
-  { value: 50, label: '50' },
-  { value: 75, label: '75' },
-  { value: 100, label: '100' },
-]
 
 interface GearButtonProps {
   onClick: () => void
@@ -175,8 +167,6 @@ export function CompositeControls() {
   const setVisible = useStore((s) => s.setCompositeVisible)
   const weights = useStore((s) => s.compositeWeights)
   const setWeights = useStore((s) => s.setCompositeWeights)
-  const scoreRange = useStore((s) => s.compositeScoreRange)
-  const setScoreRange = useStore((s) => s.setCompositeScoreRange)
   const enabledIds = useStore((s) => s.enabledLandmarkIds)
   const setEnabledIds = useStore((s) => s.setEnabledLandmarkIds)
   const riskStrengths = useStore((s) => s.compositeRiskStrengths)
@@ -276,23 +266,7 @@ export function CompositeControls() {
             <ComponentRow label="Wildfire risk" {...riskRow('fire')} />
             <ComponentRow label="Street flooding risk" {...riskRow('street')} />
 
-            <Stack gap={4}>
-              <Text size="xs" c="dimmed">Score range</Text>
-              <RangeSlider
-                min={0}
-                max={100}
-                step={5}
-                size="xs"
-                value={scoreRange}
-                onChange={(v) => setScoreRange(v as [number, number])}
-                marks={SCORE_MARKS}
-                aria-label="Score range filter"
-                style={{ '--slider-color': '#F06965' } as React.CSSProperties}
-                styles={{ markLabel: { fontSize: 9, marginTop: 4 } }}
-              />
-            </Stack>
-
-            <CompositeLegend scoreRange={scoreRange} />
+            <CompositeLegend />
             <Text size="xs" c="dimmed">Black outline = missing data</Text>
           </Stack>
         )}

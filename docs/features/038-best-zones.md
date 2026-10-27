@@ -26,16 +26,17 @@ too complex for Idealista's `shape` parameter, so those links never worked relia
 one zone into an Idealista-ready polygon; `findBestZones(input)` = both together.
 
 Input: final composite score per H3 cell (res 9, after risk penalties), visible bounds
-`[west, south, east, north]`, current score range `[min, max]`, `topPct`, Idealista base URL, and
+`[west, south, east, north]`, `topPct`, Idealista base URL, and
 optionally `sticky` (zones to keep, see step 6).
 
 1. **Smooth.** `s̄(c)` = mean score over `gridDisk(c, 1)` (cell + 6 neighbours, known cells only).
    Removes salt-and-pepper: a lone dark-green hex is not a zone, a lone yellow hex does not punch a
    hole in a green block.
-2. **Candidates.** Hexes lying **entirely** inside the visible area whose raw score is inside the
-   score range (= the cells the user actually sees). Whole hexes, not centres — so a zone sits inside
+2. **Candidates.** Hexes lying **entirely** inside the visible area (the Score range filter that
+   used to narrow them was removed in TODO-032). Whole hexes, not centres — so a zone sits inside
    the view (only the ~55 m buffer can stick out) instead of grazing its edge. The visible area is the
-   map viewport minus the left filter panel and the right hex detail card when it is open.
+   map viewport minus the left filter panel and the right hex detail card when it is open
+   (`components/Map/visibleBounds.ts`, shared with the colour scale).
    With **Inside commute zone, outside exclusion zones** ticked (default), a candidate must also lie
    entirely inside the isochrone (when one is drawn) and not touch any exclusion zone (015) —
    `allowedCells(isochrone, exclusions)` via H3 `polygonToCellsExperimental` (full containment for
@@ -59,7 +60,7 @@ optionally `sticky` (zones to keep, see step 6).
    - **Never 0:** if no core fits (all boxed in), the best remaining hexes seed one zone. Only a view
      smaller than one zone gives none (`No zones fit this view — zoom out`).
 6. **Sticky zones** (`sticky` input). When only strictness changes (same view, weights, risks,
-   landmarks, score range), the hook passes back the zones of the last **fresh** computation (the
+   landmarks), the hook passes back the zones of the last **fresh** computation (the
    anchor — set on Draw, pan/zoom or a weight change). They are placed first: each becomes the best
    core inside it — narrower when stricter, wider when looser. It disappears once nothing in it
    passes the threshold, and merges away when an earlier zone took its core. Free slots then go to
@@ -109,7 +110,7 @@ viewport), shown only while the Livability Index is on:
 
 - **Draw best zones** — turns zones on for the visible area. From then on zones **follow the map**:
   every pan/zoom (`moveend`) redraws them for the new view (fresh computation, numbers from 1).
-  Weight, risk, landmark and score-range changes recompute them fresh; strictness changes keep them
+  Weight, risk and landmark changes recompute them fresh; strictness changes keep them
   sticky (algorithm step 6).
 - **Clear zones** (also **Esc**) — turns zones off; panning draws nothing until the next **Draw**.
 - **⚙** — popover with the saved Idealista filter URL (`BaseUrlInput`, feature 016).
@@ -204,7 +205,7 @@ frontend/src/
 ## Definition of Done
 
 - [x] Unit tests — `bestZones`: smoothing, lone spike ignored, mass ranking, near-ties (up to 5, weak
-      4th hidden), viewport + whole-hex rule, score range, stricter = smaller, compact growth,
+      4th hidden), viewport + whole-hex rule, stricter = smaller, compact growth,
       never 0 (tiny core grown, boxed-in fallback), uniform area = one zone, zones never touch,
       sticky (keeps place, adds tie, disappears), hole-free closed rings ≤ 20 vertices, URL budget,
       `allowedCells` (isochrone + exclusions, exclusions only) and no zone on a disallowed hex.

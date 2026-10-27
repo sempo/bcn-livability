@@ -32,7 +32,7 @@ const lastAllowed = () => vi.mocked(findZoneCells).mock.calls.at(-1)![0].allowed
 
 describe('useBestZones', () => {
   beforeEach(() => {
-    useStore.setState({ bestZonesBounds: null, bestZonesTopPct: 3, compositeScoreRange: [0, 100], bestZonesRestrict: true, resultPolygon: null })
+    useStore.setState({ bestZonesBounds: null, bestZonesTopPct: 3, bestZonesRestrict: true, resultPolygon: null })
     useIdealistaBaseUrlStore.setState({ baseUrl: null })
     useExclusionsStore.setState({ zones: [] })
   })
