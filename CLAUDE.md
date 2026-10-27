@@ -50,6 +50,7 @@ For each new feature:
 
 - **Not yet implemented:** prefix with `TODO-` — e.g. `TODO-005-property-pins.md`
 - **Implemented:** remove the prefix — e.g. `005-property-pins.md`
+- **Deprecated (dropped or rolled back):** prefix with `DEPRECATED-` and add a status line with the date and the reason at the top — e.g. `DEPRECATED-027-territory-cards-seo-urls.md`. Keep the file for reference; don't propose the dropped idea again unless the file says when to revisit it.
 
 When a feature is marked done (Definition of Done satisfied), rename the file by dropping the `TODO-` prefix.
 

@@ -1,6 +1,20 @@
-# TODO-027 — Territory mode (hex / adm) + territory cards with SEO URLs
+# DEPRECATED-027 — Territory mode (hex / adm) + territory cards with SEO URLs
 
-**Status:** Draft for agreement. Replaces the earlier "barri mode" idea.
+**Status:** Deprecated 2026-10-27. Built behind a feature flag, rolled back without merging.
+
+**Why.** A district, barri or municipality has no meaningful single score. Noise, walkability, access to the
+centre and climate risks change street by street, so an area value misleads someone choosing a home, even when
+it is computed from source data rather than from hex scores (e.g. "el Raval: 51 dB, quiet"; "Gràcia → Plaça
+de Catalunya: 50 min" as an average walk). Only the price is native to the area (INCASOL). The territory mode and
+cards helped SEO only, not people looking for a home.
+
+**Lesson for SEO.** Google indexes the page as rendered after JavaScript, so static text that the app replaces
+on load barely counts, and hidden text is penalised: text for search has to be visible to people too.
+
+**Revisit only together with territory search (TODO-044).** Then a territory URL opens the regular hex map
+focused on that place (outline + zoom) with a small facts-only panel: price, list of barris and neighbours,
+facts as shares rather than averages ("38% of the residential area is louder than 65 dB"). No area score, no
+rank, no adm map mode. The draft below is kept for reference.
 
 ## Goal
 
