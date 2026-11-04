@@ -43,14 +43,6 @@ export interface BarriVibeData {
   barris: Record<string, BarriVibe>
 }
 
-export const SATISF_MIN = Number(import.meta.env.VITE_LOCALS_SATISF_MIN ?? 6.5)
-export const SATISF_MAX = Number(import.meta.env.VITE_LOCALS_SATISF_MAX ?? 8.4)
-
-/** Stretches satisfaction (0–10) to 0–100 between SATISF_MIN and SATISF_MAX. */
-export function localsOpinionScore(satisf: number): number {
-  return Math.max(0, Math.min(100, Math.round(((satisf - SATISF_MIN) / (SATISF_MAX - SATISF_MIN)) * 100)))
-}
-
 /** The `count` most-named problems of a barri, largest share first. */
 export function topProblems(barri: BarriVibe, count = 3): { id: ProblemId; pct: number }[] {
   return (Object.keys(PROBLEM_LABELS) as ProblemId[])

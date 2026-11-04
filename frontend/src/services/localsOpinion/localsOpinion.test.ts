@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import {
-  SATISF_MAX, SATISF_MIN, loadBarriVibe, localsOpinionScore, resetBarriVibeCache, topProblems, type BarriVibe,
+  loadBarriVibe, resetBarriVibeCache, topProblems, type BarriVibe,
 } from './localsOpinion'
 import * as mod from './localsOpinion'
 
@@ -11,22 +11,6 @@ const barri = (problems: Partial<BarriVibe['problems']>): BarriVibe => ({
     incivility: null, drugs_squats: null, maintenance: null, parking: null, traffic: null,
     ...problems,
   },
-})
-
-describe('localsOpinionScore', () => {
-  it('maps the env bounds to 0 and 100', () => {
-    expect(localsOpinionScore(SATISF_MIN)).toBe(0)
-    expect(localsOpinionScore(SATISF_MAX)).toBe(100)
-  })
-
-  it('is linear in between', () => {
-    expect(localsOpinionScore((SATISF_MIN + SATISF_MAX) / 2)).toBe(50)
-  })
-
-  it('clamps outside the bounds', () => {
-    expect(localsOpinionScore(3)).toBe(0)
-    expect(localsOpinionScore(9.5)).toBe(100)
-  })
 })
 
 describe('topProblems', () => {

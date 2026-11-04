@@ -1,9 +1,10 @@
 import React from 'react'
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, act } from '@testing-library/react'
 import { MantineProvider } from '@mantine/core'
 import { CompositeControls } from './CompositeControls'
-import { useStore, DEFAULT_COMPOSITE_WEIGHTS } from '../../store'
+import { useStore, DEFAULT_COMPOSITE_WEIGHTS, ALL_WALK_CATEGORY_IDS } from '../../store'
+import { DEFAULT_CONDITIONS } from '../../services/buildings/conditions'
 
 vi.mock('@mantine/core', async () => {
   const actual = await vi.importActual<typeof import('@mantine/core')>('@mantine/core')
@@ -40,7 +41,59 @@ describe('CompositeControls', () => {
       idealistaPriceBounds: null,
       enabledLandmarkIds: ['sagrada', 'barceloneta'],
       compositeRiskStrengths: { flood: 5, fire: 5, street: 5 },
+      ageEras: ['before-1900', '1900-1939', '1940-1979', '1980-2006', '2007-on'], conditions: DEFAULT_CONDITIONS,
+      enabledWalkCategories: ALL_WALK_CATEGORY_IDS,
     })
+  })
+
+  it('conditions in real units: the sentence follows the slider (049)', () => {
+    useStore.setState({ compositeVisible: true })
+    renderControls()
+    expect(screen.getByText('Everyday services within 10 min walk')).toBeTruthy()
+    expect(screen.getByText('Up to 65 dB is OK for me — like a busy street')).toBeTruthy()
+    expect(screen.getByText('My places within 30 min walk')).toBeTruthy()
+    expect(screen.getByText(/^I'm ready to pay up to €4[.,]?000\/m²$/)).toBeTruthy()
+    for (let k = 0; k < 10; k++) fireEvent.keyDown(screen.getByLabelText('Noise outside the window limit'), { key: 'ArrowLeft' })
+    expect(useStore.getState().conditions.noiseMaxDb).toBe(55)
+    expect(screen.getByText('Up to 55 dB is OK for me — like a calm street')).toBeTruthy()
+    expect(JSON.parse(localStorage.getItem('bcn_conditions')!).noiseMaxDb).toBe(55)
+  })
+
+  it('a subset of services or places is said so', () => {
+    useStore.setState({ compositeVisible: true, enabledWalkCategories: ['school', 'clinic'], enabledLandmarkIds: ['sagrada'] })
+    renderControls()
+    expect(screen.getByText('My 2 services within 10 min walk')).toBeTruthy()
+    expect(screen.getByText('My place within 30 min walk')).toBeTruthy()
+  })
+
+  it('risk penalties keep the words of how much they matter', () => {
+    useStore.setState({ compositeVisible: true })
+    renderControls()
+    expect(screen.getByTestId('importance-River flood risk').textContent).toBe('Matters') // 5
+    act(() => useStore.setState({ compositeRiskStrengths: { flood: 1, fire: 3, street: 10 } }))
+    expect(screen.getByTestId('importance-River flood risk').textContent).toBe('Slightly important')
+    expect(screen.getByTestId('importance-Wildfire risk').textContent).toBe('Somewhat important')
+    expect(screen.getByTestId('importance-Street flooding risk').textContent).toBe('Top priority')
+  })
+
+  it('building age: off by default; its gear picks the liked eras, never none (TODO-047)', () => {
+    useStore.setState({ compositeVisible: true })
+    renderControls()
+    expect(useStore.getState().compositeWeights.age).toBe(0)
+    fireEvent.click(screen.getByLabelText('Enable Building age'))
+    expect(useStore.getState().compositeWeights.age).toBe(1)
+    expect(screen.getByText("All eras count — untick the ones you don't want")).toBeTruthy()
+
+    fireEvent.click(screen.getByLabelText('Configure Building age'))
+    expect(screen.getByText('Building age — eras you like')).toBeTruthy()
+    fireEvent.click(screen.getByLabelText('Post-war boom · 1940–1979'))
+    expect(useStore.getState().ageEras).not.toContain('1940-1979')
+    expect(screen.getByText('Liked: before 1900, 1900–1939, 1980–2006, 2007 on')).toBeTruthy()
+
+    fireEvent.click(screen.getByLabelText('All eras'))
+    expect(useStore.getState().ageEras).toHaveLength(5)
+    fireEvent.click(screen.getByLabelText('All eras'))
+    expect(useStore.getState().ageEras).toEqual(['before-1900']) // the last one stays
   })
 
   it('renders a Livability Index toggle', () => {
@@ -52,20 +105,21 @@ describe('CompositeControls', () => {
     useStore.setState({ compositeVisible: true })
     renderControls()
     expect(screen.getByText('Walkability')).toBeTruthy()
-    expect(screen.getByText('Noise')).toBeTruthy()
+    expect(screen.getByText('Noise outside the window')).toBeTruthy()
     expect(screen.getByText('City Core Access')).toBeTruthy()
     expect(screen.getByText('Market Price')).toBeTruthy()
     expect(screen.getByText("Locals' opinion")).toBeTruthy()
   })
 
-  it("locals' opinion is off by default and turns on at weight 5 (042)", () => {
+  it("locals' opinion is off by default; on, it asks for the residents' minimum rating (042, 049)", () => {
     useStore.setState({ compositeVisible: true })
     renderControls()
     const box = screen.getByLabelText("Enable Locals' opinion") as HTMLInputElement
     expect(box.checked).toBe(false)
     fireEvent.click(box)
-    expect(useStore.getState().compositeWeights.localsOpinion).toBe(5)
-    expect(screen.getByLabelText("Locals' opinion weight")).toBeTruthy()
+    expect(useStore.getState().compositeWeights.localsOpinion).toBe(1)
+    expect(screen.getByLabelText("Locals' opinion limit")).toBeTruthy()
+    expect(screen.getByText('Residents rate their barri at least 7.5 / 10')).toBeTruthy()
   })
 
   it('enables the layer on toggle', () => {
@@ -74,11 +128,14 @@ describe('CompositeControls', () => {
     expect(useStore.getState().compositeVisible).toBe(true)
   })
 
-  it('disabling a component sets its weight to 0', () => {
+  it('turning a condition off and on', () => {
     useStore.setState({ compositeVisible: true })
     renderControls()
-    fireEvent.click(screen.getByLabelText('Enable Noise'))
+    fireEvent.click(screen.getByLabelText('Enable Noise outside the window'))
     expect(useStore.getState().compositeWeights.noise).toBe(0)
+    expect(screen.queryByLabelText('Noise outside the window limit')).toBeNull()
+    fireEvent.click(screen.getByLabelText('Enable Noise outside the window'))
+    expect(useStore.getState().compositeWeights.noise).toBe(1)
   })
 
   it('legend shows the colour range of the visible area; no score range slider (TODO-032)', () => {
@@ -86,7 +143,7 @@ describe('CompositeControls', () => {
     renderControls()
     expect(screen.getByText('58')).toBeTruthy()
     expect(screen.getByText('84')).toBeTruthy()
-    expect(screen.getByText('Colours relative to the visible area')).toBeTruthy()
+    expect(screen.getByText('How well homes meet your conditions, relative to the visible area')).toBeTruthy()
     expect(screen.queryByText('Score range')).toBeNull()
   })
 

@@ -205,8 +205,10 @@ def main():
                ("lden_avg", "u16", 10, x["lden_avg"]), ("river_zone", "u16", 1, x["river_zone"]),
                ("street_t10_cm", "u16", 1, x["street_t10_cm"]), ("street_t100_cm", "u16", 1, x["street_t100_cm"]),
                ("fire_hazard", "u16", 1000, x["fire_hazard"]), ("area", "u16", 1, np.where(area >= 0, area, np.nan)),
-               ("fire_wui", "u8", 1, x["fire_wui"])]
-    columns += [(f"walk_{c}", "u8", 1, x[f"walk_{c}"]) for c in cats]
+               ("fire_wui", "u8", 1, x["fire_wui"]), ("year_built", "u16", 1, x["year_built"])]
+    # Walking minutes to the nearest service of each category (null beyond WALK_RMAX_M): the walkability condition
+    # of 049 ("everyday services within N min").
+    columns += [(f"min_{c}", "u8", 1, x[f"min_{c}"]) for c in cats]
     columns += [(f"cc_{lm}", "u8", 1, x[f"cc_{lm}"]) for lm in landmarks]
     blob, meta_cols = pack(columns)
     PUBLIC.mkdir(parents=True, exist_ok=True)

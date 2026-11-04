@@ -5,6 +5,7 @@ import { buildingData, valueOf } from '../../services/buildings/buildingData'
 import { buildingArea, scoreBuilding } from '../../services/buildings/buildingScore'
 import { loadBuildingDetail, type BuildingDetail, type BuildingDetailResult } from '../../services/buildings/buildingDetail'
 import { catastroUrl, facadePhotoUrl, prettyAddress } from '../../services/buildings/address'
+import { UNCERTAIN_YEAR, eraOf } from '../../services/buildings/buildingAge'
 import { belowGroundUses, loadCatastroUnits } from '../../services/buildings/catastroUnits'
 import { LANDMARKS } from '../../services/cityCore/landmarks'
 import { SERVICE_CATEGORIES } from '../../services/walkability/serviceCategories'
@@ -13,11 +14,19 @@ import { LandmarkRow, LocalsSay, NoiseLabel, RiskRow, ScoreBar, SectionTitle } f
 import { scoreColor, scoreColorForRange } from './cardColors'
 import { fireText } from './cardText'
 import {
-  USE_LABEL, doorWaterText, groundFloorWarning, riverText, sideText,
+  USE_LABEL, countWithin, doorWaterText, groundFloorWarning, noiseVsLimit, priceVsBudget, ratingVsMin, riverText, sideText,
 } from './buildingCardText'
+import { minutesShare } from '../../services/buildings/conditions'
 import { features } from '../../features'
 
 const DIM = { fontSize: 10, opacity: 0.75 }
+
+/** How the building's era relates to the eras the user likes, from its age score. */
+function ageMatch(score: number): string {
+  if (score === 0) return 'not one of your eras'
+  if (score === 100) return 'counts as one of your eras'
+  return 'at the edge of one of your eras'
+}
 const fmt = (n: number) => new Intl.NumberFormat('en-ES', { maximumFractionDigits: 0 }).format(n)
 
 function Row({ label, value }: { label: string; value: string }) {
@@ -55,7 +64,11 @@ function BuildingFacts({ d }: { d: BuildingDetail }) {
       )}
       {belowUses.length > 0 && <Row label="Below ground" value={belowUses.join(', ')} />}
       {d.year_built !== undefined && (
-        <Row label="Built" value={`${d.year_built}${d.year_renov ? ` · renovated ${d.year_renov}` : ''}`} />
+        <Row label="Built"
+          value={`${d.year_built} · ${eraOf(d.year_built).name}${d.year_renov ? ` · renovated ${d.year_renov}` : ''}`} />
+      )}
+      {d.year_built === UNCERTAIN_YEAR && (
+        <Text size="xs" c="dimmed" style={DIM}>Catastro's date for many old buildings — the exact year is unknown</Text>
       )}
       {d.area_m2 !== undefined && <Row label="Built area" value={`${fmt(d.area_m2)} m²`} />}
       {d.condition && d.condition !== 'functional' && <Row label="Condition" value={d.condition} />}
@@ -125,6 +138,8 @@ export function BuildingCard() {
   const enabledLandmarkIds = useStore((s) => s.enabledLandmarkIds)
   const enabledCategories = useStore((s) => s.enabledWalkCategories)
   const riskStrengths = useStore((s) => s.compositeRiskStrengths)
+  const ageEras = useStore((s) => s.ageEras)
+  const conditions = useStore((s) => s.conditions)
   const [sMin, sMax] = useStore((s) => s.compositeColorRange)
   const [loaded, setLoaded] = useState<{ i: number; result: BuildingDetailResult } | null>(null)
 
@@ -149,8 +164,14 @@ export function BuildingCard() {
 
   const vibe = features.localsOpinion ? barriVibeData : null
   const { score, baseScore, components, penalties } = scoreBuilding(data, selected, {
-    weights, enabledLandmarkIds, enabledCategories, riskStrengths, vibe,
+    weights, conditions, enabledLandmarkIds, enabledCategories, riskStrengths, ageEras, vibe,
   })
+  const barColor = (v: number | null) => (v !== null ? scoreColor(v) : '#aaa')
+  const lden = valueOf(data, 'lden_avg', selected)
+  const services = SERVICE_CATEGORIES.filter((c) => enabledCategories.includes(c.id))
+    .map((cat) => ({ cat, minutes: valueOf(data, `min_${cat.id}`, selected) }))
+  const placeMinutes = enabledLandmarkIds.map((id) => valueOf(data, `cc_${id}`, selected))
+  const yearBuilt = valueOf(data, 'year_built', selected)
   const area = buildingArea(data, selected)
   const barri = area?.kind === 'barri' && vibe ? vibe.barris[area.code] : undefined
   const result = loaded?.i === selected ? loaded.result : null
@@ -213,17 +234,21 @@ export function BuildingCard() {
           <Divider />
           <Stack gap={4}>
             <SectionTitle>Walkability</SectionTitle>
-            <ScoreBar score={components.poiAccess} color={scoreColor(components.poiAccess)} />
+            {weights.poiAccess > 0 && (
+              <>
+                <ScoreBar score={components.poiAccess} color={barColor(components.poiAccess)} />
+                <Text size="xs">{countWithin(services.map((s) => s.minutes), conditions.walkMaxMin, 'services')}</Text>
+              </>
+            )}
             <Text size="xs" c="dimmed" style={DIM}>Walking time from the entrance, along the streets</Text>
-            {SERVICE_CATEGORIES.filter((c) => enabledCategories.includes(c.id)).map((cat) => {
-              const sub = valueOf(data, `walk_${cat.id}`, selected) ?? 0
-              const minutes = d?.[`min_${cat.id}`]
+            {services.map(({ cat, minutes }) => {
+              const sub = minutesShare([minutes], conditions.walkMaxMin)
               return (
                 <Group key={cat.id} gap={4} wrap="nowrap" align="center">
                   <Text style={{ fontSize: 11, width: 16, lineHeight: 1 }}>{cat.emoji}</Text>
                   <Text size="xs" c="dimmed" style={{ flex: 1, fontSize: 10 }}>{cat.label}</Text>
                   <Text style={{ fontSize: 10, minWidth: 40, textAlign: 'right' }} c="dimmed">
-                    {minutes !== undefined ? `${minutes} min` : 'none nearby'}
+                    {minutes !== null ? `${minutes} min` : 'none nearby'}
                   </Text>
                   <div style={{ width: 40, height: 3, borderRadius: 2, background: '#eee', overflow: 'hidden' }}>
                     <div style={{ height: '100%', width: `${sub}%`, background: scoreColor(sub) }} />
@@ -237,7 +262,10 @@ export function BuildingCard() {
           <Stack gap={4}>
             <SectionTitle>Noise</SectionTitle>
             {weights.noise > 0 && (
-              <ScoreBar score={components.noise} color={components.noise !== null ? scoreColor(components.noise) : '#aaa'} />
+              <>
+                <ScoreBar score={components.noise} color={barColor(components.noise)} />
+                {lden !== null && <Text size="xs">{noiseVsLimit(lden, conditions.noiseMaxDb)}</Text>}
+              </>
             )}
             {d ? <NoiseDetails d={d} facades={result?.facades ?? []} /> : <Text size="xs" c="dimmed">Loading…</Text>}
           </Stack>
@@ -247,8 +275,29 @@ export function BuildingCard() {
               <Divider />
               <Stack gap={4}>
                 <SectionTitle>City Core Access</SectionTitle>
-                <ScoreBar score={components.cityCore} color={scoreColor(components.cityCore)} />
+                <ScoreBar score={components.cityCore} color={barColor(components.cityCore)} />
+                <Text size="xs">{countWithin(placeMinutes, conditions.cityCoreMaxMin, 'places')}</Text>
                 {landmarks.map((e) => <LandmarkRow key={e.id} name={e.name} minutes={e.minutes} />)}
+              </Stack>
+            </>
+          )}
+
+          {weights.age > 0 && (
+            <>
+              <Divider />
+              <Stack gap={4}>
+                <SectionTitle>Building age</SectionTitle>
+                <ScoreBar score={components.age} color={barColor(components.age)} />
+                <Text size="xs" c="dimmed">
+                  {yearBuilt === null || components.age === null
+                    ? 'Year of construction unknown'
+                    : `${eraOf(yearBuilt).name}, ${eraOf(yearBuilt).years} — ${ageMatch(components.age)}`}
+                </Text>
+                {d?.year_renov !== undefined && (
+                  <Text size="xs" c="dimmed" style={DIM}>
+                    Renovated {d.year_renov} — shown only; the score uses the year built
+                  </Text>
+                )}
               </Stack>
             </>
           )}
@@ -282,21 +331,24 @@ export function BuildingCard() {
                   <Text size="xs" c="dimmed">{area.name}</Text>
                 </Group>
                 <Text size="xs" c="dimmed" style={DIM}>The same for every building in the {area.kind === 'barri' ? 'barri' : 'municipality'}</Text>
-                {area.price !== null ? (
+                {area.price === null && <Text size="xs" c="dimmed">No sale price data</Text>}
+                {area.price !== null && weights.openPrice > 0 && (
+                  <Text size="xs">Sale price: {priceVsBudget(area.price, conditions.priceMaxEurM2)}</Text>
+                )}
+                {area.price !== null && weights.openPrice === 0 && (
                   <Text size="xs">Sale price: <b>{fmt(area.price)} €/m²</b> · Generalitat official data</Text>
-                ) : (
-                  <Text size="xs" c="dimmed">No sale price data</Text>
                 )}
                 {weights.openPrice > 0 && (
-                  <ScoreBar score={components.openPrice}
-                    color={components.openPrice !== null ? scoreColor(components.openPrice) : '#aaa'} />
+                  <ScoreBar score={components.openPrice} color={barColor(components.openPrice)} />
                 )}
                 {features.localsOpinion && barriVibeData && (
                   <>
                     <Text size="xs" fw={500} mt={4}>What locals say</Text>
                     {weights.localsOpinion > 0 && (
-                      <ScoreBar score={components.localsOpinion}
-                        color={components.localsOpinion !== null ? scoreColor(components.localsOpinion) : '#aaa'} />
+                      <ScoreBar score={components.localsOpinion} color={barColor(components.localsOpinion)} />
+                    )}
+                    {weights.localsOpinion > 0 && barri && (
+                      <Text size="xs">{ratingVsMin(barri.satisfAdj, conditions.localsMin)}</Text>
                     )}
                     {barri ? <LocalsSay barri={barri} data={barriVibeData} />
                       : <Text size="xs" c="dimmed">Not available outside Barcelona city</Text>}

@@ -1,5 +1,7 @@
 # Feature 022 — Composite Livability Index
 
+**Note (2026-11-04):** since 049 the components are conditions in real units and the index is the mean over the conditions that are on; the weights described below are gone.
+
 **Superseded by TODO-046 (2026-11-04):** computed per residential building; the H3 hex version described below was removed.
 
 ## Goal

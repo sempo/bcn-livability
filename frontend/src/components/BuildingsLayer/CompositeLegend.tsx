@@ -16,7 +16,7 @@ export function CompositeLegend() {
         <Text size="9px" c="dimmed">{min}</Text>
         <Text size="9px" c="dimmed">{max}</Text>
       </Group>
-      <Text size="xs" c="dimmed">Colours relative to the visible area</Text>
+      <Text size="xs" c="dimmed">How well homes meet your conditions, relative to the visible area</Text>
     </div>
   )
 }

@@ -94,6 +94,28 @@ class TestGenerated(unittest.TestCase):
         self.assertGreater(meta["count"], 170_000)
         self.assertLess(meta["price_bounds"]["p5"], meta["price_bounds"]["p95"])
 
+    def test_year_built_column(self):
+        """Building age (TODO-047) is scored in the browser from the year of construction."""
+        import gzip
+        import json
+        meta = json.loads((bt.PUBLIC / "buildings-meta.json").read_text())
+        col = next(c for c in meta["columns"] if c["name"] == "year_built")
+        self.assertEqual((col["type"], col["scale"], col["sentinel"]), ("u16", 1, 65535))
+        blob = gzip.decompress((bt.PUBLIC / "buildings-scores.bin.gz").read_bytes())
+        years = np.frombuffer(blob, "<u2", meta["count"], col["offset"])
+        known = years[years != 65535]
+        self.assertGreater(len(known), 0.99 * meta["count"])
+        self.assertGreater(np.median(known), 1940)
+        self.assertLessEqual(known.max(), 2030)
+
+    def test_walk_minutes_columns(self):
+        """The walkability condition (049) uses walking minutes per service, not the old sub-scores."""
+        import json
+        meta = json.loads((bt.PUBLIC / "buildings-meta.json").read_text())
+        names = {c["name"] for c in meta["columns"]}
+        self.assertEqual({f"min_{c}" for c in meta["categories"]} - names, set())
+        self.assertFalse(any(n.startswith("walk_") for n in names))
+
     def test_castle_out_dorms_in(self):
         out = gpd.read_file(bt.NONRES_GPKG)
         self.assertIn("0195201DF3709E", set(out["id"]))  # Montjuïc castle

@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, act } from '@testing-library/react'
+import { render, screen, fireEvent, act, cleanup } from '@testing-library/react'
 import { MantineProvider } from '@mantine/core'
 import { useStore, DEFAULT_COMPOSITE_WEIGHTS } from '../../store'
+import { DEFAULT_CONDITIONS } from '../../services/buildings/conditions'
 import type { BuildingData } from '../../services/buildings/buildingData'
 import type { BuildingDetailResult } from '../../services/buildings/buildingDetail'
 
@@ -15,11 +16,12 @@ const DATA: BuildingData = {
   count: 2,
   cols: {
     lng: Float32Array.from([2.16, 2.24]), lat: Float32Array.from([41.39, 41.45]),
-    walk_supermarket: Float32Array.from([90, 30]), walk_park: Float32Array.from([80, 20]),
+    min_supermarket: Float32Array.from([3, 12]), min_park: Float32Array.from([NaN, 8]),
     cc_sagrada: Float32Array.from([12, 45]), lden_avg: Float32Array.from([64, 60]),
     area: Float32Array.from([0, 1]), river_zone: Float32Array.from([500, NaN]),
     fire_wui: Float32Array.from([0, 0]), fire_hazard: Float32Array.from([0, 0]),
     street_t10_cm: Float32Array.from([12, NaN]), street_t100_cm: Float32Array.from([35, NaN]),
+    year_built: Float32Array.from([1890, 1900]),
   },
 }
 
@@ -38,7 +40,10 @@ const DETAILS: BuildingDetailResult[] = [
     ],
   },
   {
-    detail: { i: 1, id: '9999999DF3899A', use: '4_3_publicServices', student: 1, noise_src: 'sica_2022', lden_avg: 60 },
+    detail: {
+      i: 1, id: '9999999DF3899A', use: '4_3_publicServices', student: 1, noise_src: 'sica_2022', lden_avg: 60,
+      year_built: 1900,
+    },
     facades: [],
   },
 ]
@@ -85,7 +90,8 @@ describe('BuildingCard (TODO-046)', () => {
     useStore.setState({
       compositeWeights: DEFAULT_COMPOSITE_WEIGHTS, enabledWalkCategories: ['supermarket', 'park'],
       enabledLandmarkIds: ['sagrada'], compositeRiskStrengths: { flood: 5, fire: 5, street: 5 },
-      compositeColorRange: [0, 100],
+      compositeColorRange: [0, 100], ageEras: ['before-1900', '1900-1939', '1940-1979', '1980-2006', '2007-on'],
+      conditions: DEFAULT_CONDITIONS,
     })
   })
 
@@ -101,7 +107,7 @@ describe('BuildingCard (TODO-046)', () => {
     expect(screen.getByText('24 · 6 other premises')).toBeInTheDocument()
     expect(screen.getByText('7 + 1 below ground')).toBeInTheDocument()
     expect(screen.getByText('parking / storage')).toBeInTheDocument() // what is below ground, from Catastro units
-    expect(screen.getByText('1890 · renovated 1995')).toBeInTheDocument()
+    expect(screen.getByText('1890 · Historic · renovated 1995')).toBeInTheDocument()
     expect(screen.getByRole('img').getAttribute('src')).toContain('ReferenciaCatastral=0123456DF2802C')
     expect(screen.getByText('Photo © Dirección General del Catastro')).toBeInTheDocument()
     expect(screen.getByText(/Open in Catastro/).getAttribute('href')).toContain('rc1=0123456&rc2=DF2802C')
@@ -113,7 +119,17 @@ describe('BuildingCard (TODO-046)', () => {
     expect(screen.getByText('Courtyard side: 52 dB · night 44')).toBeInTheDocument()
     expect(screen.getByText(/Street · faces SW · 21 m — 72 dB/)).toBeInTheDocument()
     expect(screen.getByText('3 min')).toBeInTheDocument()
-    expect(screen.getByText('none nearby')).toBeInTheDocument() // park: no minutes in the detail
+    expect(screen.getByText('none nearby')).toBeInTheDocument() // park: out of walking reach
+  })
+
+  it('says how the building meets each condition that is on (049)', async () => {
+    useStore.setState({ compositeWeights: { ...DEFAULT_COMPOSITE_WEIGHTS, localsOpinion: 1 } })
+    await renderCard(0)
+    expect(screen.getByText('1 of 2 services within 10 min')).toBeInTheDocument()
+    expect(screen.getByText('64 dB — within your 65 dB')).toBeInTheDocument()
+    expect(screen.getByText('1 of 1 place within 30 min')).toBeInTheDocument()
+    expect(screen.getByText(/^Sale price: €4[.,]?200\/m² — 5% over your €4[.,]?000\/m²$/)).toBeInTheDocument()
+    expect(screen.getByText(/^Residents rate 6\.[56] — below your 7\.5$/)).toBeInTheDocument()
   })
 
   it('warns about ground floors and explains the water at the door', async () => {
@@ -126,7 +142,7 @@ describe('BuildingCard (TODO-046)', () => {
   it('labels price and Locals’ opinion as barri-level', async () => {
     await renderCard(0)
     expect(screen.getByText('Barri-level')).toBeInTheDocument()
-    expect(document.body.textContent).toMatch(/4[.,]200 €\/m²/)
+    expect(document.body.textContent).toMatch(/€4[.,]?200\/m²/)
     expect(screen.getByText('What locals say')).toBeInTheDocument()
   })
 
@@ -136,6 +152,25 @@ describe('BuildingCard (TODO-046)', () => {
     expect(screen.getByText(/Different official model \(SICA 2022/)).toBeInTheDocument()
     expect(screen.getByText('Municipality-level')).toBeInTheDocument()
     expect(screen.getByText('Not available outside Barcelona city')).toBeInTheDocument()
+  })
+
+  it('building age (TODO-047): a section only when the weight is on; the renovation is shown, not scored', async () => {
+    await renderCard(0)
+    expect(screen.queryByText('Building age')).not.toBeInTheDocument()
+    cleanup()
+    useStore.setState({ compositeWeights: { ...DEFAULT_COMPOSITE_WEIGHTS, age: 1 }, ageEras: ['2007-on'] })
+    await renderCard(0)
+    expect(screen.getByText('Building age')).toBeInTheDocument()
+    expect(screen.getByText('Historic, before 1900 — not one of your eras')).toBeInTheDocument()
+    expect(screen.getByText('Renovated 1995 — shown only; the score uses the year built')).toBeInTheDocument()
+  })
+
+  it("Catastro's 1900: era shown with a note, counted for both neighbouring eras", async () => {
+    useStore.setState({ compositeWeights: { ...DEFAULT_COMPOSITE_WEIGHTS, age: 1 }, ageEras: ['before-1900'] })
+    await renderCard(1)
+    expect(screen.getByText('1900 · Modernista & early 20th c.')).toBeInTheDocument()
+    expect(screen.getByText("Catastro's date for many old buildings — the exact year is unknown")).toBeInTheDocument()
+    expect(screen.getByText('Modernista & early 20th c., 1900–1939 — counts as one of your eras')).toBeInTheDocument()
   })
 
   it('closes on Escape', async () => {

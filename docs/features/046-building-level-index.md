@@ -1,7 +1,8 @@
-# TODO-046 — Building-level Livability Index
+# 046 — Building-level Livability Index
 
-**Status:** Direction agreed 2026-10-28. Epic: split into the stages below; each stage goes through plan mode
-before code.
+**Status:** Done 2026-11-04. Stages 1–4 and step 6 (hexes removed) are done; 3b (slope) is not needed for now;
+stage 5 moved to 047 (building age) and TODO-048 (energy certificates, ground-floor premises). Direction
+agreed 2026-10-28; each stage went through plan mode before code.
 
 ## Problem
 
@@ -68,7 +69,8 @@ building and which describe the whole barri.*
      and Idealista outline are reused.
    - A pin picks its building — later: pins are off in production.
    - Was behind `VITE_FEATURE_BUILDINGS` until step 6; the flag is gone, buildings are the only version.
-5. **Building attributes as weights**, starting with age.
+5. **Building attributes as weights** — moved out on 2026-11-04: building age (weight or filter) and plain-word
+   weight labels to 047; energy certificates and ground-floor premises to TODO-048 (draft).
 6. **Remove hexes** — done 2026-11-04, after the product owner checked the building UI by hand. Details in
    [Step 6](#step-6--hexes-removed).
 
@@ -625,18 +627,14 @@ Done 2026-11-04. The Livability Index exists only on buildings; production switc
 
 ## Open questions
 
-- **Age is not monotonic.** 1900s modernista is valued. 1950–1975 is the risk (aluminosis era, no thermal
-  standard before NBE-CT-79). Post-2006 CTE is best. Should the user pick a preferred era, or do we use a
-  fixed curve?
 - **Pins:** parse exterior / interior and orientation from Idealista and use the matching side / direction.
 - **Noise sources:** the 2017 facade map splits noise by source (road, rail, industry, leisure, patios). More
   of it could go into the card later.
 - **Low zooms:** all footprints at z11–13 (tile size) vs centroids as dots.
 - **Walk graph:** which tool to use, and whether slope is worth it. Measure network vs straight-line error
   first.
-- **Further attributes:** energy certificates (ICAEN), ground-floor premises census
-  (`cens-locals-planta-baixa-act-economica`: bars downstairs), heat-wave cooling demand
-  (`comportament-energetic-edificis`).
+- **Further attributes:** heat-wave cooling demand (`comportament-energetic-edificis`). Age → 047; energy
+  certificates and ground-floor premises → TODO-048.
 - **Facade photos:** not downloaded. The card hotlinks
   `https://ovc.catastro.meh.es/OVCServWeb/OVCWcfLibres/OVCFotoFachada.svc/RecuperarFotoFachadaGet?ReferenciaCatastral=<ref>`.
   It answers over https (checked 2026-11-03: JPEG ~76 KB, CORS `*`, no mixed-content problem). Still open: the
@@ -648,7 +646,7 @@ Per-flat values (floor, orientation) on the map. They appear only on a pin, when
 
 ## Related
 
-009, 010, 021, 022, 025, 026, 032, 036, 037, 038, 039, 042, TODO-043, TODO-045.
+009, 010, 021, 022, 025, 026, 032, 036, 037, 038, 039, 042, TODO-043, 045, 047, TODO-048.
 
 ## Definition of Done
 

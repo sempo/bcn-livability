@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest'
 import { latLngToCell } from 'h3-js'
-import { computeComposite } from '../composite/compositeScore'
 import { floodRisk } from '../climateRisk/climateRisk'
 import type { BarriVibeData } from '../localsOpinion/localsOpinion'
 import type { BuildingArea, BuildingData } from './buildingData'
+import { DEFAULT_CONDITIONS } from './conditions'
 import {
-  buildingBundle, buildingRisks, cellMeans, centroidCells, doorWaterSeverity, riverZoneShares, scoreAll, scoreBuilding, walkFromCategories,
+  buildingBundle, buildingRisks, cellMeans, centroidCells, doorWaterSeverity, riverZoneShares, scoreAll, scoreBuilding,
   type BuildingSettings,
 } from './buildingScore'
 
@@ -28,32 +28,26 @@ function makeData(rows: Record<string, (number | null)[]>): BuildingData {
   }
 }
 
+// Building 0 in el Raval, building 1 in L'Hospitalet (no noise map, no year).
 const DATA = makeData({
-  walk_supermarket: [90, 40], walk_school: [20, 40], walk_park: [70, null],
-  cc_sagrada: [10, 80], cc_placa_cat: [25, null],
+  min_supermarket: [3, 12], min_school: [12, 8], min_park: [null, 4],
+  cc_sagrada: [10, 80], cc_placa_cat: [45, null],
   lden_avg: [62.4, null], area: [0, 1],
   river_zone: [null, 100], fire_wui: [0, 1], fire_hazard: [0, 0.4],
-  street_t10_cm: [30, null], street_t100_cm: [60, null],
+  street_t10_cm: [30, null], street_t100_cm: [60, null], year_built: [1965, null],
 })
 
 const VIBE = { barris: { '01': { satisfAdj: 7.2, lowN: false } } } as unknown as BarriVibeData
 
 const SETTINGS: BuildingSettings = {
-  weights: { poiAccess: 6, noise: 7, cityCore: 8, openPrice: 10, localsOpinion: 3 },
+  weights: { poiAccess: 1, noise: 1, cityCore: 1, openPrice: 1, localsOpinion: 1, age: 0 },
+  conditions: DEFAULT_CONDITIONS, // services ≤ 10 min, ≤ 65 dB, places ≤ 30 min, ≤ €4,000/m², residents ≥ 7.5
   enabledLandmarkIds: ['sagrada', 'placa_cat'],
   enabledCategories: ['supermarket', 'school', 'park'],
   riskStrengths: { flood: 5, fire: 5, street: 5 },
+  ageEras: ['1900-1939', '1980-2006', '2007-on'],
   vibe: VIBE,
 }
-
-describe('walkFromCategories', () => {
-  it('averages only the categories the user keeps', () => {
-    const subs = { supermarket: 90, school: 20, park: null }
-    expect(walkFromCategories(subs, ['supermarket', 'school'])).toBe(55)
-    expect(walkFromCategories(subs, ['park'])).toBe(0)
-    expect(walkFromCategories(subs, [])).toBe(0)
-  })
-})
 
 describe('building risks', () => {
   it('river zone → the band penalties of feature 036', () => {
@@ -74,26 +68,44 @@ describe('building risks', () => {
   })
 })
 
-describe('scoreBuilding', () => {
-  it('is computeComposite on the equivalent bundle', () => {
-    const bundle = {
-      walk: 60, lden: DATA.cols.lden_avg[0], cityCoreProps: { sagrada: 10, placa_cat: 25 }, saleEurM2: 4000,
-      risks: buildingRisks(DATA, 0), locals: { satisfAdj: 7.2, lowN: false },
-    }
-    const expected = computeComposite(bundle, SETTINGS.weights, SETTINGS.enabledLandmarkIds,
-      { p5: 2000, p95: 6000 }, SETTINGS.riskStrengths)
-    expect(scoreBuilding(DATA, 0, SETTINGS)).toEqual(expected)
+describe('conditions per building (049)', () => {
+  it('scores each condition from the building columns', () => {
+    expect(buildingBundle(DATA, 0, SETTINGS)).toEqual({
+      components: {
+        poiAccess: 60, // supermarket 3 min → 100, school 12 → 80, park out of reach → 0
+        noise: 100, // 62.4 dB within 65
+        cityCore: 75, // Sagrada 10 min → 100, Plaça Catalunya 45 → 50
+        openPrice: 100, // €4,000 within the budget
+        localsOpinion: 70, // 7.2 vs 7.5
+        age: 0, // 1965: post-war boom, not a liked era
+      },
+      localsLowN: false,
+      risks: buildingRisks(DATA, 0),
+    })
   })
 
-  it("takes price from the barri / municipality and Locals' opinion from Barcelona barris only", () => {
-    expect(buildingBundle(DATA, 0, SETTINGS.enabledCategories, VIBE)).toMatchObject({ saleEurM2: 4000, locals: { satisfAdj: 7.2 } })
-    expect(buildingBundle(DATA, 1, SETTINGS.enabledCategories, VIBE)).toMatchObject({ saleEurM2: 2500, locals: null })
+  it("outside Barcelona: municipality price, no Locals' opinion; unknown noise and year are missing data", () => {
+    expect(buildingBundle(DATA, 1, SETTINGS).components).toEqual({
+      poiAccess: 93, cityCore: 0, noise: null, openPrice: 100, localsOpinion: null, age: null,
+    })
   })
 
-  it('a user who drops schools gets a different walkability', () => {
-    const all = buildingBundle(DATA, 0, ['supermarket', 'school', 'park'], null).walk
-    const noSchool = buildingBundle(DATA, 0, ['supermarket', 'park'], null).walk
-    expect([all, noSchool]).toEqual([60, 80])
+  it('a stricter condition lowers the score; dropping a service changes walkability', () => {
+    const strict = scoreBuilding(DATA, 0, { ...SETTINGS, conditions: { ...DEFAULT_CONDITIONS, noiseMaxDb: 55 } })
+    expect(strict.components.noise).toBe(26)
+    expect(strict.score).toBeLessThan(scoreBuilding(DATA, 0, SETTINGS).score)
+    expect(buildingBundle(DATA, 0, { ...SETTINGS, enabledCategories: ['supermarket', 'park'] }).components.poiAccess).toBe(50)
+  })
+
+  it('the mean over the conditions that are on, then the street-flooding penalty', () => {
+    // (60 + 100 + 75 + 100 + 70) / 5 = 81; street risk 0.8 at strength 5 → × 0.6
+    expect(scoreBuilding(DATA, 0, SETTINGS)).toMatchObject({ baseScore: 81, score: 49 })
+  })
+
+  it("building age against the user's eras (047)", () => {
+    const weights = { ...SETTINGS.weights, age: 1 }
+    expect(scoreBuilding(DATA, 0, { ...SETTINGS, weights, ageEras: ['1940-1979'] }).score)
+      .toBeGreaterThan(scoreBuilding(DATA, 0, { ...SETTINGS, weights }).score)
   })
 })
 

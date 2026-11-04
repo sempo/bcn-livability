@@ -214,3 +214,62 @@ describe('climate risk state (036)', () => {
     expect(localStorage.getItem('bcn_wildfire_layer_visible')).toBe('true')
   })
 })
+
+describe('building age state (TODO-047)', () => {
+  it('weight off and every era liked by default', async () => {
+    localStorage.clear()
+    vi.resetModules()
+    const { useStore: freshStore } = await import('./index')
+    expect(freshStore.getState().compositeWeights.age).toBe(0)
+    expect(freshStore.getState().ageEras).toEqual(['before-1900', '1900-1939', '1940-1979', '1980-2006', '2007-on'])
+  })
+
+  it('restores stored eras and weight; unknown era ids are dropped, none left → all eras', async () => {
+    localStorage.clear()
+    localStorage.setItem('bcn_age_eras', JSON.stringify(['2007-on', '1850-1899']))
+    localStorage.setItem('bcn_composite_weights', JSON.stringify({ age: 7 }))
+    vi.resetModules()
+    let fresh = (await import('./index')).useStore
+    expect(fresh.getState().ageEras).toEqual(['2007-on'])
+    expect(fresh.getState().compositeWeights.age).toBe(1)
+
+    localStorage.setItem('bcn_age_eras', JSON.stringify(['1850-1899']))
+    vi.resetModules()
+    fresh = (await import('./index')).useStore
+    expect(fresh.getState().ageEras).toHaveLength(5)
+    fresh.getState().setAgeEras(['1900-1939'])
+    expect(JSON.parse(localStorage.getItem('bcn_age_eras')!)).toEqual(['1900-1939'])
+  })
+})
+
+describe('conditions (049)', () => {
+  it('defaults: conditions from env; services, noise, City Core and price on, the rest off', async () => {
+    localStorage.clear()
+    vi.resetModules()
+    const { useStore: fresh } = await import('./index')
+    expect(fresh.getState().conditions).toEqual({
+      noiseMaxDb: 65, priceMaxEurM2: 4000, cityCoreMaxMin: 30, walkMaxMin: 10, localsMin: 7.5,
+    })
+    expect(fresh.getState().compositeWeights).toEqual({
+      poiAccess: 1, noise: 1, cityCore: 1, openPrice: 1, localsOpinion: 0, age: 0,
+    })
+  })
+
+  it('weights stored before 049 (1–10) read as on, 0 as off', async () => {
+    localStorage.clear()
+    localStorage.setItem('bcn_composite_weights', JSON.stringify({ poiAccess: 6, noise: 0, cityCore: 8, openPrice: 10 }))
+    vi.resetModules()
+    const { useStore: fresh } = await import('./index')
+    expect(fresh.getState().compositeWeights).toMatchObject({ poiAccess: 1, noise: 0, cityCore: 1, openPrice: 1 })
+  })
+
+  it('restores stored conditions key by key and persists changes', async () => {
+    localStorage.clear()
+    localStorage.setItem('bcn_conditions', JSON.stringify({ noiseMaxDb: 55, priceMaxEurM2: 'x' }))
+    vi.resetModules()
+    const { useStore: fresh } = await import('./index')
+    expect(fresh.getState().conditions).toMatchObject({ noiseMaxDb: 55, priceMaxEurM2: 4000 })
+    fresh.getState().setConditions({ ...fresh.getState().conditions, walkMaxMin: 7 })
+    expect(JSON.parse(localStorage.getItem('bcn_conditions')!).walkMaxMin).toBe(7)
+  })
+})

@@ -54,3 +54,30 @@ export function sideText(side: keyof typeof SIDE, lden: number | undefined, ln: 
   if (lden === undefined) return null
   return `${SIDE[side]}: ${Math.round(lden)} dB${ln !== undefined ? ` · night ${Math.round(ln)}` : ''}`
 }
+
+// ── The building against the user's conditions (049) ────────────────────────────────────────────────────────
+
+const eur = (n: number) => `€${new Intl.NumberFormat('en-ES', { maximumFractionDigits: 0 }).format(n)}`
+
+/** "62 dB — within your 65 dB" / "72 dB — 7 dB over your 65 dB" */
+export function noiseVsLimit(lden: number, limit: number): string {
+  const db = Math.round(lden)
+  return db <= limit ? `${db} dB — within your ${limit} dB` : `${db} dB — ${db - limit} dB over your ${limit} dB`
+}
+
+/** "€4,700/m² — 18% over your €4,000/m²" */
+export function priceVsBudget(eurM2: number, budget: number): string {
+  if (eurM2 <= budget) return `${eur(eurM2)}/m² — within your ${eur(budget)}/m²`
+  return `${eur(eurM2)}/m² — ${Math.round((100 * (eurM2 - budget)) / budget)}% over your ${eur(budget)}/m²`
+}
+
+/** "7 of 10 services within 10 min"; null minutes = out of reach. */
+export function countWithin(minutes: readonly (number | null)[], limit: number, noun: string): string {
+  const n = minutes.filter((m) => m !== null && m <= limit).length
+  return `${n} of ${minutes.length} ${minutes.length === 1 ? noun.replace(/s$/, '') : noun} within ${limit} min`
+}
+
+/** "Residents rate 7.6 — meets your 7.5" */
+export function ratingVsMin(rating: number, min: number): string {
+  return `Residents rate ${rating.toFixed(1)} — ${rating >= min ? 'meets' : 'below'} your ${min.toFixed(1)}`
+}

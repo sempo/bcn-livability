@@ -121,7 +121,7 @@ src/
 │   ├── IdealistaPricesLayer/ # Idealista scraped price dots on the map
 │   │   └── priceColors.ts       # price → colour ramp
 │   ├── FilterPanel/     # travel time slider + layer toggles + composite/exclusion controls
-│   │   ├── CompositeControls.tsx  # composite index toggle + weight sliders
+│   │   ├── CompositeControls.tsx  # index toggle, conditions in real units (049), services / landmarks / eras gears, risk strengths
 │   │   └── ExclusionControls.tsx  # exclusion zone picker + draw mode buttons
 │   ├── BestZones/       # floating "Draw best zones" bar + zones on the map (feature 038)
 │   │   ├── BestZonesLayer.tsx     # zone outlines + click → Idealista link popup
@@ -166,7 +166,9 @@ src/
     ├── bestZones.ts     # res-9 H3 cell scores → up to 3 simple zones (smoothing, percentile, components)
     ├── buildings/
     │   ├── buildingData.ts     # loads buildings-meta.json + buildings-scores.bin.gz → decoded columns per building (TODO-046)
-    │   ├── buildingScore.ts    # building inputs → computeComposite (walk over the user's categories, area price, door water)
+    │   ├── buildingScore.ts    # building inputs → computeComposite (walk over the user's categories, area price, door water, age)
+    │   ├── buildingAge.ts      # building-age eras + ageScore (year built vs the eras the user likes, 047)
+    │   ├── conditions.ts       # conditions in real units (049): limits, fall-offs, atMost / atLeast, minutesShare
     │   ├── buildingDetail.ts   # card fields + facade groups of one building from buildings-detail.pmtiles (z14)
     │   ├── address.ts          # Catastro address → readable; Catastro page and facade photo URLs
     │   └── catastroUnits.ts    # Catastro DNPRC (open, per click): what the floors below ground are (parking / storage / dwellings)
@@ -183,7 +185,6 @@ src/
     │   ├── serviceCategories.ts # POI category definitions + saturation caps
     │   └── walkabilityTypes.ts  # shared types for walkability computation
     ├── cityCore/
-    │   ├── cityCoreScore.ts  # cityCoreIndex: proximity score over selected landmarks from walking minutes
     │   └── landmarks.ts      # landmark definitions (id, name, ALL_LANDMARK_IDS)
     ├── composite/
     │   └── compositeScore.ts # computeComposite: weighted index of one building + climate-risk penalties
@@ -235,20 +236,21 @@ removed on 2026-11-04 (TODO-046 step 6).
 - **Pipeline**: `prepare_buildings.py` → `building_exposure.py` (noise per facade, river zone, water at the
   door, wildfire) → `building_access.py` (walkability + City Core on the walking network) →
   `build_building_tiles.py` (non-residential filter, barri / municipality, tiles + score columns). See
-  `docs/features/TODO-046-building-level-index.md`.
+  `docs/features/046-building-level-index.md`.
 - **Data**: `buildings.pmtiles` (geometry, feature id = row), `buildings-scores.bin.gz` + `buildings-meta.json`
   (score inputs per building, area table with price and barri code), `buildings-detail.pmtiles` (card fields +
   facade noise points, z14), `barri-vibe.json` (per-barri survey fields, 042).
-- **Factors**:
-  1. `poiAccess` — walkability over the service categories the user keeps (`walk_<category>` columns)
-  2. `noise` — `noiseScore(lden_avg)`, the facade-length-weighted Lden of the building
-  3. `cityCore` — `cityCoreIndex`: walking minutes to the selected landmarks
-  4. `openPrice` — INCASOL sale EUR/m² of the barri (Barcelona) or municipality, normalised to 0–100 (cheaper = better)
-  5. `localsOpinion` (042, flag) — ESM residents' satisfaction with their barri, small samples shrunk towards the gran barri, stretched to 0–100 between `VITE_LOCALS_SATISF_MIN/MAX`. Barcelona city only; small-sample barris get the gap outline. Default weight 0.
-- **Score**: `computeComposite(inputs, weights, enabledLandmarkIds, priceBounds, riskStrengths)` (via `services/buildings/buildingScore.ts`) → weighted average (missing data = 0, see feature 022), then climate-risk penalties.
+- **Conditions** (049): each component is a condition in real units, what is OK for the user. A building that meets it scores 100, falling linearly to 0 over the fall-off (`services/buildings/conditions.ts`, ENV `VITE_COND_*`):
+  1. `poiAccess` — chosen services within N min walk (`min_<category>` columns): share within reach, 0 at 2× the limit
+  2. `noise` — the facade-length-weighted Lden of the building (`lden_avg`) up to N dB; 0 at +10 dB
+  3. `cityCore` — chosen places within N min walk (`cc_<landmark>` columns): share within reach
+  4. `openPrice` — INCASOL sale €/m² of the barri (Barcelona) or municipality up to the budget; 0 at +25 %
+  5. `localsOpinion` (042, flag) — residents' satisfaction (small samples shrunk towards the gran barri) at least N / 10; 0 one point below. Barcelona city only; small-sample barris get the gap outline. Off by default.
+  6. `age` (047) — year built (`year_built` column) against the eras the user likes: 100 in a liked era, 0 elsewhere, fading over `VITE_AGE_ERA_BLUR_YEARS`. Off by default.
+- **Score**: `computeComposite(inputs, onOff, riskStrengths)` (inputs from `services/buildings/buildingScore.ts`) → mean over the conditions that are on (missing data = 0, gap outline), then climate-risk penalties.
 - **Climate-risk penalties (036, 037)**: `score = base × (1 − sFlood/10 · floodRisk) × (1 − sFire/10 · fireRisk) × (1 − sStreet/10 · streetFloodRisk)` — safe buildings keep their score. River zone the footprint touches, WUI × forest hazard, and water depth at the door (Barcelona only) come from `building_exposure.py`; risks and penalties are computed in `services/climateRisk`. ENV: `VITE_FLOOD_PENALTY_T10/T100/T500`, `VITE_RISK_STRENGTH_FLOOD/FIRE/STREET`, `VITE_STREET_FLOOD_MIN_CM/MAX_CM`.
-- **Client**: `BuildingsLayer` scores every building and sets the score as MapLibre feature state (rescoring debounced); `BuildingCard` reads the clicked building from `buildings-detail.pmtiles` (+ Catastro photo and floor uses); `FacadeNoiseLayer` draws its facade noise. `FilterPanel/CompositeControls` hosts the layer toggle, weight sliders, walkability services and landmark gears, risk strengths. `FilterPanel/ClimateLayerControls` toggles the River flood zones / Street flooding / Wildfire hazard view layers (`scripts/climate_risk.py`).
-- **State**: `compositeVisible`, `compositeWeights`, `compositeColorRange` (colour scale of the buildings in view, set by `BuildingsLayer`), `compositeRiskStrengths`, `floodLayerVisible`, `wildfireLayerVisible`, `streetFloodingLayerVisible`, `streetFloodingReturnPeriod`, `enabledLandmarkIds`, `enabledWalkCategories`, `selectedBuilding`, `buildingScores` in Zustand store.
+- **Client**: `BuildingsLayer` scores every building and sets the score as MapLibre feature state (rescoring debounced); `BuildingCard` reads the clicked building from `buildings-detail.pmtiles` (+ Catastro photo and floor uses); `FacadeNoiseLayer` draws its facade noise. `FilterPanel/CompositeControls` hosts the layer toggle, the conditions (slider in real units + a sentence such as "Up to 65 dB is OK for me"), walkability services, landmark and era gears, risk strengths (in words). `FilterPanel/ClimateLayerControls` toggles the River flood zones / Street flooding / Wildfire hazard view layers (`scripts/climate_risk.py`).
+- **State**: `compositeVisible`, `compositeWeights`, `compositeColorRange` (colour scale of the buildings in view, set by `BuildingsLayer`), `compositeRiskStrengths`, `floodLayerVisible`, `wildfireLayerVisible`, `streetFloodingLayerVisible`, `streetFloodingReturnPeriod`, `enabledLandmarkIds`, `enabledWalkCategories`, `ageEras`, `conditions`, `selectedBuilding`, `buildingScores` in Zustand store (`compositeWeights` = which conditions are on).
 
 ## Idealista Prices layer (feature 019)
 

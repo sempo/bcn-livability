@@ -1,45 +1,40 @@
 /**
- * Livability score of a building (TODO-046): the building's inputs fed to computeComposite. Where the inputs
- * come from:
- * - walkability is recomputed from the stored per-category sub-scores over the categories the user keeps;
- * - City Core uses walking minutes per landmark from the building's entrance;
- * - price and Locals' opinion come from the building's barri (Barcelona) or municipality;
- * - risks: the ACA zone the footprint touches, wildfire as before, and water depth at the door.
+ * Livability score of a building: how well it meets the user's conditions (049), each component scored by
+ * services/buildings/conditions.ts from the building's columns:
+ * - walkability: walking minutes from the entrance to each service category the user keeps;
+ * - noise: the facade-length-weighted Lden of the building;
+ * - City Core: walking minutes to each landmark the user keeps;
+ * - price and Locals' opinion: the building's barri (Barcelona) or municipality;
+ * - building age: the year built against the eras the user likes (047);
+ * - risks: the ACA zone the footprint touches, wildfire, and water depth at the door (penalties, 036 / 037).
  */
 import { latLngToCell } from 'h3-js'
 import { computeComposite, type CompositeResult, type CompositeWeights, type ScoreInputs } from '../composite/compositeScore'
 import {
   fireRisk, floodRisk, streetFloodRisk, type Risks, type RiskStrengths,
 } from '../climateRisk/climateRisk'
-import { SERVICE_CATEGORIES } from '../walkability/serviceCategories'
 import type { BarriVibeData } from '../localsOpinion/localsOpinion'
 import { valueOf, type BuildingArea, type BuildingData } from './buildingData'
+import { ageScore } from './buildingAge'
+import {
+  localsCondition, minutesShare, noiseCondition, priceCondition, type Conditions,
+} from './conditions'
 
 /** Water at the door counts 0 up to MIN cm (stays in the gutter) and fully from MAX cm. */
 export const STREET_FLOOD_MIN_CM = Number(import.meta.env.VITE_STREET_FLOOD_MIN_CM ?? 10)
 export const STREET_FLOOD_MAX_CM = Number(import.meta.env.VITE_STREET_FLOOD_MAX_CM ?? 50)
 
-const CATEGORY_WEIGHT: Record<string, number> = Object.fromEntries(SERVICE_CATEGORIES.map((c) => [c.id, c.weight]))
-
 export interface BuildingSettings {
+  /** Which conditions are on (1) or off (0). */
   weights: CompositeWeights
+  conditions: Conditions
   enabledLandmarkIds: readonly string[]
   enabledCategories: readonly string[]
   riskStrengths: RiskStrengths
+  /** Building-age eras the user likes (047). */
+  ageEras: readonly string[]
   /** Locals' opinion data (042); null = flag off or not loaded. */
   vibe: BarriVibeData | null
-}
-
-/** Walkability 0–100 over the categories the user keeps, weighted as in feature 010. */
-export function walkFromCategories(subs: Record<string, number | null>, enabled: readonly string[]): number {
-  let sum = 0
-  let total = 0
-  for (const id of enabled) {
-    const w = CATEGORY_WEIGHT[id] ?? 0
-    sum += (subs[id] ?? 0) * w
-    total += w
-  }
-  return total === 0 ? 0 : Math.round(sum / total)
 }
 
 /** ACA zone the footprint touches (10 / 100 / 500; null = none) → nested zone shares for floodRisk. */
@@ -73,28 +68,30 @@ export function buildingArea(data: BuildingData, i: number): BuildingArea | null
   return a === null ? null : data.meta.areas[a] ?? null
 }
 
-export function buildingBundle(
-  data: BuildingData, i: number, enabledCategories: readonly string[], vibe: BarriVibeData | null,
-): ScoreInputs {
-  const subs = Object.fromEntries(data.meta.categories.map((c) => [c, valueOf(data, `walk_${c}`, i)]))
-  const minutes = Object.fromEntries(data.meta.landmarks.map((l) => [l, valueOf(data, `cc_${l}`, i)]))
+/** Walking minutes of building i in the columns `<prefix><id>`; null = out of reach. */
+function minutesTo(data: BuildingData, i: number, prefix: string, ids: readonly string[]): (number | null)[] {
+  return ids.map((id) => valueOf(data, `${prefix}${id}`, i))
+}
+
+export function buildingBundle(data: BuildingData, i: number, s: Omit<BuildingSettings, 'weights' | 'riskStrengths'>): ScoreInputs {
   const area = buildingArea(data, i)
-  const barri = area?.kind === 'barri' ? vibe?.barris[area.code] : undefined
+  const barri = area?.kind === 'barri' ? s.vibe?.barris[area.code] : undefined
   return {
-    walk: walkFromCategories(subs, enabledCategories),
-    lden: valueOf(data, 'lden_avg', i),
-    cityCoreProps: minutes,
-    saleEurM2: area?.price ?? null,
+    components: {
+      poiAccess: minutesShare(minutesTo(data, i, 'min_', s.enabledCategories), s.conditions.walkMaxMin),
+      noise: noiseCondition(valueOf(data, 'lden_avg', i), s.conditions),
+      cityCore: minutesShare(minutesTo(data, i, 'cc_', s.enabledLandmarkIds), s.conditions.cityCoreMaxMin),
+      openPrice: priceCondition(area?.price ?? null, s.conditions),
+      localsOpinion: barri ? localsCondition(barri.satisfAdj, s.conditions) : null,
+      age: ageScore(valueOf(data, 'year_built', i), s.ageEras),
+    },
+    localsLowN: barri?.lowN ?? false,
     risks: buildingRisks(data, i),
-    locals: barri ? { satisfAdj: barri.satisfAdj, lowN: barri.lowN } : null,
   }
 }
 
 export function scoreBuilding(data: BuildingData, i: number, s: BuildingSettings): CompositeResult {
-  return computeComposite(
-    buildingBundle(data, i, s.enabledCategories, s.vibe), s.weights, s.enabledLandmarkIds,
-    data.meta.price_bounds, s.riskStrengths,
-  )
+  return computeComposite(buildingBundle(data, i, s), s.weights, s.riskStrengths)
 }
 
 /** Final score and missing-data flag of every building, by row. */

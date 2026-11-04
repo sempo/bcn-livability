@@ -1,259 +1,71 @@
 import { describe, it, expect } from 'vitest'
-import { computeComposite, openPriceScore, type ScoreInputs, type CompositeWeights, type OpenPriceBounds } from './compositeScore'
-import { ALL_LANDMARK_IDS } from '../cityCore/landmarks'
+import { computeComposite, type ComponentScores, type CompositeWeights } from './compositeScore'
 
-const ALL_ENABLED = ALL_LANDMARK_IDS
+const NONE: ComponentScores = { poiAccess: null, noise: null, cityCore: null, openPrice: null, localsOpinion: null, age: null }
+const components = (c: Partial<ComponentScores>): ComponentScores => ({ ...NONE, ...c })
 
-const DEFAULT_OPEN_PRICE_BOUNDS: OpenPriceBounds = { p5: 2000, p95: 6000 }
+const WALK_NOISE: CompositeWeights = { poiAccess: 1, noise: 1, cityCore: 0, openPrice: 0 }
 
-function makeBundle(overrides: Partial<ScoreInputs> = {}): ScoreInputs {
-  return {
-    walk: 80,
-    lden: 50,
-    cityCoreProps: {
-      sagrada: 15, placa_cat: 10, barceloneta: 30, barri_gotic: 20,
-      pg_gracia: 8, arc_triomf: 18, montjuic: 25, placa_espanya: 22,
-      glories: 28, poblenou: 35, parc_guell: 55, eixample: 0, waterfront: 40,
-    },
-    saleEurM2: null,
-    ...overrides,
-  }
-}
-
-const EQUAL_WEIGHTS: CompositeWeights = { poiAccess: 1, noise: 1, cityCore: 1, openPrice: 0 }
-
-describe('openPriceScore', () => {
-  it('scores p5 price as 100 (cheapest)', () => {
-    expect(openPriceScore(2000, { p5: 2000, p95: 6000 })).toBe(100)
+describe('computeComposite (049: mean over the conditions that are on)', () => {
+  it('averages the conditions that are on and ignores the others', () => {
+    const r = computeComposite({ components: components({ poiAccess: 100, noise: 50, openPrice: 0 }) }, WALK_NOISE)
+    expect(r.score).toBe(75)
+    expect(r.hasGap).toBe(false)
   })
 
-  it('scores p95 price as 0 (most expensive)', () => {
-    expect(openPriceScore(6000, { p5: 2000, p95: 6000 })).toBe(0)
+  it('a condition that is on without data counts 0 and marks the gap', () => {
+    const r = computeComposite({ components: components({ poiAccess: 100, noise: null }) }, WALK_NOISE)
+    expect(r.score).toBe(50)
+    expect(r.hasGap).toBe(true)
   })
 
-  it('scores midpoint as 50', () => {
-    expect(openPriceScore(4000, { p5: 2000, p95: 6000 })).toBe(50)
+  it('no condition on → 0', () => {
+    const r = computeComposite({ components: components({ poiAccess: 100 }) }, { poiAccess: 0, noise: 0, cityCore: 0, openPrice: 0 })
+    expect(r.score).toBe(0)
   })
 
-  it('clamps below p5 to 100', () => {
-    expect(openPriceScore(1000, { p5: 2000, p95: 6000 })).toBe(100)
+  it("locals' opinion from a small sample counts but is marked like missing data (042)", () => {
+    const weights = { ...WALK_NOISE, noise: 0, localsOpinion: 1 }
+    const r = computeComposite({ components: components({ poiAccess: 80, localsOpinion: 100 }), localsLowN: true }, weights)
+    expect(r.score).toBe(90)
+    expect(r.hasGap).toBe(true)
+    const off = computeComposite({ components: components({ poiAccess: 80 }), localsLowN: true }, { ...weights, localsOpinion: 0 })
+    expect(off.hasGap).toBe(false)
   })
 
-  it('clamps above p95 to 0', () => {
-    expect(openPriceScore(8000, { p5: 2000, p95: 6000 })).toBe(0)
-  })
-
-  it('returns 50 when p5 === p95', () => {
-    expect(openPriceScore(3000, { p5: 3000, p95: 3000 })).toBe(50)
-  })
-})
-
-describe('computeComposite', () => {
-  it('returns score 0 and no gap when all weights are 0', () => {
-    const result = computeComposite(
-      makeBundle(),
-      { poiAccess: 0, noise: 0, cityCore: 0, openPrice: 0 },
-      ALL_ENABLED,
-      DEFAULT_OPEN_PRICE_BOUNDS,
-    )
-    expect(result.score).toBe(0)
-    expect(result.hasGap).toBe(false)
-  })
-
-  it('returns only walk score when only poiAccess weight is set', () => {
-    const bundle = makeBundle({ walk: 70 })
-    const { score, hasGap } = computeComposite(
-      bundle,
-      { poiAccess: 5, noise: 0, cityCore: 0, openPrice: 0 },
-      ALL_ENABLED,
-      DEFAULT_OPEN_PRICE_BOUNDS,
-    )
-    expect(score).toBe(70)
-    expect(hasGap).toBe(false)
-  })
-
-  it('marks hasGap when noise weight > 0 and lden is null', () => {
-    const bundle = makeBundle({ lden: null })
-    const { hasGap, score } = computeComposite(
-      bundle,
-      { poiAccess: 0, noise: 5, cityCore: 0, openPrice: 0 },
-      ALL_ENABLED,
-      DEFAULT_OPEN_PRICE_BOUNDS,
-    )
-    expect(hasGap).toBe(true)
-    expect(score).toBe(0)
-  })
-
-  it('marks hasGap when openPrice weight > 0 and saleEurM2 is null', () => {
-    const bundle = makeBundle({ saleEurM2: null })
-    const { hasGap } = computeComposite(
-      bundle,
-      { poiAccess: 0, noise: 0, cityCore: 0, openPrice: 5 },
-      ALL_ENABLED,
-      DEFAULT_OPEN_PRICE_BOUNDS,
-    )
-    expect(hasGap).toBe(true)
-  })
-
-  it('does not mark hasGap when noise weight is 0 even if lden is null', () => {
-    const bundle = makeBundle({ lden: null })
-    const { hasGap } = computeComposite(
-      bundle,
-      { poiAccess: 5, noise: 0, cityCore: 0, openPrice: 0 },
-      ALL_ENABLED,
-      DEFAULT_OPEN_PRICE_BOUNDS,
-    )
-    expect(hasGap).toBe(false)
-  })
-
-  it('does not mark hasGap when openPrice weight is 0 even if saleEurM2 is null', () => {
-    const bundle = makeBundle({ saleEurM2: null })
-    const { hasGap } = computeComposite(
-      bundle,
-      { poiAccess: 5, noise: 0, cityCore: 0, openPrice: 0 },
-      ALL_ENABLED,
-      DEFAULT_OPEN_PRICE_BOUNDS,
-    )
-    expect(hasGap).toBe(false)
-  })
-
-  it('computes weighted average in 0-100 range', () => {
-    const { score } = computeComposite(makeBundle(), EQUAL_WEIGHTS, ALL_ENABLED, DEFAULT_OPEN_PRICE_BOUNDS)
-    expect(score).toBeGreaterThanOrEqual(0)
-    expect(score).toBeLessThanOrEqual(100)
-  })
-
-  it('gives 100 for a perfect building (high walk, quiet, central)', () => {
-    const bundle = makeBundle({
-      walk: 100,
-      lden: 45,
-      cityCoreProps: {
-        sagrada: 0, placa_cat: 0, barceloneta: 0, barri_gotic: 0,
-        pg_gracia: 0, arc_triomf: 0, montjuic: 0, placa_espanya: 0,
-        glories: 0, poblenou: 0, parc_guell: 0, eixample: 0, waterfront: 0,
-      },
-    })
-    const { score } = computeComposite(bundle, EQUAL_WEIGHTS, ALL_ENABLED, DEFAULT_OPEN_PRICE_BOUNDS)
-    expect(score).toBe(100)
-  })
-
-  it('returns components breakdown with correct sub-scores', () => {
-    const bundle = makeBundle({ walk: 75, lden: 60 })
-    const { components } = computeComposite(bundle, EQUAL_WEIGHTS, ALL_ENABLED, DEFAULT_OPEN_PRICE_BOUNDS)
-    expect(components.poiAccess).toBe(75)
-    expect(components.noise).toBe(50) // noiseScore(60) = 50
-    expect(typeof components.cityCore).toBe('number')
-  })
-
-  it('components.noise is null when lden is null', () => {
-    const { components } = computeComposite(
-      makeBundle({ lden: null }),
-      EQUAL_WEIGHTS,
-      ALL_ENABLED,
-      DEFAULT_OPEN_PRICE_BOUNDS,
-    )
-    expect(components.noise).toBeNull()
-  })
-
-  it('components.openPrice is null when saleEurM2 is null', () => {
-    const { components } = computeComposite(
-      makeBundle({ saleEurM2: null }),
-      { ...EQUAL_WEIGHTS, openPrice: 1 },
-      ALL_ENABLED,
-      DEFAULT_OPEN_PRICE_BOUNDS,
-    )
-    expect(components.openPrice).toBeNull()
-  })
-
-  it('components.openPrice is computed when saleEurM2 is set', () => {
-    const { components } = computeComposite(
-      makeBundle({ saleEurM2: 4000 }), // midpoint of p5=2000, p95=6000 → score 50
-      { ...EQUAL_WEIGHTS, openPrice: 1 },
-      ALL_ENABLED,
-      DEFAULT_OPEN_PRICE_BOUNDS,
-    )
-    expect(components.openPrice).toBe(50)
+  it('building age counts like any other condition (047)', () => {
+    const r = computeComposite({ components: components({ poiAccess: 80, age: 0 }) }, { ...WALK_NOISE, noise: 0, age: 1 })
+    expect(r.score).toBe(40)
   })
 })
 
 describe('computeComposite — climate risk penalties (036)', () => {
   const WALK_ONLY: CompositeWeights = { poiAccess: 1, noise: 0, cityCore: 0, openPrice: 0 }
-  const NONE = { flood: 0, fire: 0, street: 0 }
-  const FLOODED = { ...NONE, flood: 1 }
+  const NO_RISK = { flood: 0, fire: 0, street: 0 }
+  const walk80 = components({ poiAccess: 80 })
 
   it('does not penalise when no strengths are passed', () => {
-    const r = computeComposite(makeBundle({ walk: 80, risks: FLOODED }), WALK_ONLY, ALL_ENABLED, DEFAULT_OPEN_PRICE_BOUNDS)
+    const r = computeComposite({ components: walk80, risks: { ...NO_RISK, flood: 1 } }, WALK_ONLY)
     expect(r.score).toBe(80)
     expect(r.penalties).toEqual({ flood: 0, fire: 0, street: 0 })
   })
 
-  it('keeps safe buildings unchanged', () => {
-    const r = computeComposite(makeBundle({ walk: 80, risks: NONE }), WALK_ONLY, ALL_ENABLED,
-      DEFAULT_OPEN_PRICE_BOUNDS, { flood: 10, fire: 10, street: 0 })
-    expect(r.score).toBe(80)
-    expect(r.baseScore).toBe(80)
+  it('keeps safe buildings unchanged; missing risks are no risk', () => {
+    expect(computeComposite({ components: walk80, risks: NO_RISK }, WALK_ONLY, { flood: 10, fire: 10, street: 0 }).score).toBe(80)
+    expect(computeComposite({ components: walk80 }, WALK_ONLY, { flood: 10, fire: 10, street: 0 }).score).toBe(80)
   })
 
   it('penalises a flooded building and reports the points lost', () => {
-    const r = computeComposite(makeBundle({ walk: 80, risks: FLOODED }), WALK_ONLY, ALL_ENABLED,
-      DEFAULT_OPEN_PRICE_BOUNDS, { flood: 5, fire: 5, street: 0 })
+    const r = computeComposite({ components: walk80, risks: { ...NO_RISK, flood: 1 } }, WALK_ONLY, { flood: 5, fire: 5, street: 0 })
     expect(r.baseScore).toBe(80)
     expect(r.score).toBe(40)
     expect(r.penalties).toEqual({ flood: 40, fire: 0, street: 0 })
-    expect(r.risks.flood).toBe(1)
   })
 
-  it('penalises by fire risk', () => {
-    const r = computeComposite(makeBundle({ walk: 80, risks: { ...NONE, fire: 0.5 } }), WALK_ONLY, ALL_ENABLED,
-      DEFAULT_OPEN_PRICE_BOUNDS, { flood: 5, fire: 10, street: 0 })
-    expect(r.score).toBe(40)
-    expect(r.penalties.fire).toBe(40)
-  })
-
-  it('penalises street flooding in heavy rain (037)', () => {
-    const r = computeComposite(makeBundle({ walk: 80, risks: { ...NONE, street: 1 } }), WALK_ONLY, ALL_ENABLED,
-      DEFAULT_OPEN_PRICE_BOUNDS, { flood: 5, fire: 5, street: 5 })
-    expect(r.score).toBe(40)
-    expect(r.penalties).toEqual({ flood: 0, fire: 0, street: 40 })
-  })
-
-  it('treats missing risks as no risk', () => {
-    const r = computeComposite(makeBundle({ walk: 80 }), WALK_ONLY, ALL_ENABLED,
-      DEFAULT_OPEN_PRICE_BOUNDS, { flood: 10, fire: 10, street: 0 })
-    expect(r.score).toBe(80)
-    expect(r.hasGap).toBe(false)
-  })
-})
-
-describe("computeComposite — locals' opinion (042)", () => {
-  const WALK_AND_LOCALS: CompositeWeights = { poiAccess: 1, noise: 0, cityCore: 0, openPrice: 0, localsOpinion: 1 }
-  // satisfaction at the top bound (8.4) → 100; walk 80 → mean 90
-  const LOCALS = { satisfAdj: 8.4, lowN: false }
-
-  it('is ignored when the weight is 0 or absent', () => {
-    const r = computeComposite(makeBundle({ locals: LOCALS }), EQUAL_WEIGHTS, ALL_ENABLED, DEFAULT_OPEN_PRICE_BOUNDS)
-    const without = computeComposite(makeBundle(), EQUAL_WEIGHTS, ALL_ENABLED, DEFAULT_OPEN_PRICE_BOUNDS)
-    expect(r.score).toBe(without.score)
-    expect(r.components.localsOpinion).toBe(100)
-  })
-
-  it('averages in the normalised satisfaction', () => {
-    const r = computeComposite(makeBundle({ locals: LOCALS }), WALK_AND_LOCALS, ALL_ENABLED, DEFAULT_OPEN_PRICE_BOUNDS)
-    expect(r.score).toBe(90)
-    expect(r.hasGap).toBe(false)
-  })
-
-  it('counts a building outside Barcelona as missing data', () => {
-    const r = computeComposite(makeBundle({ locals: null }), WALK_AND_LOCALS, ALL_ENABLED, DEFAULT_OPEN_PRICE_BOUNDS)
-    expect(r.score).toBe(40)
-    expect(r.hasGap).toBe(true)
-    expect(r.components.localsOpinion).toBeNull()
-  })
-
-  it('counts a small-sample barri but marks it like missing data', () => {
-    const r = computeComposite(makeBundle({ locals: { ...LOCALS, lowN: true } }), WALK_AND_LOCALS, ALL_ENABLED,
-      DEFAULT_OPEN_PRICE_BOUNDS)
-    expect(r.score).toBe(90)
-    expect(r.hasGap).toBe(true)
+  it('penalises by fire risk and by street flooding (037)', () => {
+    expect(computeComposite({ components: walk80, risks: { ...NO_RISK, fire: 0.5 } }, WALK_ONLY, { flood: 5, fire: 10, street: 0 })
+      .penalties.fire).toBe(40)
+    expect(computeComposite({ components: walk80, risks: { ...NO_RISK, street: 1 } }, WALK_ONLY, { flood: 5, fire: 5, street: 5 })
+      .penalties).toEqual({ flood: 0, fire: 0, street: 40 })
   })
 })

@@ -4,8 +4,11 @@ import { ALL_LANDMARK_IDS } from '../services/cityCore/landmarks'
 import { SERVICE_CATEGORIES } from '../services/walkability/serviceCategories'
 import { DEFAULT_RISK_STRENGTHS, type RiskStrengths } from '../services/climateRisk/climateRisk'
 import { DEFAULT_TOP_PCT, type Bounds } from '../services/bestZones'
+import { ALL_AGE_ERA_IDS } from '../services/buildings/buildingAge'
+import { DEFAULT_CONDITIONS, type Conditions } from '../services/buildings/conditions'
 import { features } from '../features'
 
+/** Which Livability conditions are on: 1 = on, 0 = off (049). */
 export interface CompositeWeights {
   poiAccess: number
   noise: number
@@ -13,16 +16,19 @@ export interface CompositeWeights {
   openPrice: number
   /** Residents' satisfaction (042); off by default. */
   localsOpinion: number
+  /** Building age against the eras the user likes (TODO-047); off by default. */
+  age: number
 }
 
 export const ALL_WALK_CATEGORY_IDS: readonly string[] = SERVICE_CATEGORIES.map((c) => c.id)
 
 export const DEFAULT_COMPOSITE_WEIGHTS: CompositeWeights = {
-  poiAccess: 6,
-  noise: 7,
-  cityCore: 8,
-  openPrice: 10,
+  poiAccess: 1,
+  noise: 1,
+  cityCore: 1,
+  openPrice: 1,
   localsOpinion: 0,
+  age: 0,
 }
 
 export interface AppState {
@@ -59,6 +65,10 @@ export interface AppState {
   // Building-level index — TODO-046
   /** Walkability categories the user keeps; walkability is recomputed over them. */
   enabledWalkCategories: readonly string[]
+  /** Building-age eras the user likes (TODO-047); all by default. */
+  ageEras: readonly string[]
+  /** What is OK for the user, in real units (049). */
+  conditions: Conditions
   /** Row (= feature id) of the clicked building; null = no card. */
   selectedBuilding: number | null
   /** Latest score of every building (by row), set by BuildingsLayer; Best zones average it per cell. */
@@ -86,6 +96,8 @@ export interface AppState {
   setStreetFloodingLayerVisible: (visible: boolean) => void
   setStreetFloodingReturnPeriod: (rp: 't10' | 't100') => void
   setEnabledWalkCategories: (ids: readonly string[]) => void
+  setAgeEras: (ids: readonly string[]) => void
+  setConditions: (conditions: Conditions) => void
   setSelectedBuilding: (row: number | null) => void
   setBuildingScores: (scores: Uint8Array | null) => void
 }
@@ -122,14 +134,30 @@ const STREET_FLOODING_LAYER_KEY = 'bcn_street_flooding_layer_visible'
 const BEST_ZONES_TOP_PCT_KEY = 'bcn_best_zones_top_pct'
 const BEST_ZONES_RESTRICT_KEY = 'bcn_best_zones_restrict'
 const WALK_CATEGORIES_KEY = 'bcn_walk_categories'
+const AGE_ERAS_KEY = 'bcn_age_eras'
+const CONDITIONS_KEY = 'bcn_conditions'
 
-function loadWalkCategories(): readonly string[] {
+function loadConditions(): Conditions {
   try {
-    const parsed = JSON.parse(localStorage.getItem(WALK_CATEGORIES_KEY) ?? 'null') as unknown
-    const known = Array.isArray(parsed) ? parsed.filter((id) => ALL_WALK_CATEGORY_IDS.includes(id)) : []
+    const parsed = JSON.parse(localStorage.getItem(CONDITIONS_KEY) ?? 'null') as Partial<Record<keyof Conditions, unknown>> | null
+    const keys = Object.keys(DEFAULT_CONDITIONS) as (keyof Conditions)[]
+    return Object.fromEntries(keys.map((k) => {
+      const v = parsed?.[k]
+      return [k, typeof v === 'number' && Number.isFinite(v) ? v : DEFAULT_CONDITIONS[k]]
+    })) as unknown as Conditions
+  } catch {
+    return DEFAULT_CONDITIONS
+  }
+}
+
+/** A stored id list, unknown ids dropped; all ids when nothing valid is stored. */
+function loadIds(key: string, all: readonly string[]): readonly string[] {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(key) ?? 'null') as unknown
+    const known = Array.isArray(parsed) ? parsed.filter((id) => all.includes(id)) : []
     if (known.length > 0) return known
   } catch { /* ignore */ }
-  return ALL_WALK_CATEGORY_IDS
+  return all
 }
 
 export function readWorkplaceFromStorage(): [number, number] | null {
@@ -165,13 +193,16 @@ function loadCompositeWeights(): CompositeWeights {
     const raw = localStorage.getItem(COMPOSITE_WEIGHTS_KEY)
     if (!raw) return DEFAULT_COMPOSITE_WEIGHTS
     const parsed = JSON.parse(raw) as Partial<CompositeWeights>
+    // Weights stored before 049 were 1–10: anything above 0 means the condition is on.
+    const on = (k: keyof CompositeWeights) => ((parsed[k] ?? DEFAULT_COMPOSITE_WEIGHTS[k]) > 0 ? 1 : 0)
     return {
-      poiAccess: parsed.poiAccess ?? DEFAULT_COMPOSITE_WEIGHTS.poiAccess,
-      noise: parsed.noise ?? DEFAULT_COMPOSITE_WEIGHTS.noise,
-      cityCore: parsed.cityCore ?? DEFAULT_COMPOSITE_WEIGHTS.cityCore,
-      openPrice: parsed.openPrice ?? DEFAULT_COMPOSITE_WEIGHTS.openPrice,
-      // Flag off: no slider to turn it back off, so a stored weight must not apply.
-      localsOpinion: features.localsOpinion ? parsed.localsOpinion ?? 0 : 0,
+      poiAccess: on('poiAccess'),
+      noise: on('noise'),
+      cityCore: on('cityCore'),
+      openPrice: on('openPrice'),
+      // Flag off: no row to turn it back off, so a stored value must not apply.
+      localsOpinion: features.localsOpinion ? on('localsOpinion') : 0,
+      age: on('age'),
     }
   } catch {
     return DEFAULT_COMPOSITE_WEIGHTS
@@ -302,10 +333,20 @@ export const useStore = create<AppState>((set) => {
     },
     streetFloodingReturnPeriod: 't10',
     setStreetFloodingReturnPeriod: (streetFloodingReturnPeriod) => set({ streetFloodingReturnPeriod }),
-    enabledWalkCategories: loadWalkCategories(),
+    enabledWalkCategories: loadIds(WALK_CATEGORIES_KEY, ALL_WALK_CATEGORY_IDS),
     setEnabledWalkCategories: (ids) => {
       try { localStorage.setItem(WALK_CATEGORIES_KEY, JSON.stringify(ids)) } catch { /* ignore */ }
       set({ enabledWalkCategories: ids })
+    },
+    ageEras: loadIds(AGE_ERAS_KEY, ALL_AGE_ERA_IDS),
+    setAgeEras: (ids) => {
+      try { localStorage.setItem(AGE_ERAS_KEY, JSON.stringify(ids)) } catch { /* ignore */ }
+      set({ ageEras: ids })
+    },
+    conditions: loadConditions(),
+    setConditions: (conditions) => {
+      try { localStorage.setItem(CONDITIONS_KEY, JSON.stringify(conditions)) } catch { /* ignore */ }
+      set({ conditions })
     },
     selectedBuilding: null,
     setSelectedBuilding: (selectedBuilding) => set({ selectedBuilding }),

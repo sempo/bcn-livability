@@ -37,6 +37,8 @@ export function BuildingsLayer() {
   const enabledLandmarkIds = useStore((s) => s.enabledLandmarkIds)
   const enabledCategories = useStore((s) => s.enabledWalkCategories)
   const riskStrengths = useStore((s) => s.compositeRiskStrengths)
+  const ageEras = useStore((s) => s.ageEras)
+  const conditions = useStore((s) => s.conditions)
   const selected = useStore((s) => s.selectedBuilding)
   const setSelectedBuilding = useStore((s) => s.setSelectedBuilding)
 
@@ -112,7 +114,7 @@ export function BuildingsLayer() {
     const run = () => {
       const t0 = performance.now()
       const { score, gap } = scoreAll(data.buildings, {
-        weights, enabledLandmarkIds, enabledCategories, riskStrengths, vibe: data.vibe,
+        weights, conditions, enabledLandmarkIds, enabledCategories, riskStrengths, ageEras, vibe: data.vibe,
       })
       const [prevScore, prevGap] = [scoresRef.current, gapRef.current]
       let changed = 0
@@ -135,7 +137,7 @@ export function BuildingsLayer() {
     }
     const timer = setTimeout(run, RESCORE_DELAY_MS)
     return () => clearTimeout(timer)
-  }, [map, data, weights, enabledLandmarkIds, enabledCategories, riskStrengths, recolor])
+  }, [map, data, weights, conditions, enabledLandmarkIds, enabledCategories, riskStrengths, ageEras, recolor])
 
   // Refit the colour scale once the map stops moving.
   useEffect(() => {

@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest'
-import { depthMeaning, depthText, doorWaterText, groundFloorWarning, riverText, sideText } from './buildingCardText'
+import {
+  countWithin, depthMeaning, depthText, doorWaterText, groundFloorWarning, noiseVsLimit, priceVsBudget, ratingVsMin, riverText,
+  sideText,
+} from './buildingCardText'
 import { fireText } from './cardText'
 
 describe('building card texts (TODO-046)', () => {
@@ -45,5 +48,27 @@ describe('fireText (036)', () => {
     expect(fireText({ fire_wui: 1, fire_class: null, fire_dist_m: null })).toBe('Wildland–urban interface · no rated forest nearby')
     expect(fireText({ fire_wui: 1, fire_class: 9, fire_dist_m: 80 }))
       .toBe('Wildland–urban interface · hazard class 9 forest at ~80 m')
+  })
+})
+
+describe('the building against your conditions (049)', () => {
+  it('noise', () => {
+    expect(noiseVsLimit(62.4, 65)).toBe('62 dB — within your 65 dB')
+    expect(noiseVsLimit(71.6, 65)).toBe('72 dB — 7 dB over your 65 dB')
+  })
+
+  it('price', () => {
+    expect(priceVsBudget(3900, 4000)).toMatch(/^€3[.,]?900\/m² — within your €4[.,]?000\/m²$/)
+    expect(priceVsBudget(4700, 4000)).toMatch(/^€4[.,]?700\/m² — 18% over your €4[.,]?000\/m²$/)
+  })
+
+  it('places and services within reach', () => {
+    expect(countWithin([3, 12, null], 10, 'services')).toBe('1 of 3 services within 10 min')
+    expect(countWithin([45], 30, 'places')).toBe('0 of 1 place within 30 min')
+  })
+
+  it("residents' rating", () => {
+    expect(ratingVsMin(7.62, 7.5)).toBe('Residents rate 7.6 — meets your 7.5')
+    expect(ratingVsMin(7.2, 7.5)).toBe('Residents rate 7.2 — below your 7.5')
   })
 })
