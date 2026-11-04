@@ -9,7 +9,7 @@ import { BaseUrlInput } from './BaseUrlInput'
 import { visibleBounds } from '../Map/visibleBounds'
 import { features } from '../../features'
 
-// Strictness steps as "top X% of visible hexes" — slider left = loose, right = strict.
+// Strictness steps as "top X% of the visible grid cells" — slider left = loose, right = strict.
 // Above ~25% the good areas merge into one city-wide blob, so the loose end stops there.
 const TOP_PCT_STEPS = [25, 20, 15, 10, 7, 5]
 

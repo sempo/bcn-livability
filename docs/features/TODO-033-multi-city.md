@@ -15,4 +15,7 @@ Extend the tool beyond Barcelona to other major Spanish (or European) cities: Ma
 - OTP2 can run one graph per city (separate Docker instances) or a combined graph.
 - Noise data availability varies by city — some have Lden maps, some don't.
 - Walkability POI data (OpenStreetMap-based) is available everywhere.
+- Buildings (TODO-046): Catastro INSPIRE covers Spain except the Basque Country and Navarre. Their foral
+  cadastres publish INSPIRE Buildings in the same schema, so they need a separate download step but not a new
+  parser. Outside Spain: OSM or the national cadastre.
 - Decision on naming should happen before public launch — renaming post-launch is costly for SEO.

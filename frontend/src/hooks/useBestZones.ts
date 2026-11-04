@@ -4,62 +4,62 @@ import { useStore } from '../store'
 import { useIdealistaBaseUrlStore } from '../store/idealistaBaseUrlStore'
 import { useExclusionsStore } from '../store/exclusionsStore'
 import { features } from '../features'
-import { loadBundles, loadOpenPriceMeta, type CellBundle } from '../services/composite/compositeData'
-import { computeComposite, type OpenPriceBounds } from '../services/composite/compositeScore'
-import { allowedCells, findZoneCells, zoneOutline } from '../services/bestZones'
+import { allowedCells, findZoneCells, RES, zoneOutline } from '../services/bestZones'
 import { buildIdealistaUrl } from '../services/idealista'
+import { loadBuildings } from '../services/buildings/buildingData'
+import { cellMeans, centroidCells } from '../services/buildings/buildingScore'
 
 /**
- * Best zones (feature 038) for the captured viewport. Derived state: changing weights, risks,
- * landmarks or the isochrone/exclusion restriction recomputes them from scratch; changing
- * only strictness keeps them sticky.
+ * Best zones (feature 038) for the captured viewport, on the res-9 H3 grid: each cell scores the mean of
+ * the buildings whose centroid is in it (TODO-046; the scores are the ones BuildingsLayer computed).
+ * Derived state: new scores (weights, risks, landmarks, categories) or a new isochrone/exclusion restriction
+ * recompute the zones from scratch; changing only strictness keeps them sticky.
  * `ready` is false until the score data has loaded (so "no zones" isn't shown prematurely).
  */
 export function useBestZones(): { zones: Polygon[]; urls: string[]; labels: number[]; ready: boolean } {
   const bounds = useStore((s) => s.bestZonesBounds)
   const topPct = useStore((s) => s.bestZonesTopPct)
-  const weights = useStore((s) => s.compositeWeights)
-  const enabledLandmarkIds = useStore((s) => s.enabledLandmarkIds)
-  const riskStrengths = useStore((s) => s.compositeRiskStrengths)
   const baseUrl = useIdealistaBaseUrlStore((s) => s.baseUrl)
   const restrict = useStore((s) => s.bestZonesRestrict)
   const isochrone = useStore((s) => s.resultPolygon)
   const exclusions = useExclusionsStore((s) => s.zones)
-  const [data, setData] = useState<{ bundles: CellBundle[]; priceBounds: OpenPriceBounds } | null>(null)
-
-  // Same module-cached loaders as CompositeLayer — usually already resolved.
+  const buildingScores = useStore((s) => s.buildingScores)
+  // Cell of each building centroid, once. Same module-cached loader as the map layer — usually resolved.
+  const [buildingCells, setBuildingCells] = useState<string[] | null>(null)
   useEffect(() => {
-    if (!bounds || data) return
+    if (!bounds || buildingCells) return
     let cancelled = false
-    Promise.all([loadBundles(), loadOpenPriceMeta()])
-      .then(([bundles, priceBounds]) => { if (!cancelled) setData({ bundles, priceBounds }) })
+    loadBuildings()
+      .then((b) => { if (!cancelled) setBuildingCells(centroidCells(b, RES)) })
       .catch((err) => console.error('Best zones: score data failed to load', err))
     return () => { cancelled = true }
-  }, [bounds, data])
+  }, [bounds, buildingCells])
 
-  const scores = useMemo(() => data && new Map(data.bundles.map((b) => [
-    b.h3,
-    computeComposite(b, weights, enabledLandmarkIds, data.priceBounds, riskStrengths).score,
-  ])), [data, weights, enabledLandmarkIds, riskStrengths])
+  const scores = useMemo(
+    () => (buildingCells && buildingScores ? cellMeans(buildingScores, buildingCells) : null),
+    [buildingCells, buildingScores],
+  )
 
   const allowed = useMemo(() => (restrict ? allowedCells(
     features.isochrone ? isochrone : null,
     features.exclusions ? exclusions.map((z) => z.geometry) : [],
   ) : undefined), [restrict, isochrone, exclusions])
 
-  // Everything but strictness. While it stays the same, the zones of the last fresh computation
-  // (the anchor) are handed over as sticky — moving the strictness slider narrows/widens zones in
-  // place instead of swapping them, and coming back to a strictness gives the same zones again.
-  const key = JSON.stringify([bounds, weights, enabledLandmarkIds, riskStrengths])
-  const anchor = useRef<{ key: string; allowed: typeof allowed; cells: string[][] } | null>(null)
-  const same = anchor.current?.key === key && anchor.current.allowed === allowed
+  // Everything but strictness: the view, the restriction and the scores (a new map whenever the settings
+  // change; building scores arrive a moment after the settings). While it stays the same, the zones of the
+  // last fresh computation (the anchor) are handed over as sticky — moving the strictness slider
+  // narrows/widens zones in place instead of swapping them, and coming back to a strictness gives the same
+  // zones again.
+  const key = JSON.stringify(bounds)
+  const anchor = useRef<{ key: string; allowed: typeof allowed; scores: typeof scores; cells: string[][] } | null>(null)
+  const same = anchor.current?.key === key && anchor.current.allowed === allowed && anchor.current.scores === scores
   const sticky = same ? anchor.current!.cells : undefined
   const cells = useMemo(
     () => (bounds && scores ? findZoneCells({ scores, bounds, topPct, sticky, allowed }) : []),
     [bounds, scores, topPct, sticky, allowed],
   )
   useEffect(() => {
-    if (scores && !same) anchor.current = { key, allowed, cells }
+    if (scores && !same) anchor.current = { key, allowed, scores, cells }
   }, [key, allowed, cells, scores, same])
 
   // A zone keeps its anchor's number; a vanished one leaves a gap; newcomers get the next numbers.

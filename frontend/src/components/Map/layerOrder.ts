@@ -6,15 +6,11 @@ import type * as maplibregl from 'maplibre-gl'
  * regardless of when it is first added (e.g. lazy-loaded or async layers).
  */
 export const LAYER_Z_ORDER: readonly string[] = [
-  // Choropleth overlays (bottom)
-  'city-core-fill',
-  'city-core-shapes-fill',
-  'city-core-shapes-line',
-  'poi-access-fill',
-  'composite-fill-b',
-  'composite-fill',
-  'composite-gap-outline',
-  'composite-hover-outline',
+  // Livability Index on buildings (bottom) — TODO-046 (dots at low zoom, footprints from z14)
+  'buildings-dots',
+  'buildings-fill',
+  'buildings-gap-outline',
+  'buildings-hover-outline',
   'noise-overlay',
   // Climate-risk view layers — features 036, 037
   'wildfire-hazard-fill',
@@ -22,6 +18,8 @@ export const LAYER_Z_ORDER: readonly string[] = [
   'flood-zones-line',
   'street-flooding-fill',
   'wildfire-wui-line',
+  // Facade noise circles of the selected building — TODO-046
+  'building-facades-circles',
   // Exclusion zones
   'exclusion-fill',
   'exclusion-line',
@@ -37,8 +35,6 @@ export const LAYER_Z_ORDER: readonly string[] = [
   // Idealista price overlay
   'idealista-prices-dots',
   'idealista-prices-labels',
-  'idealista-prices-hex-fill',
-  'idealista-prices-hex-outline',
   // Isochrone
   'isochrone-mask',
   'isochrone-line',

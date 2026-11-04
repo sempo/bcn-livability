@@ -28,16 +28,16 @@ body {
   height: 100%;
 }
 
-/* Hex detail card — positioned in the top-right of .map-pane (#025) */
-.hex-detail-overlay {
+/* Building card — positioned in the top-right of .map-pane (TODO-046) */
+.building-card-overlay {
   position: absolute;
   top: 16px;
   right: 56px; /* clear MapLibre nav controls (~40px wide) */
   z-index: 20;
-  animation: hexCardSlideIn 0.18s ease;
+  animation: cardSlideIn 0.18s ease;
 }
 
-@keyframes hexCardSlideIn {
+@keyframes cardSlideIn {
   from { opacity: 0; transform: translateX(24px); }
   to   { opacity: 1; transform: translateX(0); }
 }
@@ -995,9 +995,6 @@ body {
 }
 .price-popup-link:hover {
   box-shadow: 0 3px 12px rgba(0,0,0,0.2);
-}
-.price-popup-link--hex {
-  gap: 7px;
 }
 .price-popup-ext {
   font-size: 10px;

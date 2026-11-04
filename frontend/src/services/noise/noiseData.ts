@@ -14,7 +14,7 @@ function getPmtiles(): PMTiles {
   return pmtiles
 }
 
-function lngLatToTile(lng: number, lat: number, zoom: number): { x: number; y: number } {
+export function lngLatToTile(lng: number, lat: number, zoom: number): { x: number; y: number } {
   const n = 2 ** zoom
   const x = Math.floor(((lng + 180) / 360) * n)
   const latRad = (lat * Math.PI) / 180

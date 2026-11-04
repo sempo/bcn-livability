@@ -1,5 +1,7 @@
 # Feature 022 — Composite Livability Index
 
+**Superseded by TODO-046 (2026-11-04):** computed per residential building; the H3 hex version described below was removed.
+
 ## Goal
 
 Replace the current "Livability" layer with a **Livability Index** that lets the user combine up to

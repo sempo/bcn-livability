@@ -1,5 +1,7 @@
 # TODO-044 — Territory search
 
+**Note (2026-11-04):** the hexes were removed in TODO-046; where this file says hex / cell, read building.
+
 **Status:** Draft. Not planned for the first release.
 
 ## Idea

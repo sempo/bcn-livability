@@ -1,5 +1,7 @@
 # 037 — Street flooding penalty (RESCCUE) + depth layer
 
+**Superseded by TODO-046 (2026-11-04):** computed per residential building; the H3 hex version described below was removed.
+
 ## Goal
 
 Add flooding of **streets during heavy rain** — Barcelona's main flood risk — to the Livability Index,

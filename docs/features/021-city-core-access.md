@@ -1,5 +1,7 @@
 # Feature 021 — City Core Access Index
 
+**Superseded by TODO-046 (2026-11-04):** computed per residential building; the H3 hex version described below was removed.
+
 ## Goal
 
 Add a **City Core Access** layer to the livability map that scores how walkable each H3 cell is

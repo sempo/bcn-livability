@@ -1,23 +1,24 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { renderHook, waitFor, act } from '@testing-library/react'
-import { cellsToMultiPolygon, gridDisk, latLngToCell } from 'h3-js'
+import { cellToLatLng, cellsToMultiPolygon, gridDisk, latLngToCell } from 'h3-js'
 import { useBestZones } from './useBestZones'
 import { useStore } from '../store'
 import { useIdealistaBaseUrlStore } from '../store/idealistaBaseUrlStore'
 import { useExclusionsStore } from '../store/exclusionsStore'
 import { findZoneCells, type Bounds } from '../services/bestZones'
 
-// One 7-cell hot spot (score 90) on a zero-score grid. computeComposite is mocked to return
-// `walk` as the score, so the hook's wiring is tested, not the scoring maths.
-const HOT = new Set(gridDisk(latLngToCell(41.39, 2.17, 9), 1))
-const BUNDLES = gridDisk(latLngToCell(41.39, 2.17, 9), 10).map((h3) => ({ h3, walk: HOT.has(h3) ? 90 : 0 }))
+// One 7-cell hot spot (score 90) on a zero-score grid: two buildings at the centre of every cell of a
+// radius-10 disk, with the scores BuildingsLayer would put in the store (TODO-046).
+const CENTRE = latLngToCell(41.39, 2.17, 9)
+const HOT = new Set(gridDisk(CENTRE, 1))
+const CELLS = gridDisk(CENTRE, 10).flatMap((h) => [h, h])
+const [LAT, LNG] = [CELLS.map((h) => cellToLatLng(h)[0]), CELLS.map((h) => cellToLatLng(h)[1])]
+const scoresWithHot = (hot: number) => Uint8Array.from(CELLS.map((h) => (HOT.has(h) ? hot : 0)))
 
-vi.mock('../services/composite/compositeData', () => ({
-  loadBundles: vi.fn(() => Promise.resolve(BUNDLES)),
-  loadOpenPriceMeta: vi.fn().mockResolvedValue({ p5: 2000, p95: 6000 }),
-}))
-vi.mock('../services/composite/compositeScore', () => ({
-  computeComposite: (b: { walk: number }) => ({ score: b.walk }),
+vi.mock('../services/buildings/buildingData', () => ({
+  loadBuildings: vi.fn(() => Promise.resolve({
+    count: CELLS.length, cols: { lat: Float32Array.from(LAT), lng: Float32Array.from(LNG) },
+  })),
 }))
 
 // Spy on the zone search to see which previous zones (sticky) the hook hands over.
@@ -29,10 +30,14 @@ vi.mock('../services/bestZones', async (importActual) => {
 const BCN: Bounds = [2.0, 41.2, 2.4, 41.6]
 const lastSticky = () => vi.mocked(findZoneCells).mock.calls.at(-1)![0].sticky
 const lastAllowed = () => vi.mocked(findZoneCells).mock.calls.at(-1)![0].allowed
+const lastScores = () => vi.mocked(findZoneCells).mock.calls.at(-1)![0].scores
 
 describe('useBestZones', () => {
   beforeEach(() => {
-    useStore.setState({ bestZonesBounds: null, bestZonesTopPct: 3, bestZonesRestrict: true, resultPolygon: null })
+    useStore.setState({
+      bestZonesBounds: null, bestZonesTopPct: 3, bestZonesRestrict: true, resultPolygon: null,
+      buildingScores: scoresWithHot(90),
+    })
     useIdealistaBaseUrlStore.setState({ baseUrl: null })
     useExclusionsStore.setState({ zones: [] })
   })
@@ -110,5 +115,25 @@ describe('useBestZones', () => {
 
     act(() => useStore.getState().setBestZonesRestrict(false))
     expect(lastAllowed()).toBeUndefined()
+  })
+
+  it('averages building scores per cell of their centroids', async () => {
+    const { result } = renderHook(() => useBestZones())
+    act(() => useStore.getState().setBestZonesBounds(BCN))
+    await waitFor(() => expect(result.current.zones.length).toBe(1))
+    expect(lastScores().get(CENTRE)).toBe(90)
+    expect(vi.mocked(findZoneCells).mock.results.at(-1)!.value[0]).toEqual(expect.arrayContaining([CENTRE]))
+  })
+
+  it('new building scores (after a settings change) start a fresh draw, not sticky to the old one', async () => {
+    const { result } = renderHook(() => useBestZones())
+    act(() => useStore.getState().setBestZonesBounds(BCN))
+    await waitFor(() => expect(result.current.zones.length).toBe(1))
+    act(() => useStore.getState().setBestZonesTopPct(10))
+    expect(lastSticky()).toBeDefined()
+
+    act(() => useStore.setState({ buildingScores: scoresWithHot(80) }))
+    expect(lastSticky()).toBeUndefined()
+    expect(lastScores().get(CENTRE)).toBe(80)
   })
 })

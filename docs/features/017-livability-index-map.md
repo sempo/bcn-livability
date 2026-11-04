@@ -1,5 +1,7 @@
 # Feature 017 — Livability index map (H3 grid)
 
+**Superseded by TODO-046 (2026-11-04):** computed per residential building; the H3 hex version described below was removed.
+
 ## Goal
 
 Add a **city-wide exploration layer** that scores *every part of Barcelona* on livability —

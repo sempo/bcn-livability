@@ -19,11 +19,11 @@
 │  │Visible   │  │  └──────────┘ └──────────┘          │          │ │
 │  │prices    │  └───────────────────────────────────────────────┘ │ │
 │  │Visible   │                           │                 │       │ │
-│  │selectedHex│  ┌────────────────────────────────────────┐       │ │
+│  │selected  │  ┌────────────────────────────────────────┐       │ │
 │  └────┬─────┘  │                   Hooks                 │       │ │
 │       │        │  useIsochrone ──► OTP2 + localStorage   │       │ │
 │       │        │  usePinAnalytics ──► OTP2 + noise       │◄──────┘ │
-│       │        │  useBestZones ──► composite → zones     │         │
+│       │        │  useBestZones ──► buildings → zones     │         │
 │       │        │  useScreenshotDrop ──► Vision + Geocode │         │
 │       │        │  useSplitPane ──► resizable compare pane│         │
 │       │        │  useUrlState ──► URL sync               │         │
@@ -35,7 +35,7 @@
 │  │  (travel score +  walkability/      idealista.ts              │ │
 │  │   composite)      cityCore/         bestZones.ts              │ │
 │  │                   composite/        idealista/                 │ │
-│  │                   livability/       parser/                    │ │
+│  │                   buildings/        parser/                    │ │
 │  └───────┬────────────────┬──────────────┬──────────────────────┘ │
 └──────────┼────────────────┼──────────────┼────────────────────────┘
            │                │              │
@@ -61,25 +61,29 @@ bcn-property-finder/
 ├── backend/         # OTP2 via Docker Compose (isochrone/routing engine)
 │   └── otp/data/    # GTFS + OSM graph files for OTP
 ├── data/            # Static datasets (Barcelona open data, gitignored raw)
-│   ├── noise/       # Strategic noise map GPKG (gitignored, large)
+│   ├── noise/       # Strategic noise maps: BCN isophones + 2022 rasters + 2017 facades; sica/ = SICA END zips (gitignored)
+│   ├── buildings/   # Catastro zips, buildings.gpkg, blocks.gpkg, exposure.gpkg (noise/flood/fire), access.gpkg (walk/City Core) (TODO-046)
 │   └── areas/       # Raw district/barri/municipality downloads (gitignored)
 ├── scripts/
 │   ├── prepare-noise-data.sh        # GPKG → GeoJSON → PMTiles pipeline
 │   ├── prepare-areas-data.sh        # districtes+barris+AMB municipis → areas.geojson
-│   ├── prepare-livability-grid.py   # H3 grid + walkability + noise → livability-h3.geojson
-│   ├── climate_risk.py              # river flood / wildfire / street flooding exposure per H3 cell + view-layer pmtiles (036, 037)
+│   ├── prepare_buildings.py         # Catastro INSPIRE → residential buildings + entrances → data/buildings/buildings.gpkg (TODO-046)
+│   ├── fetch_exposure_sources.py    # BCN noise rasters + 2017 facades, SICA agglomeration maps, Catastro blocks (TODO-046)
+│   ├── building_exposure.py         # noise per facade (side × direction), river zone, water at the door, wildfire → data/buildings/exposure.gpkg (TODO-046)
+│   ├── building_access.py           # walkability + City Core on the OSM walking network (pandana), from each entrance → data/buildings/access.gpkg (TODO-046)
+│   ├── build_building_tiles.py      # non-residential filter + areas → buildings.pmtiles, buildings-detail.pmtiles, buildings-scores.bin.gz, buildings-meta.json (TODO-046)
+│   ├── climate_risk.py              # hazard helpers for building_exposure + river flood / wildfire / street flooding view-layer pmtiles (036, 037)
 │   ├── fetch_climate_risk.py        # downloads climate-risk sources → data/climate-risk/ (gitignored)
-│   ├── prepare-city-core-access.py  # landmark walking-time matrix → city-core-h3.geojson
+│   ├── build_neighbourhood_vibe.py  # ESM residents' survey (+ Inside Airbnb research) per barri → public/data/barri-vibe.json (042)
 │   ├── prepare-landmark-geometries.py # landmark point/polygon extraction
 │   ├── extract_poi.py               # OSM PBF → barcelona_poi.pmtiles (walkability POIs)
 │   ├── fgc-gtfs-to-geojson.mjs      # FGC GTFS → fgc-lines/fgc-stations.geojson
 │   ├── fetch_bcn_rental_barri.py    # BCN open data rental stats by barri
 │   ├── fetch_catalonia_rental.py    # Generalitat rental price data
 │   ├── fetch_incasol_sale_catalonia.py  # INCASOL sale prices (Catalonia)
-│   ├── fetch_incasol_sale_prices.py # INCASOL sale prices → price per H3
+│   ├── fetch_incasol_sale_prices.py # INCASOL sale prices by barri / districte
 │   ├── fetch_ine_indices.py         # INE housing price indices
 │   ├── build_price_geopackage.py    # joins price sources → price GPKG
-│   ├── enrich_h3_with_prices.py     # merges INCASOL prices into H3 grid
 │   ├── har_to_geojson.py            # Idealista HAR capture → GeoJSON price dots
 │   └── _amb_muni_url.py             # builds the AMB municipalities export URL
 └── docs/
@@ -103,17 +107,19 @@ src/
 │   ├── FloodZonesLayer/ # ACA river flood zones T10/T100/T500 (PMTiles) + legend + info modal
 │   ├── StreetFloodingLayer/ # RESCCUE street-flooding depth classes, T10/T100 switch (PMTiles) + legend + info modal
 │   ├── WildfireLayer/   # wildfire hazard 2024 classes + WUI outline (PMTiles) + legend + info modal
-│   ├── WalkabilityLayer/  # H3 hex choropleth (walkability only) + legend
-│   ├── CompositeLayer/    # H3 hex choropleth (4-factor composite index) + legend; hover outline, click → detail card
-│   │   └── scoreRamp.ts         # shared RdYlGn colour ramp; fitScoreRange (scale fitted to the view, TODO-032)
+│   ├── WalkabilityLayer/  # walking-time markers of the selected pin's nearest services
+│   ├── BuildingsLayer/    # Livability Index per building (TODO-046): dots z≤13, footprints z≥14, colour from feature state
+│   │   ├── FacadeNoiseLayer.tsx # noise circles at the facades of the selected building (z≥15)
+│   │   ├── CompositeLegend.tsx  # colour scale legend of the index
+│   │   └── scoreRamp.ts         # RdYlGn colour ramp; fitScoreRange (scale fitted to the view, TODO-032)
+│   ├── BuildingCard/      # click card of a building (TODO-046): Catastro facts, photo, noise by facade, barri-level block
+│   │   └── cardParts.tsx / cardColors.ts / cardText.ts / buildingCardText.ts  # card blocks, colours, texts
 │   ├── MetroLayer/      # TMB metro lines + station dots (API: api.tmb.cat)
 │   ├── FgcLayer/        # FGC suburban rail lines + stations (static GeoJSON)
 │   ├── PoiLayer/        # POI dots from barcelona_poi.pmtiles
 │   ├── LandmarksLayer/  # city-core landmark markers (Sagrada Família, Passeig de Gràcia, etc.)
 │   ├── IdealistaPricesLayer/ # Idealista scraped price dots on the map
-│   │   ├── h3Index.ts           # aggregates price dots to H3 medians
 │   │   └── priceColors.ts       # price → colour ramp
-│   ├── HexDetailCard/   # click detail card for a single H3 cell
 │   ├── FilterPanel/     # travel time slider + layer toggles + composite/exclusion controls
 │   │   ├── CompositeControls.tsx  # composite index toggle + weight sliders
 │   │   └── ExclusionControls.tsx  # exclusion zone picker + draw mode buttons
@@ -134,7 +140,7 @@ src/
 ├── hooks/
 │   ├── useIsochrone.ts       # fetches isochrone from OTP2; caches in localStorage
 │   ├── usePinAnalytics.ts    # walk/cycle/drive/transit times + noise Lden per pin
-│   ├── useBestZones.ts       # composite scores + captured viewport → best zones + Idealista URLs
+│   ├── useBestZones.ts       # building scores averaged per res-9 H3 cell + captured viewport → best zones + Idealista URLs
 │   ├── useScreenshotDrop.ts  # screenshot drop → Vision parse → geocode → pin
 │   ├── useSplitPane.ts       # resizable split-pane width + collapse state
 │   ├── useEffectiveArea.ts   # isochrone − exclusion zones (isochrone mask)
@@ -143,7 +149,7 @@ src/
 │   ├── index.ts                  # Zustand: workplace, minutes, resultPolygon,
 │   │                             #   noiseLayerVisible, compositeVisible,
 │   │                             #   compositeWeights, idealistaPricesVisible,
-│   │                             #   idealistaPriceRange, selectedHexH3, …
+│   │                             #   idealistaPriceRange, selectedBuilding, buildingScores, …
 │   ├── pinsStore.ts              # Zustand: apartment pins, localStorage persistence
 │   ├── exclusionsStore.ts        # Zustand: no-go zones + drawingMode, localStorage
 │   └── idealistaBaseUrlStore.ts  # Zustand: custom Idealista base URL, localStorage
@@ -157,12 +163,19 @@ src/
     ├── analytics.ts     # travelIndex + per-pin compositeScore (travel × noise × walkability)
     ├── imageUtils.ts    # image compression + base64 helpers
     ├── idealista.ts     # GeoJSON → Google Encoded Polyline → Idealista URL; base URL parse
-    ├── bestZones.ts     # H3 scores → up to 3 simple zones (smoothing, percentile, components)
+    ├── bestZones.ts     # res-9 H3 cell scores → up to 3 simple zones (smoothing, percentile, components)
+    ├── buildings/
+    │   ├── buildingData.ts     # loads buildings-meta.json + buildings-scores.bin.gz → decoded columns per building (TODO-046)
+    │   ├── buildingScore.ts    # building inputs → computeComposite (walk over the user's categories, area price, door water)
+    │   ├── buildingDetail.ts   # card fields + facade groups of one building from buildings-detail.pmtiles (z14)
+    │   ├── address.ts          # Catastro address → readable; Catastro page and facade photo URLs
+    │   └── catastroUnits.ts    # Catastro DNPRC (open, per click): what the floors below ground are (parking / storage / dwellings)
     ├── exclusions.ts    # subtractExclusions (turf union+difference), isPointInExclusions
     ├── areas.ts         # loads areas.geojson; grouped picker options; geometry lookup
     ├── noise/
     │   ├── noiseData.ts        # PMTiles tile fetch at z=14 + point-in-polygon → Lden
     │   ├── noiseScore.ts       # noiseScore(lden) = clamp(0,100,(75−lden)/30×100)
+    │   ├── noisePalette.ts     # official noise-map colours as a MapLibre step expression
     │   └── pmtilesProtocol.ts  # registers pmtiles:// protocol with MapLibre (once at startup)
     ├── walkability/
     │   ├── walkabilityScore.ts  # distance-decay + per-category saturation over nearby POIs
@@ -170,17 +183,14 @@ src/
     │   ├── serviceCategories.ts # POI category definitions + saturation caps
     │   └── walkabilityTypes.ts  # shared types for walkability computation
     ├── cityCore/
-    │   ├── cityCoreData.ts   # loads city-core-h3.geojson (landmark walking-time matrix)
-    │   ├── cityCoreScore.ts  # cellCityCoreIndex: proximity score over selected landmarks
+    │   ├── cityCoreScore.ts  # cityCoreIndex: proximity score over selected landmarks from walking minutes
     │   └── landmarks.ts      # landmark definitions (id, name, ALL_LANDMARK_IDS)
     ├── composite/
-    │   ├── compositeData.ts  # joins livability + cityCore + INCASOL prices → CellBundle[]
-    │   └── compositeScore.ts # computeComposite: 4-factor weighted index + climate-risk penalties
+    │   └── compositeScore.ts # computeComposite: weighted index of one building + climate-risk penalties
     ├── climateRisk/
     │   └── climateRisk.ts    # floodRisk / fireRisk / streetFloodRisk (0–1) + applyRiskPenalties (036, 037)
-    ├── livability/
-    │   ├── livabilityData.ts  # loads livability-h3.geojson (walk + lden per cell)
-    │   └── livabilityScore.ts # livabilityIndex (walk only, or walk+noise blend — WalkabilityLayer)
+    ├── localsOpinion/
+    │   └── localsOpinion.ts  # loads barri-vibe.json; localsOpinionScore (satisfaction → 0–100), topProblems (042)
     ├── idealista/
     │   └── idealistaRawData.ts # loads Idealista price-dot GeoJSON (scraped via HAR)
     ├── parser/
@@ -207,37 +217,45 @@ src/
 
 **Per-pin composite score**: `round((travelIndex × W_travel + noiseScore × W_noise + walkScore × W_walk) / sum(weights))`. Weights from ENV (`VITE_COMPOSITE_WEIGHT_TRAVEL`, `VITE_COMPOSITE_WEIGHT_NOISE`, `VITE_COMPOSITE_WEIGHT_WALKABILITY`). If noise or walkability data is unavailable, falls back gracefully.
 
-## Walkability layer (feature 010 / 017)
+## Walkability (feature 010)
 
-H3 hex grid coloured by **walkability only** — nearby POI access via distance-decay + per-category saturation. Workplace-independent, precomputed offline.
+Nearby services by distance-decay + per-category saturation (`services/walkability`): for a pin, computed live
+from `barcelona_poi.pmtiles` (`WalkabilityLayer` shows the selected pin's walking times); for the Livability
+Index, precomputed per building on the walking network (`scripts/building_access.py`, TODO-046).
+ENV: `VITE_WALK_DECAY_M` (default 400 m), `VITE_WALK_RMAX_M` (default 1500 m); the pipeline reads
+`WALK_DECAY_M` / `WALK_RMAX_M` with the same defaults.
 
-- **Data**: `frontend/public/data/livability-h3.geojson` — one hexagon per H3 cell (res 9 ≈ 170 m) covering residential BCN + AMB (non-residential land masked out, feature 039). Each cell: `{ h3, walk, lden }`.
-- **Score**: `computeWalkabilityScore` (services/walkability) — sums `exp(-d/DECAY)` per nearby POI, saturation-capped per category.
-- **Client**: `WalkabilityLayer` renders a GeoJSON fill choropleth (RdYlGn ramp). `livabilityIndex` (services/livability) optionally blends walkability + noise when a "Consider noise" toggle is on.
-- **Precompute** (`scripts/prepare-livability-grid.py`): fills H3 cells, scores walkability from OSM PBF via shapely STRtree, reads `lden` from noise GPKG.
-- **ENV**: `VITE_LIVABILITY_H3_RES` (default 9), `VITE_LIVABILITY_COVERAGE` (default `bcn-amb`), `VITE_WALK_DECAY_M` (default 400 m), `VITE_WALK_RMAX_M` (default 1500 m).
+## Livability Index on buildings (features 022, TODO-046)
 
-## Composite Index layer (feature 022)
+Every residential building (Catastro, BCN + AMB) coloured by a weighted index: walkability (POI access), noise,
+City Core proximity, open sale price, and residents' satisfaction (`VITE_FEATURE_LOCALS_OPINION`). All factors
+are workplace-independent and precomputed offline; weights are applied in the browser. The H3 hex version was
+removed on 2026-11-04 (TODO-046 step 6).
 
-H3 hex grid coloured by a **4-factor composite index**: walkability (POI access), noise, city-core proximity, and open sale price. All factors are workplace-independent and precomputed offline.
-
+- **Pipeline**: `prepare_buildings.py` → `building_exposure.py` (noise per facade, river zone, water at the
+  door, wildfire) → `building_access.py` (walkability + City Core on the walking network) →
+  `build_building_tiles.py` (non-residential filter, barri / municipality, tiles + score columns). See
+  `docs/features/TODO-046-building-level-index.md`.
+- **Data**: `buildings.pmtiles` (geometry, feature id = row), `buildings-scores.bin.gz` + `buildings-meta.json`
+  (score inputs per building, area table with price and barri code), `buildings-detail.pmtiles` (card fields +
+  facade noise points, z14), `barri-vibe.json` (per-barri survey fields, 042).
 - **Factors**:
-  1. `poiAccess` — same walkability score as the Walkability layer
-  2. `noise` — `noiseScore(lden)` from the noise layer
-  3. `cityCore` — `cellCityCoreIndex`: proximity to selected landmarks (Sagrada Família, Passeig de Gràcia, Barceloneta, etc.) weighted by walking minutes
-  4. `openPrice` — INCASOL sale EUR/m² normalised to 0–100 (cheaper = better)
-- **Data**: joins `livability-h3.geojson` + `city-core-h3.geojson` + INCASOL price data into `CellBundle[]` (`services/composite/compositeData.ts`).
-- **Score**: `computeComposite(bundle, weights, enabledLandmarkIds, priceBounds, riskStrengths)` → weighted average (missing data = 0, see feature 022), then climate-risk penalties.
-- **Climate-risk penalties (036, 037)**: `score = base × (1 − sFlood/10 · floodRisk) × (1 − sFire/10 · fireRisk) × (1 − sStreet/10 · streetFloodRisk)` — safe cells keep their score. Raw exposure (`flood_t10/t100/t500`, `fire_wui`, `fire_hazard`, `fire_class`, `fire_dist_m`, `street_t10/t100` — Barcelona only, null elsewhere) is baked into `livability-h3.geojson` by `scripts/climate_risk.py`; risks and penalties are computed in `services/climateRisk`. ENV: `VITE_FLOOD_PENALTY_T10/T100/T500`, `VITE_RISK_STRENGTH_FLOOD/FIRE/STREET`, `VITE_STREET_FLOOD_SATURATION`.
-- **Client**: `CompositeLayer` renders the choropleth; `HexDetailCard` shows per-factor breakdown and the climate-risk explanation on click. `FilterPanel/CompositeControls` hosts the layer toggle + per-factor weight sliders + risk-penalty strengths + landmark selection. `FilterPanel/ClimateLayerControls` toggles the River flood zones / Street flooding / Wildfire hazard view layers.
-- **State**: `compositeVisible`, `compositeWeights`, `compositeColorRange` (colour scale of the visible hexes, set by `CompositeLayer`), `compositeRiskStrengths`, `floodLayerVisible`, `wildfireLayerVisible`, `streetFloodingLayerVisible`, `streetFloodingReturnPeriod`, `selectedHexH3`, `enabledLandmarkIds` in Zustand store.
+  1. `poiAccess` — walkability over the service categories the user keeps (`walk_<category>` columns)
+  2. `noise` — `noiseScore(lden_avg)`, the facade-length-weighted Lden of the building
+  3. `cityCore` — `cityCoreIndex`: walking minutes to the selected landmarks
+  4. `openPrice` — INCASOL sale EUR/m² of the barri (Barcelona) or municipality, normalised to 0–100 (cheaper = better)
+  5. `localsOpinion` (042, flag) — ESM residents' satisfaction with their barri, small samples shrunk towards the gran barri, stretched to 0–100 between `VITE_LOCALS_SATISF_MIN/MAX`. Barcelona city only; small-sample barris get the gap outline. Default weight 0.
+- **Score**: `computeComposite(inputs, weights, enabledLandmarkIds, priceBounds, riskStrengths)` (via `services/buildings/buildingScore.ts`) → weighted average (missing data = 0, see feature 022), then climate-risk penalties.
+- **Climate-risk penalties (036, 037)**: `score = base × (1 − sFlood/10 · floodRisk) × (1 − sFire/10 · fireRisk) × (1 − sStreet/10 · streetFloodRisk)` — safe buildings keep their score. River zone the footprint touches, WUI × forest hazard, and water depth at the door (Barcelona only) come from `building_exposure.py`; risks and penalties are computed in `services/climateRisk`. ENV: `VITE_FLOOD_PENALTY_T10/T100/T500`, `VITE_RISK_STRENGTH_FLOOD/FIRE/STREET`, `VITE_STREET_FLOOD_MIN_CM/MAX_CM`.
+- **Client**: `BuildingsLayer` scores every building and sets the score as MapLibre feature state (rescoring debounced); `BuildingCard` reads the clicked building from `buildings-detail.pmtiles` (+ Catastro photo and floor uses); `FacadeNoiseLayer` draws its facade noise. `FilterPanel/CompositeControls` hosts the layer toggle, weight sliders, walkability services and landmark gears, risk strengths. `FilterPanel/ClimateLayerControls` toggles the River flood zones / Street flooding / Wildfire hazard view layers (`scripts/climate_risk.py`).
+- **State**: `compositeVisible`, `compositeWeights`, `compositeColorRange` (colour scale of the buildings in view, set by `BuildingsLayer`), `compositeRiskStrengths`, `floodLayerVisible`, `wildfireLayerVisible`, `streetFloodingLayerVisible`, `streetFloodingReturnPeriod`, `enabledLandmarkIds`, `enabledWalkCategories`, `selectedBuilding`, `buildingScores` in Zustand store.
 
 ## Idealista Prices layer (feature 019)
 
 Scraped Idealista listing price dots overlaid on the map as a supplementary reference layer.
 
 - **Data**: captured via HAR (`scripts/har_to_geojson.py`) → `frontend/public/data/idealista-raw.geojson`. Each feature: `{ price, priceByArea }`.
-- **Client**: `IdealistaPricesLayer` renders dots coloured by EUR/m² (`priceColors.ts`). `h3Index.ts` aggregates dots to H3 median prices for this layer. The data file is gitignored (local dev only), so the layer is not deployed.
+- **Client**: `IdealistaPricesLayer` renders dots coloured by EUR/m² (`priceColors.ts`). The data file is gitignored (local dev only), so the layer is not deployed.
 - **State**: `idealistaPricesVisible`, `idealistaPriceRange`, `idealistaPriceBounds` in Zustand store.
 
 ## Transit layers (feature 020)
@@ -274,7 +292,7 @@ All scoring weights are in `.env.local` (see `.env.local.example`):
 | `VITE_WALK_DECAY_M` | 400 | Walkability distance-decay constant (metres) |
 | `VITE_WALK_RMAX_M` | 1500 | Walkability hard cutoff radius (metres) |
 
-Composite Index layer weights (per-cell, not per-pin) are stored in Zustand (`compositeWeights`) with defaults `{ poiAccess: 6, noise: 7, cityCore: 8, openPrice: 10 }` and adjusted via UI sliders in `CompositeControls`.
+Composite Index layer weights (per-cell, not per-pin) are stored in Zustand (`compositeWeights`) with defaults `{ poiAccess: 6, noise: 7, cityCore: 8, openPrice: 10, localsOpinion: 0 }` and adjusted via UI sliders in `CompositeControls`.
 
 ## UI
 
@@ -290,6 +308,7 @@ Composite Index layer weights (per-cell, not per-pin) are stored in Zustand (`co
 | OpenFreeMap | Vector map tiles | No API key needed |
 | TMB API | Metro lines + station data | Requires `VITE_TMB_APP_ID` / `VITE_TMB_APP_KEY` from developer.tmb.cat |
 | Idealista | Property search target | URL only |
+| Catastro OVC (ovc.catastro.meh.es) | Building card (TODO-046): facade photo, DNPRC units per floor | Open, no key; called per click; photo behind `VITE_FEATURE_FACADE_PHOTO` |
 
 ## Backend
 

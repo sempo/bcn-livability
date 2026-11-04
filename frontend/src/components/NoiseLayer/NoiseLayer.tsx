@@ -1,27 +1,14 @@
 import { useContext, useEffect } from 'react'
-import type * as maplibregl from 'maplibre-gl'
 import { MapContext } from '../Map/MapContext'
 import { useStore } from '../../store'
 import { addLayerOrdered } from '../Map/layerOrder'
+import { ldenColorExpression } from '../../services/noise/noisePalette'
 
 const SOURCE_ID = 'noise-pmtiles'
 const LAYER_ID = 'noise-overlay'
 const PMTILES_URL = `pmtiles://${import.meta.env.BASE_URL}data/noise.pmtiles`
 
-// Color palette matching official Barcelona acoustic map (QGIS .qml style)
-const LDEN_COLOR_STEP = [
-  'step', ['get', 'lden'],
-  '#b3e0f2',       // < 40
-  40,  '#79c8e0',
-  45,  '#a8d86e',
-  50,  '#d4ed6a',
-  55,  '#f5f500',
-  60,  '#f5c800',
-  65,  '#f57d00',
-  70,  '#e02020',
-  75,  '#d400d4',
-  80,  '#0000c8',
-] as maplibregl.ExpressionSpecification
+const LDEN_COLOR_STEP = ldenColorExpression(['get', 'lden'])
 
 export function NoiseLayer() {
   const map = useContext(MapContext)

@@ -8,7 +8,7 @@ import { FilterPanel } from './components/FilterPanel/FilterPanel'
 import { ComparePane } from './components/PropertyPins/ComparePane'
 import { AddPinButton } from './components/PropertyPins/AddPinButton'
 import { ScreenshotDropZone } from './components/PropertyPins/ScreenshotDropZone'
-import { HexDetailCard } from './components/HexDetailCard/HexDetailCard'
+import { BuildingCard } from './components/BuildingCard/BuildingCard'
 import { usePinsStore } from './store/pinsStore'
 import { useUrlState } from './hooks/useUrlState'
 import { useIsochrone } from './hooks/useIsochrone'
@@ -61,7 +61,7 @@ export function App() {
           <FilterPanel />
         </div>
       )}
-      <HexDetailCard />
+      <BuildingCard />
     </div>
   )
 

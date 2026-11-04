@@ -1,21 +1,28 @@
 import { create } from 'zustand'
 import type { MultiPolygon, Polygon } from 'geojson'
 import { ALL_LANDMARK_IDS } from '../services/cityCore/landmarks'
+import { SERVICE_CATEGORIES } from '../services/walkability/serviceCategories'
 import { DEFAULT_RISK_STRENGTHS, type RiskStrengths } from '../services/climateRisk/climateRisk'
 import { DEFAULT_TOP_PCT, type Bounds } from '../services/bestZones'
+import { features } from '../features'
 
 export interface CompositeWeights {
   poiAccess: number
   noise: number
   cityCore: number
   openPrice: number
+  /** Residents' satisfaction (042); off by default. */
+  localsOpinion: number
 }
+
+export const ALL_WALK_CATEGORY_IDS: readonly string[] = SERVICE_CATEGORIES.map((c) => c.id)
 
 export const DEFAULT_COMPOSITE_WEIGHTS: CompositeWeights = {
   poiAccess: 6,
   noise: 7,
   cityCore: 8,
   openPrice: 10,
+  localsOpinion: 0,
 }
 
 export interface AppState {
@@ -40,7 +47,7 @@ export interface AppState {
   // Composite Index layer — feature 022
   compositeVisible: boolean
   compositeWeights: CompositeWeights
-  /** Colour scale of the map, fitted to the visible hexes (TODO-032); set by CompositeLayer. */
+  /** Colour scale of the map, fitted to the buildings in view (TODO-032); set by BuildingsLayer. */
   compositeColorRange: [number, number]
   // Climate risk penalties + view layers — feature 036
   compositeRiskStrengths: RiskStrengths
@@ -49,8 +56,13 @@ export interface AppState {
   // Street flooding view layer — feature 037
   streetFloodingLayerVisible: boolean
   streetFloodingReturnPeriod: 't10' | 't100'
-  // Hex detail card — feature 025
-  selectedHexH3: string | null
+  // Building-level index — TODO-046
+  /** Walkability categories the user keeps; walkability is recomputed over them. */
+  enabledWalkCategories: readonly string[]
+  /** Row (= feature id) of the clicked building; null = no card. */
+  selectedBuilding: number | null
+  /** Latest score of every building (by row), set by BuildingsLayer; Best zones average it per cell. */
+  buildingScores: Uint8Array | null
   setWorkplace: (wp: [number, number] | null) => void
   setMinutes: (minutes: number) => void
   setZoom: (zoom: number) => void
@@ -73,7 +85,9 @@ export interface AppState {
   setWildfireLayerVisible: (visible: boolean) => void
   setStreetFloodingLayerVisible: (visible: boolean) => void
   setStreetFloodingReturnPeriod: (rp: 't10' | 't100') => void
-  setSelectedHexH3: (h3: string | null) => void
+  setEnabledWalkCategories: (ids: readonly string[]) => void
+  setSelectedBuilding: (row: number | null) => void
+  setBuildingScores: (scores: Uint8Array | null) => void
 }
 
 function isValidMinutes(n: number): boolean {
@@ -107,6 +121,16 @@ const WILDFIRE_LAYER_KEY = 'bcn_wildfire_layer_visible'
 const STREET_FLOODING_LAYER_KEY = 'bcn_street_flooding_layer_visible'
 const BEST_ZONES_TOP_PCT_KEY = 'bcn_best_zones_top_pct'
 const BEST_ZONES_RESTRICT_KEY = 'bcn_best_zones_restrict'
+const WALK_CATEGORIES_KEY = 'bcn_walk_categories'
+
+function loadWalkCategories(): readonly string[] {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(WALK_CATEGORIES_KEY) ?? 'null') as unknown
+    const known = Array.isArray(parsed) ? parsed.filter((id) => ALL_WALK_CATEGORY_IDS.includes(id)) : []
+    if (known.length > 0) return known
+  } catch { /* ignore */ }
+  return ALL_WALK_CATEGORY_IDS
+}
 
 export function readWorkplaceFromStorage(): [number, number] | null {
   try {
@@ -146,6 +170,8 @@ function loadCompositeWeights(): CompositeWeights {
       noise: parsed.noise ?? DEFAULT_COMPOSITE_WEIGHTS.noise,
       cityCore: parsed.cityCore ?? DEFAULT_COMPOSITE_WEIGHTS.cityCore,
       openPrice: parsed.openPrice ?? DEFAULT_COMPOSITE_WEIGHTS.openPrice,
+      // Flag off: no slider to turn it back off, so a stored weight must not apply.
+      localsOpinion: features.localsOpinion ? parsed.localsOpinion ?? 0 : 0,
     }
   } catch {
     return DEFAULT_COMPOSITE_WEIGHTS
@@ -276,7 +302,14 @@ export const useStore = create<AppState>((set) => {
     },
     streetFloodingReturnPeriod: 't10',
     setStreetFloodingReturnPeriod: (streetFloodingReturnPeriod) => set({ streetFloodingReturnPeriod }),
-    selectedHexH3: null,
-    setSelectedHexH3: (selectedHexH3) => set({ selectedHexH3 }),
+    enabledWalkCategories: loadWalkCategories(),
+    setEnabledWalkCategories: (ids) => {
+      try { localStorage.setItem(WALK_CATEGORIES_KEY, JSON.stringify(ids)) } catch { /* ignore */ }
+      set({ enabledWalkCategories: ids })
+    },
+    selectedBuilding: null,
+    setSelectedBuilding: (selectedBuilding) => set({ selectedBuilding }),
+    buildingScores: null,
+    setBuildingScores: (buildingScores) => set({ buildingScores }),
   }
 })

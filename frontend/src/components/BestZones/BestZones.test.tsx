@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import { MantineProvider } from '@mantine/core'
 import type * as maplibregl from 'maplibre-gl'
-import { gridDisk, latLngToCell } from 'h3-js'
+import { cellToLatLng, gridDisk, latLngToCell } from 'h3-js'
 import { MapContext } from '../Map/MapContext'
 import { BestZones } from './BestZones'
 import { useStore } from '../../store'
@@ -18,15 +18,16 @@ const { popup } = vi.hoisted(() => ({
 }))
 vi.mock('maplibre-gl', () => ({ Popup: vi.fn(function () { return popup }) }))
 
-// One 7-cell hot spot (score 90) on a zero-score grid; computeComposite returns `walk` as score.
+// One 7-cell hot spot (score 90) on a zero-score grid: a building at the centre of every cell, with the
+// scores BuildingsLayer would put in the store.
 const HOT = new Set(gridDisk(latLngToCell(41.39, 2.17, 9), 1))
-const BUNDLES = gridDisk(latLngToCell(41.39, 2.17, 9), 10).map((h3) => ({ h3, walk: HOT.has(h3) ? 90 : 0 }))
-vi.mock('../../services/composite/compositeData', () => ({
-  loadBundles: vi.fn(() => Promise.resolve(BUNDLES)),
-  loadOpenPriceMeta: vi.fn().mockResolvedValue({ p5: 2000, p95: 6000 }),
-}))
-vi.mock('../../services/composite/compositeScore', () => ({
-  computeComposite: (b: { walk: number }) => ({ score: b.walk }),
+const CELLS = gridDisk(latLngToCell(41.39, 2.17, 9), 10)
+const SCORES = Uint8Array.from(CELLS.map((h) => (HOT.has(h) ? 90 : 0)))
+vi.mock('../../services/buildings/buildingData', () => ({
+  loadBuildings: vi.fn(() => Promise.resolve({
+    count: CELLS.length,
+    cols: { lat: Float32Array.from(CELLS.map((h) => cellToLatLng(h)[0])), lng: Float32Array.from(CELLS.map((h) => cellToLatLng(h)[1])) },
+  })),
 }))
 
 type Handler = (e: unknown) => void
@@ -91,7 +92,7 @@ describe('BestZones', () => {
   beforeEach(() => {
     map = makeMap()
     popup.setDOMContent.mockClear()
-    useStore.setState({ compositeVisible: true, bestZonesBounds: null, bestZonesTopPct: 3 })
+    useStore.setState({ compositeVisible: true, bestZonesBounds: null, bestZonesTopPct: 3, buildingScores: SCORES })
     useIdealistaBaseUrlStore.setState({ baseUrl: null })
   })
 
@@ -120,9 +121,9 @@ describe('BestZones', () => {
     expect((popup.setDOMContent.mock.calls.at(-1)![0] as HTMLAnchorElement).textContent).toBe('Open zone 4 in Idealista ↗')
   })
 
-  it('ignores the map area hidden under the left panel and the right hex card', () => {
+  it('ignores the map area hidden under the left panel and the right building card', () => {
     const panel = overlay('top-panel', rect(12, 12, 300, 480))
-    const card = overlay('hex-detail-overlay', rect(800, 16, 980, 300))
+    const card = overlay('building-card-overlay', rect(800, 16, 980, 300))
     renderBar()
     fireEvent.click(screen.getByRole('button', { name: /draw best zones/i }))
     const [w, s, e, n] = useStore.getState().bestZonesBounds!
@@ -180,7 +181,7 @@ describe('BestZones', () => {
   })
 
   it('says so when nothing qualifies', async () => {
-    map.view = [10, 10, 10.1, 10.1] // no hexes in view
+    map.view = [10, 10, 10.1, 10.1] // no buildings in view
     renderBar()
     fireEvent.click(screen.getByRole('button', { name: /draw best zones/i }))
     expect(await screen.findByText('No zones fit this view — zoom out')).toBeInTheDocument()

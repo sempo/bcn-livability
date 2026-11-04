@@ -4,7 +4,6 @@ import {
   DEFAULT_RISK_STRENGTHS,
   fireRisk,
   floodRisk,
-  mostSevereFloodZone,
   streetFloodRisk,
   type ClimateRiskProps,
 } from './climateRisk'
@@ -30,7 +29,7 @@ describe('floodRisk', () => {
     expect(floodRisk(p, PENALTIES)).toBeCloseTo(0.2 * 1 + 0.3 * 0.6 + 0.5 * 0.25)
   })
 
-  it('a cell fully in T10 has risk 1', () => {
+  it('a building in the T10 zone has risk 1', () => {
     expect(floodRisk(props({ flood_t10: 1, flood_t100: 1, flood_t500: 1 }), PENALTIES)).toBe(1)
   })
 
@@ -69,7 +68,7 @@ describe('applyRiskPenalties', () => {
       .toEqual({ score: 70, floodPenalty: 0, firePenalty: 0, streetPenalty: 0 })
   })
 
-  it('max strength on a full-risk cell drives the score to 0', () => {
+  it('max strength on a full-risk building drives the score to 0', () => {
     expect(applyRiskPenalties(80, { flood: 1, fire: 0, street: 0 }, { flood: 10, fire: 5, street: 5 }).score).toBe(0)
   })
 
@@ -87,43 +86,23 @@ describe('applyRiskPenalties', () => {
 })
 
 describe('streetFloodRisk (feature 037)', () => {
-  const SAT = 0.15
-
-  it('is 0 without data (outside Barcelona / old grid) or when dry', () => {
-    expect(streetFloodRisk({}, PENALTIES, SAT)).toBe(0)
-    expect(streetFloodRisk(props({ street_t10: null, street_t100: null }), PENALTIES, SAT)).toBe(0)
-    expect(streetFloodRisk(props({ street_t10: 0, street_t100: 0 }), PENALTIES, SAT)).toBe(0)
+  it('is 0 without data (outside Barcelona) or when dry', () => {
+    expect(streetFloodRisk({}, PENALTIES)).toBe(0)
+    expect(streetFloodRisk(props({ street_t10: null, street_t100: null }), PENALTIES)).toBe(0)
+    expect(streetFloodRisk(props({ street_t10: 0, street_t100: 0 }), PENALTIES)).toBe(0)
   })
 
-  it('normalises by the saturation share and weights T10 above the extra T100 part', () => {
-    // r10 = 0.075/0.15 = 0.5, r100 = 1 → 0.5·1 + 0.5·0.6
-    expect(streetFloodRisk(props({ street_t10: 0.075, street_t100: 0.15 }), PENALTIES, SAT)).toBeCloseTo(0.8)
+  it('weights T10 above the extra T100 part', () => {
+    // r10 = 0.5, r100 = 1 → 0.5·1 + 0.5·0.6
+    expect(streetFloodRisk(props({ street_t10: 0.5, street_t100: 1 }), PENALTIES)).toBeCloseTo(0.8)
   })
 
-  it('caps at 1 above saturation', () => {
-    expect(streetFloodRisk(props({ street_t10: 0.4, street_t100: 0.5 }), PENALTIES, SAT)).toBe(1)
+  it('caps severities at 1', () => {
+    expect(streetFloodRisk(props({ street_t10: 2, street_t100: 3 }), PENALTIES)).toBe(1)
   })
 
   it('treats T100 as at least as wet as T10', () => {
-    expect(streetFloodRisk(props({ street_t10: 0.075, street_t100: 0.01 }), PENALTIES, SAT)).toBeCloseTo(0.5)
-  })
-
-  it('uses env defaults (saturation 0.15)', () => {
-    expect(streetFloodRisk(props({ street_t10: 0.15, street_t100: 0.15 }))).toBe(1)
-  })
-})
-
-describe('mostSevereFloodZone', () => {
-  it('returns null outside all zones', () => {
-    expect(mostSevereFloodZone(props())).toBeNull()
-  })
-
-  it('returns the most severe zone touching the cell with its share', () => {
-    expect(mostSevereFloodZone(props({ flood_t10: 0, flood_t100: 0.35, flood_t500: 0.8 })))
-      .toEqual({ zone: 't100', share: 0.35 })
-    expect(mostSevereFloodZone(props({ flood_t10: 0.1, flood_t100: 0.1, flood_t500: 0.1 })))
-      .toEqual({ zone: 't10', share: 0.1 })
-    expect(mostSevereFloodZone(props({ flood_t500: 0.4 }))).toEqual({ zone: 't500', share: 0.4 })
+    expect(streetFloodRisk(props({ street_t10: 0.5, street_t100: 0.1 }), PENALTIES)).toBeCloseTo(0.5)
   })
 })
 

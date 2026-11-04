@@ -1,8 +1,45 @@
 # TODO-043 — Noise level outside Barcelona city
 
-**Status:** Blocked. **Do not implement** until the approach is chosen (see Options) and the effort is
-estimated. The first step is research only: check the official data sources (Option 1) and/or run a
-feasibility prototype (Option 3). Then pick an approach and estimate it.
+**Note (2026-11-04):** the hexes were removed in TODO-046; where this file says hex / cell, read building.
+
+**Status:** Partly done via TODO-046 stage 2 (2026-11-03): Option 1 found full official maps for 14 AMB
+municipalities (84% of dwellings, together with Barcelona). They are used per building. **Still open for the
+other 21 municipalities** (16% of dwellings), which have only corridor maps. For those, do not implement until
+an approach is chosen (Option 3 or hybrid) and estimated.
+
+## Option 1 results (2026-11-03)
+
+**Source: SICA (MITECO), 4th round (2022), original END deliveries:**
+<https://sicaweb.miteco.gob.es/datos-geoespaciales/4a-fase/>. One zip per agglomeration or infrastructure, with
+GeoPackages in the EU END reporting schema (DF4_8):
+
+- `NoiseContours_{source}InAgglomeration_{Lden|Lday|Levening|Lnight}`: MultiPolygon, EPSG:3035;
+- `category` holds the band: `Lden5559`, `LdenGreaterThan75` (also spelt `LdenThan75`), `LdenLowerThan40`,
+  `Lnight6064`, …;
+- `source = allSources` sums roads, railways and industry (≈ Barcelona's "Total");
+- 5 dB bands from 40 (Lden) and from below 40 (Lnight), all four periods. The lowest band differs by period
+  (checklist item 5);
+- also `NoiseIsophone_*` lines and exposure tables (not used);
+- some deliveries are invalid geometry → `make_valid(method="structure")`;
+- the server does not send its intermediate certificate (see `scripts/fetch_exposure_sources.py`).
+
+| Delivery | Municipalities |
+|---|---|
+| Aglomeració de l'Hospitalet | L'Hospitalet |
+| Aglomeració del Baix Llobregat I | Cornellà, Esplugues, Sant Feliu, Sant Joan Despí, Sant Just Desvern |
+| Aglomeració del Baix Llobregat II | Gavà, Sant Boi, Viladecans |
+| Barcelonès | Badalona, Sant Adrià de Besòs, Santa Coloma de Gramenet |
+| Aglomeració del Vallès Occidental I | Barberà del Vallès, Badia del Vallès |
+
+**Corridor maps only** (Carreteras del Estado, Generalitat, Diputació, ADIF, FGC, FMB, El Prat airport) for Sant
+Cugat, Castelldefels, El Prat, Cerdanyola, Ripollet, Montcada, Molins de Rei, Sant Vicenç dels Horts, Sant Andreu de
+la Barca, Corbera, Montgat, Castellbisbal, Pallejà, Cervelló, Tiana, Santa Coloma de Cervelló, Begues, Torrelles,
+El Papiol, Sant Climent, La Palma de Cervelló. Inside a corridor map the town's own streets are a uniform
+"< 40 dB" (seen in Sant Cugat), so these maps are not used.
+
+**Comparability:** at the Barcelona border, SICA reads 4–9 dB louder on streets and 6–17 dB louder in courtyards
+than the Barcelona map (numbers in TODO-046 stage 2). The product owner decided to use it as is, with a note in
+the card.
 
 ## Problem
 

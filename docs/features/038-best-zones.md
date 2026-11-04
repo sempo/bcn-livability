@@ -1,5 +1,7 @@
 # Feature 038 — Best zones (Livability Index → Idealista)
 
+**Superseded by TODO-046 (2026-11-04):** computed per residential building; the H3 hex version described below was removed.
+
 ## Goal
 
 A floating bar at the bottom of the map with one button, **Draw best zones**. It finds compact zones
@@ -25,7 +27,8 @@ too complex for Idealista's `shape` parameter, so those links never worked relia
 `findZoneCells(input) → string[][]` (hexes per zone, best first); `zoneOutline(cells, baseUrl)` turns
 one zone into an Idealista-ready polygon; `findBestZones(input)` = both together.
 
-Input: final composite score per H3 cell (res 9, after risk penalties), visible bounds
+Input: final composite score per H3 cell (res 9, after risk penalties; with `VITE_FEATURE_BUILDINGS`, the
+mean score of the buildings whose centroid is in the cell — TODO-046), visible bounds
 `[west, south, east, north]`, `topPct`, Idealista base URL, and
 optionally `sticky` (zones to keep, see step 6).
 
@@ -171,7 +174,8 @@ frontend/src/
   services/bestZones.ts            — findZoneCells (smoothing, percentile, cores, ties, sticky, growth),
                                      growZone, zoneOutline, findBestZones, allowedCells
   services/idealista.ts            — polyline encoding fix
-  hooks/useBestZones.ts            — composite scores (loadBundles + computeComposite) → zones, URLs,
+  hooks/useBestZones.ts            — composite scores (loadBundles + computeComposite, or building scores
+                                     from the store averaged per cell — TODO-046) → zones, URLs,
                                      stable numbers; sticky anchor for strictness-only changes
   components/BestZones/
     BestZones.tsx                  — floating bar: Draw ↔ Clear (Esc), auto-redraw on moveend,

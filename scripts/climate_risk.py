@@ -1,19 +1,13 @@
 #!/usr/bin/env python3
 """
-Climate-risk exposure per H3 cell + view-layer tiles (features 036, 037).
+Climate-risk inputs and view-layer tiles (features 036, 037).
 
-For every cell of frontend/public/data/livability-h3.geojson compute (sampled at H3 children, like lden_avg):
-  - flood_t10 / flood_t100 / flood_t500 : share of cell area (0–1) in ACA river flood zones, forced nested
-  - fire_wui    : share of cell area (0–1) in the wildland–urban interface (Protecció Civil, Llei 5/2003)
-  - fire_hazard : mean over samples of max_px(class/10 · exp(−d/FIRE_DECAY_M)) over forest pixels
-                  (Generalitat wildfire hazard 2024, classes 1–10) within FIRE_SEARCH_RADIUS_M
-  - fire_class / fire_dist_m : class and distance of the strongest pixel at the cell centre (detail card)
-  - street_t10 / street_t100 : RESCCUE street flooding in heavy rain (Barcelona only, null elsewhere):
-                  Σ area · severity(depth) / cell area, severity ramps 0 → 1 between
-                  STREET_FLOOD_MIN_DEPTH_M and STREET_FLOOD_MAX_DEPTH_M; model elements assigned by centroid
+Hazard helpers for scripts/building_exposure.py (TODO-046: river zone, wildfire and water at the door per
+building): forest pixels of the Generalitat wildfire hazard 2024 (classes 1–10) and pixel_hazard =
+max_px(class/10 · exp(−d/FIRE_DECAY_M)) within FIRE_SEARCH_RADIUS_M, flood / WUI zones, RESCCUE street water.
 Risk scores and penalties are computed in the frontend (src/services/climateRisk/climateRisk.ts).
 
-Also builds the view layers:
+Builds the view layers over the buildings' extent (data/buildings/buildings.gpkg):
   frontend/public/data/flood-zones.pmtiles — source-layer `flood` (prop `zone`: t10 | t100 | t500)
   frontend/public/data/wildfire.pmtiles    — source-layers `hazard` (prop `class` 1–10) and `wui`
   frontend/public/data/street-flooding.pmtiles — source-layer `street` (props `rp`: t10 | t100, `class` 1–3)
@@ -21,31 +15,23 @@ Also builds the view layers:
 Inputs come from scripts/fetch_climate_risk.py (data/climate-risk/, gitignored).
 All geometry work is done in EPSG:25831 (metres).
 
-Requirements: gdal (gdal_translate, gdal_polygonize.py), tippecanoe; pip install h3 shapely geopandas pyproj numpy
-On this machine h3 is an x86_64 wheel, so run python under Rosetta:
-  arch -x86_64 python3 scripts/climate_risk.py              # enrich existing grid + build tiles
-  arch -x86_64 python3 scripts/climate_risk.py --tiles-only # rebuild only the view-layer tiles
-  arch -x86_64 python3 -m unittest scripts/test_climate_risk.py
-prepare-livability-grid.py calls enrich_grid() so a full grid rebuild keeps the fields.
+Requirements: gdal (gdal_translate), tippecanoe; pip install shapely geopandas numpy pyogrio
+  arch -x86_64 .venv-livability/bin/python scripts/climate_risk.py   # rebuild the view-layer tiles
+  arch -x86_64 .venv-livability/bin/python -m unittest scripts/test_climate_risk.py
 """
 
-import json
 import os
 import subprocess
 import sys
 import tempfile
 from dataclasses import dataclass
 
-import h3
 import numpy as np
-from pyproj import Transformer
 from shapely.geometry import Point, box
 from shapely.ops import unary_union
-from shapely.prepared import prep
 from shapely.strtree import STRtree
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-GRID_PATH = os.path.join(ROOT, "frontend/public/data/livability-h3.geojson")
 FLOOD_TILES_OUT = os.path.join(ROOT, "frontend/public/data/flood-zones.pmtiles")
 WILDFIRE_TILES_OUT = os.path.join(ROOT, "frontend/public/data/wildfire.pmtiles")
 STREET_TILES_OUT = os.path.join(ROOT, "frontend/public/data/street-flooding.pmtiles")
@@ -54,52 +40,20 @@ CLIMATE_RISK_DIR = os.path.join(ROOT, os.environ.get("CLIMATE_RISK_DIR", "data/c
 FLOOD_GPKG = os.path.join(CLIMATE_RISK_DIR, "flood_catalonia.gpkg")
 FIRE_GPKG = os.path.join(CLIMATE_RISK_DIR, "fire_catalonia.gpkg")
 FIRE_TIF = os.path.join(CLIMATE_RISK_DIR, "fire_hazard_2024.tif")
-BCN_GPKG = os.path.join(CLIMATE_RISK_DIR, "flood_bcn.gpkg")  # RESCCUE depths + barri polygons (BCN boundary)
-BCN_BOUNDARY_LAYER = "bcn_resccue_property_damage_barri"
+BCN_GPKG = os.path.join(CLIMATE_RISK_DIR, "flood_bcn.gpkg")  # RESCCUE depths
 
 FLOOD_LAYERS = {"t10": "aca_flood_zone_t10", "t100": "aca_flood_zone_t100", "t500": "aca_flood_zone_t500"}
 WUI_LAYER = "pcivil_fire_wui_zone"
-FIRE_NODATA = 15
 STREET_LAYERS = {"t10": "bcn_resccue_depth_t10_current", "t100": "bcn_resccue_depth_t100_current"}
 
-# Sample resolution defaults to grid resolution + 2 (~49 points per res-9 cell), like NOISE_SAMPLE_RES.
-CLIMATE_SAMPLE_RES = os.environ.get("CLIMATE_SAMPLE_RES")
 FIRE_SEARCH_RADIUS_M = float(os.environ.get("FIRE_SEARCH_RADIUS_M", "500"))
 FIRE_DECAY_M = float(os.environ.get("FIRE_DECAY_M", "150"))
-# Street flooding (037): depth weight ramps linearly from 0 at MIN to 1 at MAX (kerb ~15 cm; cars float ~50 cm).
+# Street-flooding view classes (037): MIN–0.30 m, 0.30–MAX, ≥ MAX (kerb ~15 cm; cars float ~50 cm).
 STREET_FLOOD_MIN_DEPTH_M = float(os.environ.get("STREET_FLOOD_MIN_DEPTH_M", "0.10"))
 STREET_FLOOD_MAX_DEPTH_M = float(os.environ.get("STREET_FLOOD_MAX_DEPTH_M", "0.50"))
-STREET_CLASS_MID_M = 0.30  # view-layer classes: MIN–0.30, 0.30–MAX, ≥ MAX
-# Margin around the grid when clipping inputs, so edge cells still see nearby forest.
+STREET_CLASS_MID_M = 0.30
+# Margin around the buildings for the view layers: every forest pixel that can reach a building is drawn.
 CLIP_MARGIN_M = FIRE_SEARCH_RADIUS_M + 500
-
-_TO_METRIC = Transformer.from_crs("EPSG:4326", "EPSG:25831", always_xy=True)
-
-
-def to_metric(lat, lng):
-    """WGS84 lat/lng → EPSG:25831 (x, y) in metres."""
-    return _TO_METRIC.transform(lng, lat)
-
-
-def cell_samples(cell, sample_res):
-    """Child-cell centroids of `cell` at `sample_res`, as metric (x, y)."""
-    return [to_metric(*h3.cell_to_latlng(c)) for c in h3.cell_to_children(cell, sample_res)]
-
-
-# ── Flood ────────────────────────────────────────────────────────────────────
-def zone_share(samples, zone):
-    """Share of sample points covered by a prepared geometry (0 when zone is None)."""
-    if zone is None or not samples:
-        return 0.0
-    return sum(1 for x, y in samples if zone.covers(Point(x, y))) / len(samples)
-
-
-def flood_shares(samples, zones):
-    """Area shares in T10/T100/T500 zones, forced nested (T10 ⊆ T100 ⊆ T500)."""
-    t10 = zone_share(samples, zones.get("t10"))
-    t100 = max(zone_share(samples, zones.get("t100")), t10)
-    t500 = max(zone_share(samples, zones.get("t500")), t100)
-    return {"flood_t10": round(t10, 3), "flood_t100": round(t100, 3), "flood_t500": round(t500, 3)}
 
 
 # ── Wildfire ─────────────────────────────────────────────────────────────────
@@ -149,67 +103,11 @@ def forest_polygons(forest, pixel_m=100):
     return out
 
 
-def fire_exposure(samples, centre_xy, wui, forest, radius_m, decay_m):
-    """WUI share + mean decayed forest hazard over samples; class/distance of the strongest pixel at the centre.
-
-    The WUI gate (fireRisk = fire_wui · fire_hazard) is applied in the frontend, so urban-park pixels
-    outside the WUI keep their hazard value here but carry no risk.
-    """
-    hazard = [pixel_hazard(x, y, forest, radius_m, decay_m)[0] for x, y in samples] if samples else [0.0]
-    _, cls, dist = pixel_hazard(*centre_xy, forest, radius_m, decay_m)
-    return {
-        "fire_wui": round(zone_share(samples, wui), 3),
-        "fire_hazard": round(float(np.mean(hazard)), 3),
-        "fire_class": cls,
-        "fire_dist_m": None if dist is None else int(round(dist)),
-    }
-
-
 # ── Street flooding (RESCCUE, feature 037) ──────────────────────────────────
-def street_severity(depths, min_m=STREET_FLOOD_MIN_DEPTH_M, max_m=STREET_FLOOD_MAX_DEPTH_M):
-    """Depth (m) → weight 0–1: 0 at ≤ min_m (water stays in the gutter), 1 at ≥ max_m."""
-    return np.clip((np.asarray(depths, dtype=float) - min_m) / (max_m - min_m), 0, 1)
-
-
 def depth_class(depths):
     """View-layer depth class: 0 below MIN (dropped), 1 MIN–0.30 m, 2 0.30–MAX, 3 ≥ MAX."""
     return np.digitize(np.asarray(depths, dtype=float),
                        [STREET_FLOOD_MIN_DEPTH_M, STREET_CLASS_MID_M, STREET_FLOOD_MAX_DEPTH_M])
-
-
-def street_shares(lats, lngs, areas, depths, h3_res):
-    """{cell: Σ area · severity(depth) / cell area} — model elements (≤ 150 m²) assigned by centroid."""
-    weighted = np.asarray(areas, dtype=float) * street_severity(depths)
-    sums = {}
-    for lat, lng, w in zip(lats, lngs, weighted):
-        if w > 0:
-            c = h3.latlng_to_cell(lat, lng, h3_res)
-            sums[c] = sums.get(c, 0.0) + w
-    return {c: w / h3.cell_area(c, "m^2") for c, w in sums.items()}
-
-
-def enrich_with_street(features, shares_by_rp, bcn_cells):
-    """street_t10/t100 in-place: share in Barcelona (0 when dry), null outside (no model there)."""
-    for feat in features:
-        props = feat["properties"]
-        for rp in STREET_LAYERS:
-            props[f"street_{rp}"] = (round(shares_by_rp.get(rp, {}).get(props["h3"], 0.0), 4)
-                                     if props["h3"] in bcn_cells else None)
-
-
-def load_bcn_boundary():
-    """Barcelona municipality (union of barris, EPSG:25831), prepared — or None when data is missing."""
-    import geopandas as gpd
-
-    if not os.path.exists(BCN_GPKG):
-        return None
-    return prep(gpd.read_file(BCN_GPKG, layer=BCN_BOUNDARY_LAYER).to_crs(25831).union_all())
-
-
-def cells_in(features, boundary):
-    """Cells whose centre falls inside a prepared metric boundary."""
-    return {f["properties"]["h3"] for f in features
-            if boundary.covers(Point(*to_metric(*h3.cell_to_latlng(f["properties"]["h3"]))))}
 
 
 def load_street_elements(rp):
@@ -219,62 +117,7 @@ def load_street_elements(rp):
     return gpd.read_file(BCN_GPKG, layer=STREET_LAYERS[rp], columns=["area2d", "depth2d"]).to_crs(25831)
 
 
-def enrich_grid_street(features, h3_res):
-    """Street-flooding fields for the grid; all null when RESCCUE data is missing."""
-    boundary = load_bcn_boundary()
-    if boundary is None:
-        print("   RESCCUE data missing — street_* fields will be null.", file=sys.stderr)
-        enrich_with_street(features, {}, bcn_cells=set())
-        return
-    to_wgs = Transformer.from_crs("EPSG:25831", "EPSG:4326", always_xy=True)
-    shares = {}
-    for rp in STREET_LAYERS:
-        print(f"Scoring street flooding {rp} (severity {STREET_FLOOD_MIN_DEPTH_M:.2f}→{STREET_FLOOD_MAX_DEPTH_M:.2f} m)…")
-        el = load_street_elements(rp)
-        c = el.geometry.centroid
-        lngs, lats = to_wgs.transform(c.x.values, c.y.values)
-        shares[rp] = street_shares(lats, lngs, el["area2d"].values, el["depth2d"].values, h3_res)
-    enrich_with_street(features, shares, cells_in(features, boundary))
-
-
-# ── Grid enrichment ──────────────────────────────────────────────────────────
-@dataclass
-class ClimateInputs:
-    zones: dict  # {"t10" | "t100" | "t500": prepared geometry}
-    wui: object  # prepared geometry
-    forest: Forest
-
-
-CLIMATE_FIELDS = ("flood_t10", "flood_t100", "flood_t500", "fire_wui", "fire_hazard", "fire_class", "fire_dist_m")
-
-
-def enrich_with_climate(features, inputs, sample_res, radius_m=FIRE_SEARCH_RADIUS_M, decay_m=FIRE_DECAY_M):
-    """Inject climate fields into grid features in-place. inputs=None → all fields null (no penalty)."""
-    for n, feat in enumerate(features):
-        props = feat["properties"]
-        if inputs is None:
-            props.update({k: None for k in CLIMATE_FIELDS})
-            continue
-        cell = props["h3"]
-        samples = cell_samples(cell, sample_res)
-        centre = to_metric(*h3.cell_to_latlng(cell))
-        props.update(flood_shares(samples, inputs.zones))
-        props.update(fire_exposure(samples, centre, inputs.wui, inputs.forest, radius_m, decay_m))
-        if (n + 1) % 1000 == 0:
-            print(f"   {n + 1}/{len(features)} cells")
-
-
-def grid_bounds_metric(features, margin_m=CLIP_MARGIN_M):
-    """Metric bbox (minx, miny, maxx, maxy) of the grid cells plus a margin."""
-    xs, ys = [], []
-    for f in features:
-        for lng, lat in f["geometry"]["coordinates"][0]:
-            x, y = to_metric(lat, lng)
-            xs.append(x)
-            ys.append(y)
-    return min(xs) - margin_m, min(ys) - margin_m, max(xs) + margin_m, max(ys) + margin_m
-
-
+# ── Inputs ───────────────────────────────────────────────────────────────────
 def _read_union(gpkg, layer, bounds):
     import geopandas as gpd
 
@@ -307,47 +150,16 @@ def load_forest(bounds):
     return make_forest(pts, classes)
 
 
-def load_inputs(bounds):
-    """Loads flood zones, WUI and forest pixels clipped to bounds, or None when data is missing."""
-    missing = [p for p in (FLOOD_GPKG, FIRE_GPKG, FIRE_TIF) if not os.path.exists(p)]
-    if missing:
-        print(f"   Climate-risk inputs missing ({', '.join(missing)}) — fields will be null.", file=sys.stderr)
-        return None
-    print("Loading flood zones…")
-    zones = {}
-    for key, layer in FLOOD_LAYERS.items():
-        g = _read_union(FLOOD_GPKG, layer, bounds)
-        zones[key] = prep(g) if g is not None else None
-    print("Loading WUI zone…")
-    wui = _read_union(FIRE_GPKG, WUI_LAYER, bounds)
-    print("Loading forest hazard pixels…")
-    forest = load_forest(bounds)
-    print(f"   forest pixels: {len(forest.classes)}")
-    return ClimateInputs(zones=zones, wui=prep(wui) if wui is not None else None, forest=forest)
-
-
-def enrich_grid(features, h3_res):
-    """Entry point used by prepare-livability-grid.py."""
-    sample_res = int(CLIMATE_SAMPLE_RES) if CLIMATE_SAMPLE_RES else h3_res + 2
-    inputs = load_inputs(grid_bounds_metric(features))
-    print(f"Scoring climate exposure (sample res {sample_res}, radius {FIRE_SEARCH_RADIUS_M:.0f} m, "
-          f"decay {FIRE_DECAY_M:.0f} m)…")
-    enrich_with_climate(features, inputs, sample_res)
-    enrich_grid_street(features, h3_res)
-    return inputs is not None
-
-
 # ── View layers (PMTiles) ────────────────────────────────────────────────────
 def _write_geojson(gdf, path):
     gdf.to_crs(4326).to_file(path, driver="GeoJSON")
 
 
-def build_view_tiles(features):
-    """Flood zones + wildfire hazard/WUI clipped to the grid → PMTiles for the map layers."""
+def build_view_tiles(bounds):
+    """Flood zones, wildfire hazard/WUI and street flooding within bounds (EPSG:25831) → PMTiles for the map."""
     import geopandas as gpd
     import pandas as pd
 
-    bounds = grid_bounds_metric(features, margin_m=0)
     with tempfile.TemporaryDirectory() as tmp:
         print("Building flood-zones.pmtiles…")
         parts = []
@@ -397,50 +209,15 @@ def _tippecanoe(out, layers):
     print(f"   -> {os.path.basename(out)} ({os.path.getsize(out) // 1024} KB)")
 
 
-# ── Calibration stats ────────────────────────────────────────────────────────
-def print_stats(features):
-    """Share of cells touched by each hazard, split Barcelona / rest of the grid."""
-    bcn = load_bcn_boundary()
-    groups = {"Barcelona": [], "Rest of grid": []}
-    for f in features:
-        p = f["properties"]
-        x, y = to_metric(*h3.cell_to_latlng(p["h3"]))
-        in_bcn = bcn is not None and bcn.covers(Point(x, y))
-        groups["Barcelona" if in_bcn else "Rest of grid"].append(p)
-    for name, ps in groups.items():
-        if not ps or ps[0].get("flood_t500") is None:
-            continue
-        n = len(ps)
-        pct = lambda cond: 100 * sum(1 for p in ps if cond(p)) / n  # noqa: E731
-        fire = [p["fire_wui"] * p["fire_hazard"] for p in ps]
-        print(f"   {name}: {n} cells | T10 {pct(lambda p: p['flood_t10'] > 0):.1f}% · "
-              f"T100 {pct(lambda p: p['flood_t100'] > 0):.1f}% · T500 {pct(lambda p: p['flood_t500'] > 0):.1f}% | "
-              f"WUI {pct(lambda p: p['fire_wui'] > 0):.1f}% | fire exposure p50/p90/max "
-              f"{np.percentile(fire, 50):.2f}/{np.percentile(fire, 90):.2f}/{max(fire):.2f}")
-        for rp in STREET_LAYERS:
-            v = [p[f"street_{rp}"] for p in ps if p.get(f"street_{rp}") is not None]
-            if v:
-                print(f"      street {rp}: {len(v)} cells, >0 {100 * np.mean(np.array(v) > 0):.1f}% | "
-                      f"p50/p90/p99/max {np.percentile(v, 50):.3f}/{np.percentile(v, 90):.3f}/"
-                      f"{np.percentile(v, 99):.3f}/{max(v):.3f}")
-
-
 def main():
-    if not os.path.exists(GRID_PATH):
-        sys.exit(f"Grid not found: {GRID_PATH} — run prepare-livability-grid.py first")
-    with open(GRID_PATH) as f:
-        grid = json.load(f)
-    features = grid["features"]
-    if "--tiles-only" not in sys.argv:
-        h3_res = h3.get_resolution(features[0]["properties"]["h3"])
-        if not enrich_grid(features, h3_res):
-            sys.exit("Climate-risk inputs missing — run scripts/fetch_climate_risk.py first")
-        with open(GRID_PATH, "w") as f:
-            json.dump(grid, f, separators=(",", ":"))
-        print(f"   -> {os.path.basename(GRID_PATH)} ({os.path.getsize(GRID_PATH) // 1024} KB)")
-    build_view_tiles(features)
-    print("\nCalibration:")
-    print_stats(features)
+    import pyogrio
+    from prepare_buildings import OUT_GPKG as BUILDINGS_GPKG
+
+    if not BUILDINGS_GPKG.exists():
+        sys.exit(f"Buildings not found: {BUILDINGS_GPKG} — run scripts/prepare_buildings.py first")
+    minx, miny, maxx, maxy = pyogrio.read_info(BUILDINGS_GPKG, layer="buildings", force_total_bounds=True)["total_bounds"]
+    m = CLIP_MARGIN_M
+    build_view_tiles((minx - m, miny - m, maxx + m, maxy + m))
 
 
 if __name__ == "__main__":

@@ -1,5 +1,7 @@
 # 036 — Climate risk penalties (flood + wildfire)
 
+**Superseded by TODO-046 (2026-11-04):** computed per residential building; the H3 hex version described below was removed.
+
 ## Goal
 
 Add two official climate-hazard signals to the Livability Index — **river flood** and **wildfire** —

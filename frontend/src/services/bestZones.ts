@@ -27,8 +27,8 @@ const MAX_VERTICES = Number(import.meta.env.VITE_BEST_ZONES_MAX_VERTICES ?? 20)
 // Idealista 400s on over-long shapes (probed: ~600 chars works, ~1800 fails).
 const MAX_URL_CHARS = Number(import.meta.env.VITE_IDEALISTA_MAX_URL_CHARS ?? 900)
 const MAX_SIMPLIFY_STEPS = 12
-// Livability grid resolution (scripts/prepare-livability-grid.py).
-const RES = 9
+// Zone grid resolution (~0.1 km² cells): each cell scores the mean of the buildings in it (TODO-046).
+export const RES = 9
 
 /** Mean score over each cell and its 6 neighbours (known cells only) — kills salt-and-pepper. */
 export function smoothScores(scores: Map<string, number>): Map<string, number> {

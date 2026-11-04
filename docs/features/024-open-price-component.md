@@ -1,5 +1,7 @@
 # Feature 024 — Open Price Component (INCASOL)
 
+**Superseded by TODO-046 (2026-11-04):** computed per residential building; the H3 hex version described below was removed.
+
 ## Goal
 
 Add a **Market Price** component to the Livability Index based on **open government data

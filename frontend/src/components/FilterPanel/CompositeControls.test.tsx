@@ -55,6 +55,17 @@ describe('CompositeControls', () => {
     expect(screen.getByText('Noise')).toBeTruthy()
     expect(screen.getByText('City Core Access')).toBeTruthy()
     expect(screen.getByText('Market Price')).toBeTruthy()
+    expect(screen.getByText("Locals' opinion")).toBeTruthy()
+  })
+
+  it("locals' opinion is off by default and turns on at weight 5 (042)", () => {
+    useStore.setState({ compositeVisible: true })
+    renderControls()
+    const box = screen.getByLabelText("Enable Locals' opinion") as HTMLInputElement
+    expect(box.checked).toBe(false)
+    fireEvent.click(box)
+    expect(useStore.getState().compositeWeights.localsOpinion).toBe(5)
+    expect(screen.getByLabelText("Locals' opinion weight")).toBeTruthy()
   })
 
   it('enables the layer on toggle', () => {
@@ -96,6 +107,20 @@ describe('CompositeControls', () => {
     renderControls()
     fireEvent.click(screen.getByLabelText('Configure City Core Access'))
     expect(screen.getByText('City Core landmarks')).toBeTruthy()
+  })
+
+  it('walkability gear: the user drops services, but never the last one (TODO-046)', () => {
+    useStore.setState({ compositeVisible: true, enabledWalkCategories: ['school', 'clinic'] })
+    renderControls()
+    fireEvent.click(screen.getByLabelText('Configure Walkability'))
+    expect(screen.getByText('Walkability services')).toBeTruthy()
+    fireEvent.click(screen.getByLabelText('🎓 School'))
+    expect(useStore.getState().enabledWalkCategories).toEqual(['clinic'])
+    expect(JSON.parse(localStorage.getItem('bcn_walk_categories')!)).toEqual(['clinic'])
+    fireEvent.click(screen.getByLabelText('🏥 Clinic'))
+    expect(useStore.getState().enabledWalkCategories).toEqual(['clinic'])
+    fireEvent.click(screen.getByLabelText('All services'))
+    expect(useStore.getState().enabledWalkCategories).toHaveLength(10)
   })
 
   describe('risk penalties (036)', () => {

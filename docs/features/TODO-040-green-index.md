@@ -1,5 +1,7 @@
 # TODO-040 — Green index (tree canopy around home)
 
+**Note (2026-11-04):** the hexes were removed in TODO-046; where this file says hex / cell, read building.
+
 ## Goal
 
 Add a **Greenery** component to the Livability Index: the share of tree canopy within 300 m of a cell.

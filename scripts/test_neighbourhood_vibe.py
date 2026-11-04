@@ -1,10 +1,13 @@
-"""Unit tests for build_neighbourhood_vibe helpers (review tagging, name matching, ESM scores)."""
+"""Unit tests for build_neighbourhood_vibe helpers (review tagging, name matching, ESM scores, frontend export)."""
 
 import unittest
 
+import numpy as np
 import pandas as pd
 
-from build_neighbourhood_vibe import norm, score_0_10, tag_reviews, wshare
+from build_neighbourhood_vibe import (
+    PROBLEMS, barri_vibe_json, norm, score_0_10, shrink, tag_reviews, wshare,
+)
 
 
 class TagReviews(unittest.TestCase):
@@ -47,6 +50,36 @@ class Helpers(unittest.TestCase):
         s = pd.Series(["UN DELS MILLORS", "UN DELS PITJORS", "NO HO SAP", "UN DELS MILLORS"])
         w = pd.Series([1.0, 1.0, 5.0, 2.0])
         self.assertAlmostEqual(wshare(s, w, {"UN DELS MILLORS"}), 75.0)
+
+
+class Shrink(unittest.TestCase):
+    def test_no_interviews_gives_gran_barri_mean(self):
+        self.assertEqual(shrink(6.0, 0, 8.0, k=100), 8.0)
+
+    def test_n_equal_k_is_midpoint(self):
+        self.assertEqual(shrink(6.0, 100, 8.0, k=100), 7.0)
+
+    def test_large_sample_stays_close_to_barri_mean(self):
+        self.assertAlmostEqual(shrink(6.0, 900, 8.0, k=100), 6.2)
+
+
+class FrontendExport(unittest.TestCase):
+    def test_barri_vibe_json(self):
+        probs = {f"esm_prob_{k}_pct": [10.0, 30.0] for k in PROBLEMS}
+        vibe = pd.DataFrame({
+            "BARRI": ["01", "02"], "NOM": ["el Raval", "la Clota"], "esm_n": [770, 19],
+            "esm_satisf": [6.551, 8.0], "esm_satisf_adj": [6.6, 7.9], "esm_stay_pct": [36.1, 70.0],
+            "esm_satisf_delta": [-0.62, np.nan], **probs,
+        })
+        out = barri_vibe_json(vibe)
+        self.assertNotIn("hexes", out)
+        self.assertEqual(out["city"]["satisf"], 7.28)
+        self.assertEqual(out["city"]["problems"]["insecurity"], 20.0)
+        self.assertNotIn("none", out["city"]["problems"])
+        raval, clota = out["barris"]["01"], out["barris"]["02"]
+        self.assertEqual((raval["name"], raval["satisf"], raval["delta"], raval["lowN"]), ("el Raval", 6.55, -0.6, False))
+        self.assertTrue(clota["lowN"])
+        self.assertIsNone(clota["delta"])
 
 
 if __name__ == "__main__":

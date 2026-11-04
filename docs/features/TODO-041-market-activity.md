@@ -1,5 +1,7 @@
 # TODO-041 — Market activity (sale & rental turnover per barri)
 
+**Note (2026-11-04):** the hexes were removed in TODO-046; where this file says hex / cell, read building.
+
 **Status:** Draft. Not planned yet.
 
 ## Goal

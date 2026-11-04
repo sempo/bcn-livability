@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { landmarkScore, cellCityCoreIndex } from './cityCoreScore'
-import type { CityCoreCellProps } from './cityCoreData'
+import { landmarkScore, cityCoreIndex } from './cityCoreScore'
+import type { LandmarkMinutes } from './cityCoreScore'
 
 describe('landmarkScore', () => {
   it('returns 100 at exactly 0 minutes', () => {
@@ -37,9 +37,8 @@ describe('landmarkScore', () => {
   })
 })
 
-describe('cellCityCoreIndex', () => {
-  const props: CityCoreCellProps = {
-    h3: 'abc',
+describe('cityCoreIndex', () => {
+  const props: LandmarkMinutes = {
     sagrada: 10,
     placa_cat: 5,
     barceloneta: 30,
@@ -53,26 +52,26 @@ describe('cellCityCoreIndex', () => {
   }
 
   it('returns 0 when no landmarks are enabled', () => {
-    expect(cellCityCoreIndex(props, [])).toBe(0)
+    expect(cityCoreIndex(props, [])).toBe(0)
   })
 
   it('returns score for a single landmark', () => {
     // sagrada = 10 min → 100
-    expect(cellCityCoreIndex(props, ['sagrada'])).toBe(100)
+    expect(cityCoreIndex(props, ['sagrada'])).toBe(100)
     // barceloneta = 30 min → 75
-    expect(cellCityCoreIndex(props, ['barceloneta'])).toBe(75)
+    expect(cityCoreIndex(props, ['barceloneta'])).toBe(75)
   })
 
   it('averages scores across enabled landmarks', () => {
     // sagrada=100, placa_cat=100 → avg=100
-    expect(cellCityCoreIndex(props, ['sagrada', 'placa_cat'])).toBe(100)
+    expect(cityCoreIndex(props, ['sagrada', 'placa_cat'])).toBe(100)
     // sagrada=100, barceloneta=75 → avg=87.5 → 88
-    expect(cellCityCoreIndex(props, ['sagrada', 'barceloneta'])).toBe(88)
+    expect(cityCoreIndex(props, ['sagrada', 'barceloneta'])).toBe(88)
   })
 
   it('treats null minutes as score 0', () => {
     const withNull: CityCoreCellProps = { ...props, sagrada: null }
     // sagrada=0, placa_cat=100 → avg=50
-    expect(cellCityCoreIndex(withNull, ['sagrada', 'placa_cat'])).toBe(50)
+    expect(cityCoreIndex(withNull, ['sagrada', 'placa_cat'])).toBe(50)
   })
 })

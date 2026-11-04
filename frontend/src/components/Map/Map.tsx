@@ -14,7 +14,8 @@ import { NoiseLayer } from '../NoiseLayer/NoiseLayer'
 import { FloodZonesLayer } from '../FloodZonesLayer/FloodZonesLayer'
 import { WildfireLayer } from '../WildfireLayer/WildfireLayer'
 import { StreetFloodingLayer } from '../StreetFloodingLayer/StreetFloodingLayer'
-import { CompositeLayer } from '../CompositeLayer/CompositeLayer'
+import { BuildingsLayer } from '../BuildingsLayer/BuildingsLayer'
+import { FacadeNoiseLayer } from '../BuildingsLayer/FacadeNoiseLayer'
 import { WalkabilityLayer } from '../WalkabilityLayer/WalkabilityLayer'
 import { PoiLayer } from '../PoiLayer/PoiLayer'
 import { ExclusionLayer } from '../ExclusionLayer/ExclusionLayer'
@@ -163,7 +164,8 @@ export function Map() {
     <MapContext.Provider value={mapInstance}>
       <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
       {/* Layer z-order: first rendered = bottom of stack */}
-      <CompositeLayer />
+      <BuildingsLayer />
+      <FacadeNoiseLayer />
       <LandmarksLayer />
       <NoiseLayer />
       <FloodZonesLayer />

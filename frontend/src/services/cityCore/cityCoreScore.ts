@@ -1,7 +1,8 @@
-import type { CityCoreCellProps } from './cityCoreData'
+/** Walking minutes to each landmark, by landmark id; null / missing = beyond reach. */
+export type LandmarkMinutes = Partial<Record<string, number | null>>
 
 /**
- * Score (0–100) for a single landmark given walking minutes from that cell.
+ * Score (0–100) for a single landmark given the walking minutes to it.
  *   ≤ 15 min → 100
  *   15–30    → linear 100 → 75
  *   30–45    → linear 75  → 50
@@ -18,17 +19,11 @@ export function landmarkScore(minutes: number | null | undefined): number {
 }
 
 /**
- * City Core Access index (0–100) for one H3 cell.
- * Average of landmarkScore() over the enabled landmark IDs.
+ * City Core Access index (0–100): average of landmarkScore() over the enabled landmark IDs.
  * Returns 0 if no landmarks are enabled.
  */
-export function cellCityCoreIndex(
-  props: CityCoreCellProps,
-  enabledIds: readonly string[],
-): number {
+export function cityCoreIndex(minutes: LandmarkMinutes, enabledIds: readonly string[]): number {
   if (enabledIds.length === 0) return 0
-  const scores = enabledIds.map((id) =>
-    landmarkScore(props[id as keyof CityCoreCellProps] as number | null | undefined),
-  )
+  const scores = enabledIds.map((id) => landmarkScore(minutes[id]))
   return Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)
 }

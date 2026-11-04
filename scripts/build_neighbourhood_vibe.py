@@ -9,12 +9,22 @@ Layers in data/neighbourhood-vibe/neighbourhood_vibe.gpkg:
   vibe_barri        — 73 barris, ESM indicators (esm_*) + Airbnb aggregates (abnb_*)
   esm_granbarri     — 39 grans barris (ESM sample is stratified at this level), ESM indicators
   airbnb_listings   — listing points (location is jittered by Airbnb up to ~150 m)
-Plus vibe_barri.csv / esm_granbarri.csv (same attributes, no geometry).
+Plus vibe_barri.csv / esm_granbarri.csv (same attributes, no geometry), and for the frontend
+(042, "Locals' opinion"): frontend/public/data/barri-vibe.json — per-barri ESM fields and city medians.
+Buildings get their barri code in scripts/build_building_tiles.py.
+
+Env (pipeline; rerun the script after changing):
+  VIBE_ESM_YEARS=2022-2026   ESM survey years pooled per barri
+  VIBE_ESM_MIN_N=100         barris with fewer interviews are flagged as small samples
+  VIBE_ESM_SHRINK_K=100      pull towards the gran barri mean, (n·s + k·s_gb) / (n + k);
+                             k ≈ σ²within / τ²between (≈ 93 on 2022–26 microdata)
 
 Run:
-  uv run --with geopandas --with pyogrio --with pyarrow python scripts/build_neighbourhood_vibe.py
+  uv run --with geopandas --with pyogrio --with pyarrow --with h3 python scripts/build_neighbourhood_vibe.py
 """
 
+import json
+import os
 import re
 import unicodedata
 import urllib.request
@@ -30,6 +40,7 @@ OUT_DIR = ROOT / "data" / "neighbourhood-vibe"
 RAW = OUT_DIR / "raw"
 BARRIS = ROOT / "data" / "areas" / "barris.geojson"
 GPKG = OUT_DIR / "neighbourhood_vibe.gpkg"
+FRONTEND_JSON = ROOT / "frontend" / "public" / "data" / "barri-vibe.json"
 
 IAB_SNAPSHOT = "2026-09-17"
 IAB_BASE = f"https://data.insideairbnb.com/spain/catalonia/barcelona/{IAB_SNAPSHOT}"
@@ -40,9 +51,11 @@ ESM_ZIP_URL = (
 )
 ESM_CSV = "2026_r26001_Serveis_Municipals_Evolucio2026_BD_CSVtext_v1_0.csv"
 
-ESM_YEARS = range(2022, 2027)        # pooled for sample size (~30k interviews, post-COVID)
+_y0, _y1 = os.environ.get("VIBE_ESM_YEARS", "2022-2026").split("-")
+ESM_YEARS = range(int(_y0), int(_y1) + 1)  # pooled for sample size (~30k interviews, post-COVID)
 ESM_BASELINE = range(2015, 2020)     # pre-COVID baseline for the satisfaction trend
-ESM_LOW_N = 100                      # barri estimates below this are flagged as noisy
+ESM_LOW_N = int(os.environ.get("VIBE_ESM_MIN_N", "100"))  # barri estimates below this are flagged as noisy
+ESM_SHRINK_K = float(os.environ.get("VIBE_ESM_SHRINK_K", "100"))
 REVIEW_YEARS = 3                     # Airbnb reviews window before the snapshot date
 ABNB_MIN_REVIEWS = 300               # below this, review-tag shares per barri are left empty
 NA_ANSWERS = {"NO HO SAP", "NO CONTESTA"}
@@ -160,6 +173,11 @@ def build_esm():
     return out["BARRI"], out["GRANBARRI"], recent[["BARRI", "GRANBARRI"]].drop_duplicates()
 
 
+def shrink(mean, n, prior, k=ESM_SHRINK_K):
+    """Pulls a barri mean towards its gran barri mean, more so for small samples."""
+    return (n * mean + k * prior) / (n + k)
+
+
 # ── Inside Airbnb ─────────────────────────────────────────────────────────────
 
 def tag_reviews(text: pd.Series) -> pd.DataFrame:
@@ -203,6 +221,31 @@ def build_airbnb(barris: gpd.GeoDataFrame):
     return pts, by_lst.join(by_rev)
 
 
+# ── Frontend export (042) ────────────────────────────────────────────────
+
+def barri_vibe_json(vibe: pd.DataFrame) -> dict:
+    """Card + score fields per barri and city medians (over barris)."""
+    def r(x, nd=1):
+        return None if pd.isna(x) else round(float(x), nd)
+
+    probs = [k for k in PROBLEMS if k != "none"]
+    med = vibe.median(numeric_only=True)
+    return {
+        "years": f"{ESM_YEARS.start}–{ESM_YEARS.stop - 1}",
+        "city": {"satisf": r(med.esm_satisf, 2), "stay": r(med.esm_stay_pct),
+                 "problems": {k: r(med[f"esm_prob_{k}_pct"]) for k in probs}},
+        "barris": {
+            row.BARRI: {
+                "name": row.NOM, "n": int(row.esm_n), "lowN": bool(row.esm_n < ESM_LOW_N),
+                "satisf": r(row.esm_satisf, 2), "satisfAdj": r(row.esm_satisf_adj, 2),
+                "stay": r(row.esm_stay_pct), "delta": r(row.esm_satisf_delta),
+                "problems": {k: r(getattr(row, f"esm_prob_{k}_pct")) for k in probs},
+            }
+            for row in vibe.itertuples()
+        },
+    }
+
+
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 def main():
@@ -220,8 +263,14 @@ def main():
     print("Inside Airbnb …")
     pts, abnb = build_airbnb(barris)
 
+    # ESM barri → gran barri (ESM merges some official codes, e.g. 18+19)
+    gb_of = mapping.assign(key=mapping.BARRI.map(norm)).set_index("key").GRANBARRI
+
     vibe = barris.merge(esm_b, on="key").merge(abnb, left_on="CODI", right_index=True, how="left")
     vibe["esm_low_n"] = vibe.esm_n < ESM_LOW_N
+    vibe["esm_satisf_adj"] = shrink(vibe.esm_satisf, vibe.esm_n,
+                                    vibe.key.map(gb_of).map(esm_gb.set_index("esm_name").esm_satisf))
+    assert vibe.esm_satisf_adj.notna().all(), "barri without gran barri satisfaction"
     vibe["abnb_listings"] = vibe.abnb_listings.fillna(0).astype(int)
     vibe["abnb_per_km2"] = vibe.abnb_listings / vibe.area_km2
     # > 0: guests rank the location higher than residents rank living there
@@ -230,8 +279,7 @@ def main():
                                                - vibe[rated].abnb_location_score.rank(ascending=False))
     vibe = vibe.drop(columns=["key", "esm_name"])
 
-    # gran barri geometry: ESM barri→granbarri pairs (ESM merges some official codes, e.g. 18+19)
-    gb_of = mapping.assign(key=mapping.BARRI.map(norm)).set_index("key").GRANBARRI
+    # gran barri geometry from the ESM barri→granbarri pairs
     gb = barris.assign(esm_name=barris.key.map(gb_of)).dissolve("esm_name", aggfunc="first", as_index=False)
     gb = gb[["esm_name", "DISTRICTE", "geometry"]].merge(esm_gb, on="esm_name", how="left")
     assert gb.esm_n.notna().all(), "unmatched gran barri"
@@ -243,6 +291,9 @@ def main():
     vibe.drop(columns="geometry").to_csv(OUT_DIR / "vibe_barri.csv", index=False)
     gb.drop(columns="geometry").to_csv(OUT_DIR / "esm_granbarri.csv", index=False)
     print(f"→ {GPKG}  ({len(vibe)} barris, {len(gb)} grans barris, {len(pts)} listings)")
+
+    FRONTEND_JSON.write_text(json.dumps(barri_vibe_json(vibe), ensure_ascii=False, separators=(",", ":")))
+    print(f"→ {FRONTEND_JSON}  ({len(vibe)} barris)")
 
 
 if __name__ == "__main__":

@@ -1,10 +1,13 @@
 import { useState } from 'react'
 import { ActionIcon, Checkbox, Group, Modal, Slider, Stack, Switch, Text } from '@mantine/core'
 import { IconSettings, IconInfoCircle } from '@tabler/icons-react'
-import { useStore, DEFAULT_COMPOSITE_WEIGHTS, type CompositeWeights } from '../../store'
+import { useStore, ALL_WALK_CATEGORY_IDS, DEFAULT_COMPOSITE_WEIGHTS, type CompositeWeights } from '../../store'
 import { LANDMARKS, ALL_LANDMARK_IDS } from '../../services/cityCore/landmarks'
+import { SERVICE_CATEGORIES } from '../../services/walkability/serviceCategories'
 import { DEFAULT_RISK_STRENGTHS, type RiskStrengths } from '../../services/climateRisk/climateRisk'
-import { CompositeLegend } from '../CompositeLayer/CompositeLegend'
+import { CompositeLegend } from '../BuildingsLayer/CompositeLegend'
+import { SATISF_MAX, SATISF_MIN } from '../../services/localsOpinion/localsOpinion'
+import { features } from '../../features'
 
 interface GearButtonProps {
   onClick: () => void
@@ -95,19 +98,22 @@ function InfoModal({ opened, onClose }: { opened: boolean; onClose: () => void }
         <Stack gap={6}>
           <Text size="sm" fw={600}>Walkability</Text>
           <Text size="xs" c="dimmed">
-            Scores how well-served a location is by 10 everyday services: supermarket, pharmacy,
-            park, school, kindergarten, clinic, metro, café, restaurant, beach. For each category,
-            an exponential distance-decay score is computed from the cell centroid
-            (decay half-distance ~400 m, max radius 1 500 m). The final walkability is the weighted
-            mean across all 10 categories, normalised to 0–100.
+            Scores how well-served a building is by everyday services: supermarket, pharmacy,
+            park, school, kindergarten, clinic, metro, café, restaurant, beach. Distances are walked
+            along the street network from the building's entrance (OSM); parks and beaches count to
+            their edge. Closer services count more (decay ~400 m, max 1 500 m). Use the gear icon to
+            pick which services count — the score is the mean over the ones you keep, 0–100.
           </Text>
         </Stack>
 
         <Stack gap={6}>
           <Text size="sm" fw={600}>Noise</Text>
           <Text size="xs" c="dimmed">
-            Based on Lden (day-evening-night equivalent level, dB) from Barcelona's 2022 strategic
-            noise map. Formula: score = clamp((75 − Lden) / 30 × 100, 0, 100).
+            Lden (day-evening-night level, dB) along every exposed facade of the building — street
+            and courtyard sides — averaged by facade length: the noise of a typical window. Barcelona:
+            the city's 2022 strategic noise map; 14 AMB municipalities: their 2022 official maps (SICA),
+            a different model that reads a few dB louder.{' '}
+            Formula: score = clamp((75 − Lden) / 30 × 100, 0, 100).
             Very quiet (≤ 45 dB) → 100 · WHO recommended (53 dB) → 73 · EU action level (55 dB) →
             67 · highly noisy (≥ 75 dB) → 0.
           </Text>
@@ -117,7 +123,8 @@ function InfoModal({ opened, onClose }: { opened: boolean; onClose: () => void }
           <Text size="sm" fw={600}>City Core Access</Text>
           <Text size="xs" c="dimmed">
             Average walking-minute score across your selected landmarks (Sagrada Família, Plaça
-            Catalunya…). Per-landmark score: ≤ 15 min → 100, 30 min → 75, 45 min → 50,
+            Catalunya…), walked along the street network from the building.
+            Per-landmark score: ≤ 15 min → 100, 30 min → 75, 45 min → 50,
             90 min → 25, &gt; 90 min → 0. Use the gear icon to pick which landmarks count.
           </Text>
         </Stack>
@@ -131,26 +138,39 @@ function InfoModal({ opened, onClose }: { opened: boolean; onClose: () => void }
           </Text>
         </Stack>
 
+        {features.localsOpinion && (
+          <Stack gap={6}>
+            <Text size="sm" fw={600}>Locals' opinion</Text>
+            <Text size="xs" c="dimmed">
+              How satisfied residents are with living in their barri (0–10), from Barcelona's
+              municipal services survey (ESM, 2022–2026, about 30,000 interviews). Barris with few
+              interviews are pulled towards their wider area (gran barri). Stretched to 0–100:
+              {' '}{SATISF_MIN} → 0, {SATISF_MAX} → 100. Barcelona city only — buildings outside count
+              as missing data.
+            </Text>
+          </Stack>
+        )}
+
         <Stack gap={6}>
           <Text size="sm" fw={600}>Risk penalties</Text>
           <Text size="xs" c="dimmed">
-            Climate risks are not averaged in — they reduce the score of exposed cells only:
-            score × (1 − strength/10 × risk). Safe cells keep their score; strength 10 on a cell
-            fully in the highest-risk zone drives it to 0.
+            Climate risks are not averaged in — they reduce the score of exposed buildings only:
+            score × (1 − strength/10 × risk). Safe buildings keep their score; strength 10 on a
+            building in the highest-risk zone drives it to 0.
           </Text>
           <Text size="xs" c="dimmed">
-            <b>River flood risk</b> — share of the cell inside official river flood zones (ACA): 10-year
+            <b>River flood risk</b> — the building touches one of the official river flood zones (ACA): 10-year
             zone counts fully, 100-year 60%, 500-year 25%. Rivers overflowing only — rain water on
             streets is the separate Street flooding risk.
           </Text>
           <Text size="xs" c="dimmed">
-            <b>Wildfire risk</b> — share of the cell inside the wildland–urban interface (Protecció
+            <b>Wildfire risk</b> — the building touches the wildland–urban interface (Protecció
             Civil, zones around forests ≥ 5 ha) × the hazard of the nearest forest (Generalitat
             structural wildfire hazard map 2024, classes 1–10), fading with distance. A static
             hazard map, not a forecast; recent burned areas are not reflected.
           </Text>
           <Text size="xs" c="dimmed">
-            <b>Street flooding risk</b> — how much of the cell is under water in a 10-year and a
+            <b>Street flooding risk</b> — how deep the water gets at the building's door in a 10-year and a
             100-year rain (RESCCUE drainage model, Barcelona only). Depth is weighted smoothly: water
             up to 10 cm stays in the gutter and counts 0, 50 cm or more counts fully. Matters most for
             ground-floor flats, basements and underground parking.
@@ -171,14 +191,17 @@ export function CompositeControls() {
   const setEnabledIds = useStore((s) => s.setEnabledLandmarkIds)
   const riskStrengths = useStore((s) => s.compositeRiskStrengths)
   const setRiskStrengths = useStore((s) => s.setCompositeRiskStrengths)
+  const walkCategories = useStore((s) => s.enabledWalkCategories)
+  const setWalkCategories = useStore((s) => s.setEnabledWalkCategories)
 
   const [cityModalOpen, setCityModalOpen] = useState(false)
+  const [walkModalOpen, setWalkModalOpen] = useState(false)
   const [infoModalOpen, setInfoModalOpen] = useState(false)
 
   function weightRow(id: keyof CompositeWeights) {
     return {
       weight: weights[id],
-      defaultWeight: DEFAULT_COMPOSITE_WEIGHTS[id],
+      defaultWeight: DEFAULT_COMPOSITE_WEIGHTS[id] || 5,
       onChange: (value: number) => setWeights({ ...weights, [id]: value }),
     }
   }
@@ -199,6 +222,11 @@ export function CompositeControls() {
       const next = enabledIds.filter((i) => i !== id)
       if (next.length > 0) setEnabledIds(next)
     }
+  }
+
+  function toggleWalkCategory(id: string, checked: boolean) {
+    const next = checked ? [...walkCategories, id] : walkCategories.filter((i) => i !== id)
+    if (next.length > 0) setWalkCategories(next)
   }
 
   return (
@@ -234,6 +262,35 @@ export function CompositeControls() {
         </Stack>
       </Modal>
 
+      <Modal
+        opened={walkModalOpen}
+        onClose={() => setWalkModalOpen(false)}
+        title="Walkability services"
+        size="sm"
+      >
+        <Stack gap={6} pb={8}>
+          {SERVICE_CATEGORIES.map((cat) => (
+            <Checkbox
+              key={cat.id}
+              label={`${cat.emoji} ${cat.label}`}
+              size="xs"
+              checked={walkCategories.includes(cat.id)}
+              onChange={(e) => toggleWalkCategory(cat.id, e.currentTarget.checked)}
+            />
+          ))}
+          <Checkbox
+            label="All services"
+            size="xs"
+            checked={walkCategories.length === ALL_WALK_CATEGORY_IDS.length}
+            indeterminate={walkCategories.length > 0 && walkCategories.length < ALL_WALK_CATEGORY_IDS.length}
+            onChange={(e) =>
+              setWalkCategories(e.currentTarget.checked ? ALL_WALK_CATEGORY_IDS : [ALL_WALK_CATEGORY_IDS[0]])
+            }
+            styles={{ root: { borderTop: '1px solid #eee', paddingTop: 6, marginTop: 4 } }}
+          />
+        </Stack>
+      </Modal>
+
       <Stack gap={8}>
         <Group gap={4} wrap="nowrap" align="center">
           <Switch
@@ -255,11 +312,15 @@ export function CompositeControls() {
         </Group>
         {visible && (
           <Stack gap={10} pl={28}>
-            <ComponentRow label="Walkability" {...weightRow('poiAccess')} />
+            <ComponentRow label="Walkability" {...weightRow('poiAccess')}
+              onGear={() => setWalkModalOpen(true)} />
             <ComponentRow label="Noise" {...weightRow('noise')} />
             <ComponentRow label="City Core Access" {...weightRow('cityCore')}
               onGear={() => setCityModalOpen(true)} />
             <ComponentRow label="Market Price" {...weightRow('openPrice')} />
+            {features.localsOpinion && (
+              <ComponentRow label="Locals' opinion" {...weightRow('localsOpinion')} />
+            )}
 
             <Text size="xs" c="dimmed" mt={2}>Risk penalties</Text>
             <ComponentRow label="River flood risk" {...riskRow('flood')} />

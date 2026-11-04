@@ -12,6 +12,8 @@ interface ImportMetaEnv {
   readonly VITE_FEATURE_PINS?: string
   readonly VITE_FEATURE_IDEALISTA_PRICES?: string
   readonly VITE_FEATURE_SCREENSHOT?: string
+  readonly VITE_FEATURE_LOCALS_OPINION?: string
+  readonly VITE_FEATURE_FACADE_PHOTO?: string
 }
 
 interface ImportMeta {
