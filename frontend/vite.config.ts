@@ -30,7 +30,8 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react(), ...(stub ? [stubAnthropicSdk()] : [])],
-    base: '/',
+    // '/' for the custom domain; a fork on github.io/<repo>/ sets VITE_BASE=/<repo>/ (see deploy.yml).
+    base: env.VITE_BASE || '/',
     test: {
       environment: 'jsdom',
       globals: true,

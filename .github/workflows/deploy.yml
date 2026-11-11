@@ -38,7 +38,13 @@ jobs:
         env:
           VITE_TMB_APP_ID: ${{ secrets.VITE_TMB_APP_ID }}
           VITE_TMB_APP_KEY: ${{ secrets.VITE_TMB_APP_KEY }}
-        run: npm run build
+          # Only the upstream repo owns livability.time2map.com (base '/'). A fork is served from
+          # https://<owner>.github.io/<repo>/, so its assets live under that subpath.
+          VITE_BASE: ${{ github.repository == 'time2map/bcn-property-finder' && '/' || format('/{0}/', github.event.repository.name) }}
+        run: |
+          # The custom domain is claimed in the upstream repo's Pages settings, never by a fork's build.
+          if [ "$GITHUB_REPOSITORY" != "time2map/bcn-property-finder" ]; then rm -f public/CNAME; fi
+          npm run build
 
       - uses: actions/upload-pages-artifact@v3
         with:
