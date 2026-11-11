@@ -15,7 +15,7 @@ Synced with the code on 2026-11-11 (`frontend/src/main.tsx`, `index.css`, layer 
 
 | Element | Value |
 |---|---|
-| Livability Index | RdYlGn ramp `#d73027` → `#fc8d59` → `#fee08b` → `#91cf60` → `#1a9850`, fitted to the visible area (TODO-050 makes four absolute bands the default); fill opacity 0.75, dots 0.85 |
+| Livability Index | RdYlGn ramp `#d73027` → `#fc8d59` → `#fee08b` → `#91cf60` → `#1a9850`, fixed on 0–100 with four named bands (Great / Good / Partial / Poor match, TODO-050); "Boost contrast" fits it to the visible area (032); fill opacity 0.75, dots 0.85 |
 | Missing data | black building outline, opacity 0.7 |
 | Hovered / selected building | white outline, 2 px |
 | Best zones | `#6741d9`, dashed outline, light fill, numbered |

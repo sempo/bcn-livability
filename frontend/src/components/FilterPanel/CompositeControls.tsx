@@ -245,6 +245,8 @@ function InfoModal({ opened, onClose }: { opened: boolean; onClose: () => void }
 export function CompositeControls() {
   const visible = useStore((s) => s.compositeVisible)
   const setVisible = useStore((s) => s.setCompositeVisible)
+  const contrastBoost = useStore((s) => s.contrastBoost)
+  const setContrastBoost = useStore((s) => s.setContrastBoost)
   const weights = useStore((s) => s.compositeWeights)
   const setWeights = useStore((s) => s.setCompositeWeights)
   const enabledIds = useStore((s) => s.enabledLandmarkIds)
@@ -444,6 +446,12 @@ export function CompositeControls() {
             <StrengthRow label="Street flooding risk" {...riskRow('street')} />
 
             <CompositeLegend />
+            <Switch
+              size="xs"
+              label="Boost contrast for this view"
+              checked={contrastBoost}
+              onChange={(e) => setContrastBoost(e.currentTarget.checked)}
+            />
             <Text size="xs" c="dimmed">Black outline = missing data</Text>
           </Stack>
         )}

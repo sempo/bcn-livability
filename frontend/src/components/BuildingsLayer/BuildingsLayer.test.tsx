@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, act } from '@testing-library/react'
 import { MapContext } from '../Map/MapContext'
 import { useStore, DEFAULT_COMPOSITE_WEIGHTS } from '../../store'
@@ -33,6 +33,18 @@ vi.mock('../../services/localsOpinion/localsOpinion', async (orig) => ({
   loadBarriVibe: vi.fn(() => Promise.resolve({ barris: { '01': { satisfAdj: 7.5, lowN: false } } })),
 }))
 
+const popups: { text: string; removed: boolean; lngLat?: unknown }[] = []
+vi.mock('maplibre-gl', () => ({
+  Popup: class {
+    private entry = { text: '', removed: false } as { text: string; removed: boolean; lngLat?: unknown }
+    constructor() { popups.push(this.entry) }
+    setLngLat(l: unknown) { this.entry.lngLat = l; return this }
+    setText(t: string) { this.entry.text = t; return this }
+    addTo() { return this }
+    remove() { this.entry.removed = true; return this }
+  },
+}))
+
 import { BuildingsLayer, SOURCE_ID, DOT_LAYER_ID, FILL_LAYER_ID, GAP_LAYER_ID, HOVER_LAYER_ID } from './BuildingsLayer'
 
 function makeFakeMap() {
@@ -59,6 +71,7 @@ function makeFakeMap() {
     off: vi.fn(),
     queryRenderedFeatures: vi.fn((): unknown[] => []),
     getCanvas: () => ({ style: {} as Record<string, string> }),
+    getZoom: vi.fn(() => 15),
   }
 }
 
@@ -75,10 +88,11 @@ async function renderLayer(map: FakeMap) {
 
 describe('BuildingsLayer (TODO-046)', () => {
   beforeEach(() => {
+    popups.length = 0
     useStore.setState({
       compositeVisible: true, compositeWeights: DEFAULT_COMPOSITE_WEIGHTS, selectedBuilding: null,
       enabledWalkCategories: ['supermarket', 'park'], enabledLandmarkIds: ['sagrada'],
-      compositeRiskStrengths: { flood: 5, fire: 5, street: 5 }, compositeColorRange: [0, 100],
+      compositeRiskStrengths: { flood: 5, fire: 5, street: 5 }, compositeColorRange: [0, 100], contrastBoost: false,
       ageEras: ['before-1900', '1900-1939', '1940-1979', '1980-2006', '2007-on'], conditions: DEFAULT_CONDITIONS,
     })
   })
@@ -137,16 +151,39 @@ describe('BuildingsLayer (TODO-046)', () => {
     }
   })
 
-  it('fits the colour scale to the buildings in view', async () => {
+  /** The interpolate stops of the last paint expression set on the fill layer. */
+  const lastStops = (map: FakeMap) => {
+    const call = map.setPaintProperty.mock.calls.filter(([l, p]) => l === FILL_LAYER_ID && p === 'fill-color').at(-1)!
+    return (call[2] as unknown[][])[2].slice(3) as (number | string)[]
+  }
+  const stopValues = (stops: (number | string)[]) => stops.filter((_, i) => i % 2 === 0) as number[]
+
+  it('colours on the fixed 0–100 scale by default and does not refit when the map moves (TODO-050)', async () => {
     const map = makeFakeMap()
     await renderLayer(map)
+    expect(useStore.getState().compositeColorRange).toEqual([0, 100])
+    expect(stopValues(lastStops(map))).toEqual([0, 25, 50, 75, 100])
+    expect(lastStops(map)[9]).toBe('#1a9850')
+    handler(map, 'moveend')()
+    expect(useStore.getState().compositeColorRange).toEqual([0, 100])
+    expect(stopValues(lastStops(map))).toEqual([0, 25, 50, 75, 100])
+  })
+
+  it('Boost contrast fits the scale to the buildings in view; switching it off restores the fixed one (TODO-032, 050)', async () => {
+    const map = makeFakeMap()
+    await renderLayer(map)
+    act(() => useStore.getState().setContrastBoost(true))
     const [lo, hi] = useStore.getState().compositeColorRange
     const scores = [map.states.get(0)!.score as number, map.states.get(1)!.score as number]
     expect(lo).toBeLessThanOrEqual(Math.min(...scores))
     expect(hi).toBeGreaterThanOrEqual(Math.max(...scores))
-    expect(map.setPaintProperty).toHaveBeenCalledWith(FILL_LAYER_ID, 'fill-color', expect.anything())
-    handler(map, 'moveend')()
+    expect(stopValues(lastStops(map))[0]).toBe(lo)
+    expect(stopValues(lastStops(map))[4]).toBe(hi)
+    expect([lo, hi]).not.toEqual([0, 100])
     expect(map.setPaintProperty).toHaveBeenCalledWith(DOT_LAYER_ID, 'circle-color', expect.anything())
+    act(() => useStore.getState().setContrastBoost(false))
+    expect(stopValues(lastStops(map))).toEqual([0, 25, 50, 75, 100])
+    expect(useStore.getState().compositeColorRange).toEqual([0, 100])
   })
 
   it('click selects a building, a second click closes it; hiding the index clears it', async () => {
@@ -162,5 +199,59 @@ describe('BuildingsLayer (TODO-046)', () => {
     act(() => useStore.setState({ compositeVisible: false }))
     expect(useStore.getState().selectedBuilding).toBeNull()
     expect(map.setLayoutProperty).toHaveBeenCalledWith(FILL_LAYER_ID, 'visibility', 'none')
+  })
+
+  describe('hover tooltip (TODO-050)', () => {
+    const move = (map: FakeMap, id: number) =>
+      act(() => handler(map, 'mousemove', FILL_LAYER_ID)({ features: [{ id }], lngLat: { lng: 0.2, lat: 0.5 } }))
+
+    beforeEach(() => { vi.useFakeTimers() })
+    afterEach(() => { vi.useRealTimers() })
+
+    it('shows the band, score and conditions met after a short pause, and hides on leave', async () => {
+      vi.useRealTimers()
+      const map = makeFakeMap()
+      await renderLayer(map)
+      vi.useFakeTimers()
+      move(map, 0)
+      expect(popups).toHaveLength(0) // debounced
+      act(() => { vi.advanceTimersByTime(100) })
+      expect(popups).toHaveLength(1)
+      const score = map.states.get(0)!.score
+      expect(popups[0].text).toMatch(/^(Great|Good|Partial|Poor) match · \d+ — meets \d of 4$/)
+      expect(popups[0].text).toContain(`· ${score} `)
+      act(() => handler(map, 'mouseleave', FILL_LAYER_ID)())
+      expect(popups[0].removed).toBe(true)
+    })
+
+    it('does not show for a quick pass across buildings', async () => {
+      vi.useRealTimers()
+      const map = makeFakeMap()
+      await renderLayer(map)
+      vi.useFakeTimers()
+      move(map, 0)
+      act(() => { vi.advanceTimersByTime(20) })
+      move(map, 1)
+      act(() => { vi.advanceTimersByTime(100) })
+      expect(popups).toHaveLength(1)
+      expect(popups[0].text).toContain(`· ${map.states.get(1)!.score} `)
+    })
+
+    it('is off below zoom 14 and on touch devices', async () => {
+      vi.useRealTimers()
+      const map = makeFakeMap()
+      await renderLayer(map)
+      vi.useFakeTimers()
+      map.getZoom.mockReturnValue(12)
+      move(map, 0)
+      act(() => { vi.advanceTimersByTime(100) })
+      expect(popups).toHaveLength(0)
+      map.getZoom.mockReturnValue(15)
+      vi.stubGlobal('matchMedia', (q: string) => ({ matches: q === '(hover: none)' }))
+      move(map, 1)
+      act(() => { vi.advanceTimersByTime(100) })
+      expect(popups).toHaveLength(0)
+      vi.unstubAllGlobals()
+    })
   })
 })

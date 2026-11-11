@@ -19,6 +19,25 @@ describe('layer visibility defaults', () => {
   })
 })
 
+describe('contrast boost (TODO-050)', () => {
+  it('is off by default, remembered, and switching it off resets the colour range to 0–100', async () => {
+    localStorage.clear()
+    vi.resetModules()
+    const { useStore: fresh } = await import('./index')
+    expect(fresh.getState().contrastBoost).toBe(false)
+    fresh.getState().setContrastBoost(true)
+    fresh.getState().setCompositeColorRange([45, 80])
+    expect(localStorage.getItem('bcn_contrast_boost')).toBe('true')
+    fresh.getState().setContrastBoost(false)
+    expect(localStorage.getItem('bcn_contrast_boost')).toBe('false')
+    expect(fresh.getState().compositeColorRange).toEqual([0, 100])
+    localStorage.setItem('bcn_contrast_boost', 'true')
+    vi.resetModules()
+    const { useStore: again } = await import('./index')
+    expect(again.getState().contrastBoost).toBe(true)
+  })
+})
+
 function setSearch(search: string) {
   Object.defineProperty(window, 'location', {
     value: { ...window.location, search },

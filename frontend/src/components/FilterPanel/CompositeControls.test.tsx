@@ -37,7 +37,7 @@ describe('CompositeControls', () => {
     useStore.setState({
       compositeVisible: false,
       compositeWeights: { ...DEFAULT_COMPOSITE_WEIGHTS },
-      compositeColorRange: [0, 100],
+      compositeColorRange: [0, 100], contrastBoost: false,
       idealistaPriceBounds: null,
       enabledLandmarkIds: ['sagrada', 'barceloneta'],
       compositeRiskStrengths: { flood: 5, fire: 5, street: 5 },
@@ -57,6 +57,19 @@ describe('CompositeControls', () => {
     expect(useStore.getState().conditions.noiseMaxDb).toBe(55)
     expect(screen.getByText('Up to 55 dB is OK for me — like a calm street')).toBeTruthy()
     expect(JSON.parse(localStorage.getItem('bcn_conditions')!).noiseMaxDb).toBe(55)
+  })
+
+  it('Boost contrast switch is under the legend, off by default (TODO-050)', () => {
+    useStore.setState({ compositeVisible: true, contrastBoost: false })
+    renderControls()
+    expect(screen.getByText('Great match')).toBeTruthy()
+    const toggle = screen.getByLabelText('Boost contrast for this view') as HTMLInputElement
+    expect(toggle.checked).toBe(false)
+    fireEvent.click(toggle)
+    expect(useStore.getState().contrastBoost).toBe(true)
+    expect(screen.getByLabelText('Composite score colour scale')).toBeTruthy()
+    fireEvent.click(toggle)
+    expect(useStore.getState().contrastBoost).toBe(false)
   })
 
   it('a subset of services or places is said so', () => {
@@ -138,8 +151,8 @@ describe('CompositeControls', () => {
     expect(useStore.getState().compositeWeights.noise).toBe(1)
   })
 
-  it('legend shows the colour range of the visible area; no score range slider (TODO-032)', () => {
-    useStore.setState({ compositeVisible: true, compositeColorRange: [58, 84] })
+  it('with Boost contrast on, the legend shows the colour range of the visible area; no score range slider (TODO-032, 050)', () => {
+    useStore.setState({ compositeVisible: true, contrastBoost: true, compositeColorRange: [58, 84] })
     renderControls()
     expect(screen.getByText('58')).toBeTruthy()
     expect(screen.getByText('84')).toBeTruthy()

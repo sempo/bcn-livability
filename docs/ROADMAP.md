@@ -18,7 +18,7 @@ dependencies. Status lives in the feature files.
 
 | Order | Feature | Depends on |
 |---|---|---|
-| B1 | TODO-050 match bands, card header | — |
+| B1 | 050 match bands, card header (done 2026-11-11) | — |
 | B2 | TODO-044 address / area search | — |
 | B3 | TODO-031 onboarding quiz and presets | B1 |
 | B4 | TODO-051 ranked areas, area view at low zoom | B1 (bands), B5-independent |
