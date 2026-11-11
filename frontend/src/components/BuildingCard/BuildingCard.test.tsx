@@ -100,6 +100,38 @@ describe('BuildingCard (TODO-046)', () => {
     expect(screen.queryByText('Livability')).not.toBeInTheDocument()
   })
 
+  it('opens with the match summary: band, score, conditions met, one row per condition, risk line (TODO-050)', async () => {
+    await renderCard(0)
+    const header = screen.getByTestId('match-header')
+    expect(header.firstElementChild).toBe(header.querySelector('[data-testid="match-band"]'))
+    expect(screen.getByTestId('match-band').textContent).toMatch(/^(Great|Good|Partial|Poor) match · \d+$/)
+    expect(screen.getByText('Meets 2 of 4 of your conditions')).toBeInTheDocument()
+    expect(screen.getByText('✓ Quiet — 64 dB, under your 65')).toBeInTheDocument()
+    expect(screen.getByText('✓ Centre — 1 of 1 place within 30 min')).toBeInTheDocument()
+    expect(screen.getByText('◐ Everyday services — 1 of 2 within 10 min')).toBeInTheDocument()
+    expect(screen.getByText(/^◐ Budget — €4[.,]?200\/m², 5% over your €4[.,]?000$/)).toBeInTheDocument()
+    expect(screen.getByText(/^▼ Risk: −\d+ points — .*river flooding \(500-year zone\)/)).toBeInTheDocument()
+    // the header comes before the Catastro facts
+    const facts = screen.getByText('Building')
+    expect(header.compareDocumentPosition(facts) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
+  it('a condition without data reads "no data" and is not counted as met; no risk line without penalties (TODO-050)', async () => {
+    useStore.setState({
+      compositeWeights: { ...DEFAULT_COMPOSITE_WEIGHTS, localsOpinion: 1 }, compositeRiskStrengths: { flood: 0, fire: 0, street: 0 },
+    })
+    await renderCard(1)
+    expect(screen.getByText("– Locals' opinion — no data")).toBeInTheDocument()
+    expect(screen.getByText(/^Meets \d of 5 of your conditions$/)).toBeInTheDocument()
+    expect(screen.queryByText(/Risk: −/)).not.toBeInTheDocument()
+  })
+
+  it('shows the shortfall as "not met" with ✗ when a condition scores 0 (TODO-050)', async () => {
+    useStore.setState({ conditions: { ...DEFAULT_CONDITIONS, noiseMaxDb: 40 } })
+    await renderCard(0)
+    expect(screen.getByText(/^✗ Quiet — 64 dB, 24 dB over your 40$/)).toBeInTheDocument()
+  })
+
   it('shows the address, Catastro facts, photo and link', async () => {
     await renderCard(0)
     expect(screen.getByText('Carrer Arago 255 · Rambla Catalunya 30')).toBeInTheDocument()

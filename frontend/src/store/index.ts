@@ -55,6 +55,8 @@ export interface AppState {
   compositeWeights: CompositeWeights
   /** Colour scale of the map, fitted to the buildings in view (TODO-032); set by BuildingsLayer. */
   compositeColorRange: [number, number]
+  /** "Boost contrast for this view" (TODO-050): fit the colour scale to the visible area; off = fixed 0–100. */
+  contrastBoost: boolean
   // Climate risk penalties + view layers — feature 036
   compositeRiskStrengths: RiskStrengths
   floodLayerVisible: boolean
@@ -90,6 +92,7 @@ export interface AppState {
   setCompositeVisible: (visible: boolean) => void
   setCompositeWeights: (weights: CompositeWeights) => void
   setCompositeColorRange: (range: [number, number]) => void
+  setContrastBoost: (on: boolean) => void
   setCompositeRiskStrengths: (strengths: RiskStrengths) => void
   setFloodLayerVisible: (visible: boolean) => void
   setWildfireLayerVisible: (visible: boolean) => void
@@ -134,6 +137,7 @@ const STREET_FLOODING_LAYER_KEY = 'bcn_street_flooding_layer_visible'
 const BEST_ZONES_TOP_PCT_KEY = 'bcn_best_zones_top_pct'
 const BEST_ZONES_RESTRICT_KEY = 'bcn_best_zones_restrict'
 const WALK_CATEGORIES_KEY = 'bcn_walk_categories'
+const CONTRAST_BOOST_KEY = 'bcn_contrast_boost'
 const AGE_ERAS_KEY = 'bcn_age_eras'
 const CONDITIONS_KEY = 'bcn_conditions'
 
@@ -311,6 +315,12 @@ export const useStore = create<AppState>((set) => {
       set({ compositeWeights: weights })
     },
     setCompositeColorRange: (compositeColorRange) => set({ compositeColorRange }),
+    contrastBoost: loadBoolKey(CONTRAST_BOOST_KEY),
+    setContrastBoost: (contrastBoost) => {
+      try { localStorage.setItem(CONTRAST_BOOST_KEY, String(contrastBoost)) } catch { /* ignore */ }
+      // Off: the scale is the fixed one at once; on: BuildingsLayer fits it to the view.
+      set(contrastBoost ? { contrastBoost } : { contrastBoost, compositeColorRange: [0, 100] })
+    },
     compositeRiskStrengths: loadRiskStrengths(),
     setCompositeRiskStrengths: (strengths) => {
       try { localStorage.setItem(COMPOSITE_RISK_STRENGTHS_KEY, JSON.stringify(strengths)) } catch { /* ignore */ }

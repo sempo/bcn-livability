@@ -6,11 +6,12 @@
 - `docs/ARCHITECTURE.md` — repository structure, key modules, external services
 - `docs/DESIGN.md` — design rules
 - `docs/FEATURE_FLAGS.md` — feature flags (what's gated, what's public)
+- `docs/ROADMAP.md` — order and dependencies of the planned tracks
 ## Stack
 
 - **Frontend:** React + Vite + TypeScript, MapLibre GL JS
 - **Backend:** OpenTripPlanner 2 (OTP2) via Docker — isochrone/routing engine
-- **Map tiles:** OpenFreeMap
+- **Map tiles:** ICGC context map style (primary), OpenFreeMap (fallback)
 
 ## Commands
 

@@ -4,6 +4,10 @@
 
 **Status:** Draft. Not planned for the first release.
 
+**Note (2026-11-11):** promoted to a prerequisite of the mass-market UX track (050–053): a public map needs a
+search box (address or area) before an onboarding quiz makes sense. Add a plain address geocoder (Geoapify,
+already used for pins) next to the territory match; result = fly-to + temporary marker, no card.
+
 ## Idea
 
 A "Search a neighbourhood" box over Barcelona districts, barris and AMB municipalities, including colloquial

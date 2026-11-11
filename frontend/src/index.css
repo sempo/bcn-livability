@@ -1001,3 +1001,15 @@ body {
   color: #9970ab;
   font-weight: 400;
 }
+
+/* Hover tooltip on buildings: band, score, conditions met (TODO-050) */
+.match-tooltip .maplibregl-popup-content {
+  padding: 4px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  pointer-events: none;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+}
+.match-tooltip .maplibregl-popup-tip {
+  display: none;
+}
