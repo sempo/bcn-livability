@@ -26,8 +26,9 @@ The product has two modes in one codebase, separated by feature flags (`docs/FEA
 2. In the panel the user turns conditions on or off and sets each limit in real units. The panel shows what each
    setting means in words, for example "Up to 65 dB is OK for me — like a busy street" or "I'm ready to pay up
    to €4,000/m²".
-3. The map recolours. The colour scale fits the visible area, so "green" means "best around here".
-4. A click on a building opens its card. It shows Catastro facts, the photo (flag), noise by facade side, walking
+3. The map recolours on a fixed 0–100 scale with four bands (Great / Good / Partial / Poor match), so green means
+   "fits me" anywhere. An optional **Boost contrast** switch fits the scale to the visible area.
+4. A click on a building opens its card. It opens with the match summary ("Meets 3 of 4 of your conditions"), then shows Catastro facts, the photo (flag), noise by facade side, walking
    times, climate risks, and a clearly labelled **Barri-level** block (price, what locals say).
 5. **Draw best zones** outlines up to 3–5 compact best areas in view. Each zone opens as an Idealista search
    with the user's saved Idealista filters.

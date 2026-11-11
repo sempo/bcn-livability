@@ -94,11 +94,12 @@ src/
 │   │   ├── BuildingsLayer.tsx     Livability Index on buildings: dots at z≤13, footprints from z14, colour from
 │   │   │                          feature state; gap outline (missing data), hover/selected outline; click → card
 │   │   ├── FacadeNoiseLayer.tsx   noise circles at the facades of the selected building (z≥15)
-│   │   ├── CompositeLegend.tsx    colour legend of the current (fitted) range
-│   │   └── scoreRamp.ts           RdYlGn ramp; fitScoreRange() fits it to the buildings in view (032)
+│   │   ├── CompositeLegend.tsx    legend: four match bands (050); gradient of the fitted range with Boost contrast
+│   │   └── scoreRamp.ts           RdYlGn ramp; colorRange(): fixed 0–100, or fitScoreRange() with Boost contrast (032, 050)
 │   ├── BuildingCard/              card of the clicked building: address, facade photo (flag), Catastro link, facts,
 │   │                              below-ground uses, per-condition scores, noise by facade side, climate risk,
-│   │                              Barri-level / Municipality-level block (price, "What locals say")
+│   │                              Barri-level / Municipality-level block (price, "What locals say");
+│   │                              MatchHeader.tsx on top: band, "Meets N of M", a row per condition, risk line (050)
 │   ├── BestZones/
 │   │   ├── BestZones.tsx          floating bar: Draw best zones / Clear zones (Esc), strictness slider (top 25…5 %),
 │   │   │                          ⚙ Idealista filters, "Inside commute zone, outside exclusion zones" (only when
@@ -145,6 +146,8 @@ src/
 │   │   ├── address.ts         Catastro address → readable; Catastro page and facade photo URLs
 │   │   └── catastroUnits.ts   Catastro DNPRC (open, CORS, one call per card): uses of the floors below ground
 │   ├── composite/compositeScore.ts  computeComposite(): mean over the conditions that are on, then risk penalties
+│   ├── match/                 matchSummary.ts: bands, conditionStatus(), matchSummary(), riskLine(), tooltip text;
+│   │                          matchText.ts: short row texts of the card header (050)
 │   ├── climateRisk/climateRisk.ts   floodRisk / fireRisk / streetFloodRisk (0–1), applyRiskPenalties()
 │   ├── localsOpinion/localsOpinion.ts  barri-vibe.json loader, topProblems() (042)
 │   ├── cityCore/landmarks.ts  the 13 City Core places (ids match the cc_<id> columns)
@@ -215,15 +218,21 @@ buildings whose score changed get a new feature state. Changes to the settings a
    - Wildfire: WUI × distance-decayed forest hazard.
    - Street flooding: water depth at the door (Barcelona only), 0 at ≤ 10 cm and 1 at ≥ 50 cm, banded like the
      river zones (T10 fully, the extra part of T100 at 0.6).
-4. **Colour**: the RdYlGn ramp is fitted to the buildings whose centroid is in the visible area (`visibleBounds`).
-   It ignores the extreme 2 % on each side and never spans fewer than 20 points (032). The fit runs again after
-   each map move.
+4. **Colour** (050): the RdYlGn ramp is fixed on 0–100, so a building is the same colour anywhere on the map.
+   The legend names four bands (Great ≥ 85, Good ≥ 65, Partial ≥ 40, Poor; `VITE_MATCH_BANDS`). The switch
+   **Boost contrast for this view** (`contrastBoost`, `bcn_contrast_boost`, off by default) brings back the
+   fit (032): the ramp spans the buildings whose centroid is in the visible area (`visibleBounds`), ignores the
+   extreme 2 % on each side, never spans fewer than 20 points, and is refitted after each map move.
+5. **Hover tooltip** (z14+, not on touch screens): "Good match · 78 — meets 3 of 4", a MapLibre popup after
+   60 ms of rest on a building.
 
 ### Building card
 
 Click a building to open `BuildingCard`. It reads one z14 tile of `buildings-detail.pmtiles` and calls Catastro
 DNPRC for the uses of the floors below ground. The Catastro facade photo is shown only with
 `VITE_FEATURE_FACADE_PHOTO`. Area-only data is labelled **Barri-level** (Barcelona) or **Municipality-level**.
+The card opens with `MatchHeader` (050): the band and score, "Meets N of M of your conditions" and one row per
+condition that is on (✓ met = component 100, ◐ partly = 1–99, ✗ not met = 0, – no data), then the risk line.
 
 ### Best zones (038, public)
 
@@ -347,8 +356,9 @@ build, committed) and `frontend/.env.test` (all flags on). Every default below i
 | `VITE_FLOOD_PENALTY_T10` / `_T100` / `_T500` | 1 / 0.6 / 0.25 | penalty per flood band (river and street) |
 | `VITE_RISK_STRENGTH_FLOOD` / `_FIRE` / `_STREET` | 5 / 5 / 5 | default risk strengths 0–10 |
 | `VITE_STREET_FLOOD_MIN_CM` / `_MAX_CM` | 10 / 50 | water at the door: counts from / fully at |
-| `VITE_SCORE_SCALE_TRIM_PCT` | 2 | colour scale ignores this % at each end |
-| `VITE_SCORE_SCALE_MIN_SPAN` | 20 | colour scale minimum span, points |
+| `VITE_MATCH_BANDS` | 85,65,40 | lower edges of Great / Good / Partial match (050) |
+| `VITE_SCORE_SCALE_TRIM_PCT` | 2 | Boost contrast: scale ignores this % at each end |
+| `VITE_SCORE_SCALE_MIN_SPAN` | 20 | Boost contrast: scale minimum span, points |
 | `VITE_BEST_ZONES_TOP_PCT` | 15 | default strictness |
 | `VITE_BEST_ZONES_MAX` / `_MAX_WITH_TIES` / `_TIE_RATIO` | 3 / 5 / 0.9 | zone count and near-ties |
 | `VITE_BEST_ZONES_MIN_CELLS` | 5 | minimum zone size, res-9 cells |

@@ -1,6 +1,6 @@
-# TODO-050 — Match score: "meets N of M of your conditions"
+# 050 — Match score: "meets N of M of your conditions"
 
-**Status:** Planned, not started. First step of the mass-market UX track (031, 051, 052, 053 follow).
+**Status:** Done 2026-11-11. First step of the mass-market UX track (031, 051, 052, 053 follow).
 Cheapest change with the largest effect: display only, on top of the existing `computeComposite`.
 
 ## Problem
@@ -82,7 +82,13 @@ no data "– no data". The existing per-condition blocks move below the header u
 Per `CLAUDE.md`. Manual check: pan across Eixample → Nou Barris with boost off, colours stay put; a building
 with all conditions at 100 and no risk is `#1a9850` anywhere on the map.
 
-## Open questions
+## Decisions taken while building (2026-11-11)
 
-- Should the band thresholds be in the legend copy ("85+")? Proposed: no, labels only; numbers in the card.
-- Keep the 0–100 number in the card header? Proposed: yes, small, next to the label.
+- Band thresholds are not in the legend copy (labels only). The 0–100 number stays in the card header, next to
+  the band label.
+- The map stays a smooth 0–100 gradient; the four bands are named in the legend and the card, not drawn as steps.
+- A condition that is on but has no data reads "– no data", counts as not met in "Meets N of M" and stays in M
+  (consistent with the model: no data = 0).
+- The hover tooltip works from zoom 14 (footprints), appears after 60 ms of rest and is off on `(hover: none)`.
+- Header rows are compact single lines (`matchText.ts`); the full sentences stay in the per-condition blocks.
+- The "before risk penalties" line is replaced by the risk line in the header.

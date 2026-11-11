@@ -18,6 +18,9 @@ import {
 } from './buildingCardText'
 import { minutesShare } from '../../services/buildings/conditions'
 import { features } from '../../features'
+import { matchSummary, riskLine } from '../../services/match/matchSummary'
+import { ageText, cityCoreText, localsText, noiseText, poiText, priceText } from '../../services/match/matchText'
+import { MatchHeader } from './MatchHeader'
 
 const DIM = { fontSize: 10, opacity: 0.75 }
 
@@ -163,9 +166,10 @@ export function BuildingCard() {
   if (selected === null || !data) return null
 
   const vibe = features.localsOpinion ? barriVibeData : null
-  const { score, baseScore, components, penalties } = scoreBuilding(data, selected, {
+  const composite = scoreBuilding(data, selected, {
     weights, conditions, enabledLandmarkIds, enabledCategories, riskStrengths, ageEras, vibe,
   })
+  const { score, components, penalties } = composite
   const barColor = (v: number | null) => (v !== null ? scoreColor(v) : '#aaa')
   const lden = valueOf(data, 'lden_avg', selected)
   const services = SERVICE_CATEGORIES.filter((c) => enabledCategories.includes(c.id))
@@ -179,6 +183,17 @@ export function BuildingCard() {
   const riskShown = riskStrengths.flood > 0 || riskStrengths.fire > 0 || riskStrengths.street > 0
   const warning = d && groundFloorWarning(d.street_t10_cm, d.street_t100_cm, d.river_zone, d.floors_below)
   const color = scoreColorForRange(score, sMin, sMax)
+  const withinMin = (minutes: readonly (number | null)[], limit: number) =>
+    minutes.filter((m) => m !== null && m <= limit).length
+  const summary = matchSummary(composite, weights, {
+    noise: lden !== null ? noiseText(lden, conditions.noiseMaxDb) : undefined,
+    poiAccess: poiText(withinMin(services.map((x) => x.minutes), conditions.walkMaxMin), services.length, conditions.walkMaxMin),
+    cityCore: cityCoreText(withinMin(placeMinutes, conditions.cityCoreMaxMin), placeMinutes.length, conditions.cityCoreMaxMin),
+    openPrice: area?.price != null ? priceText(area.price, conditions.priceMaxEurM2) : undefined,
+    localsOpinion: barri ? localsText(barri.satisfAdj, conditions.localsMin) : undefined,
+    age: ageText(yearBuilt !== null ? eraOf(yearBuilt).name : null),
+  })
+  const riskText = riskLine(penalties, { flood: d?.river_zone ? `${d.river_zone}-year zone` : undefined })
   const landmarks = enabledLandmarkIds
     .map((id) => ({ id, name: LANDMARKS.find((l) => l.id === id)?.name ?? id, minutes: valueOf(data, `cc_${id}`, selected) }))
     .filter((e): e is { id: string; name: string; minutes: number } => e.minutes !== null)
@@ -210,15 +225,7 @@ export function BuildingCard() {
             </Stack>
           )}
 
-          <Stack gap={2}>
-            <Text size="xs" c="dimmed">Livability</Text>
-            <Text fw={800} lh={1} style={{ fontSize: 28, color }}>
-              {score}<Text component="span" size="sm" c="dimmed" fw={400}> / 100</Text>
-            </Text>
-            {penalties.flood + penalties.fire + penalties.street > 0 && (
-              <Text size="xs" c="dimmed">{baseScore} before risk penalties</Text>
-            )}
-          </Stack>
+          <MatchHeader score={score} summary={summary} riskText={riskText} color={color} />
 
           {d && (
             <>

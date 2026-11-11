@@ -1,11 +1,12 @@
 import { useCallback, useContext, useEffect, useRef, useState } from 'react'
-import type * as maplibregl from 'maplibre-gl'
+import * as maplibregl from 'maplibre-gl'
 import { MapContext } from '../Map/MapContext'
 import { useStore } from '../../store'
 import { loadBuildings, type BuildingData } from '../../services/buildings/buildingData'
-import { scoreAll } from '../../services/buildings/buildingScore'
+import { scoreAll, scoreBuilding } from '../../services/buildings/buildingScore'
+import { matchSummary, matchTooltip } from '../../services/match/matchSummary'
 import { loadBarriVibe, type BarriVibeData } from '../../services/localsOpinion/localsOpinion'
-import { buildStateColorForRange, fitScoreRange } from './scoreRamp'
+import { buildStateColorForRange, colorRange } from './scoreRamp'
 import { inBestZone } from '../BestZones/inBestZone'
 import { addLayerOrdered } from '../Map/layerOrder'
 import { visibleBounds } from '../Map/visibleBounds'
@@ -23,6 +24,9 @@ const LAYER_IDS = [DOT_LAYER_ID, FILL_LAYER_ID, GAP_LAYER_ID, HOVER_LAYER_ID]
 const PMTILES_URL = `pmtiles://${import.meta.env.BASE_URL}data/buildings.pmtiles`
 /** Pause after the last settings change before rescoring (scoring all buildings takes ~0.4 s). */
 const RESCORE_DELAY_MS = 150
+/** Hover tooltip (TODO-050): footprints only (z14+), after the pointer rests on a building. */
+const TOOLTIP_MIN_ZOOM = 14
+const TOOLTIP_DELAY_MS = 60
 
 const POINT: maplibregl.FilterSpecification = ['==', ['geometry-type'], 'Point']
 const POLYGON: maplibregl.FilterSpecification = ['==', ['geometry-type'], 'Polygon']
@@ -39,11 +43,14 @@ export function BuildingsLayer() {
   const riskStrengths = useStore((s) => s.compositeRiskStrengths)
   const ageEras = useStore((s) => s.ageEras)
   const conditions = useStore((s) => s.conditions)
+  const contrastBoost = useStore((s) => s.contrastBoost)
   const selected = useStore((s) => s.selectedBuilding)
   const setSelectedBuilding = useStore((s) => s.setSelectedBuilding)
 
   const [data, setData] = useState<Loaded | null>(null)
   const scoresRef = useRef<Uint8Array | null>(null)
+  const buildingsRef = useRef<Loaded | null>(null)
+  buildingsRef.current = data
 
   // Lazy-load the score columns the first time the index is shown.
   useEffect(() => {
@@ -55,23 +62,32 @@ export function BuildingsLayer() {
     return () => { cancelled = true }
   }, [visible, data])
 
-  /** Fits the colour scale (TODO-032) to the buildings whose centroid is in the visible part of the map. */
+  /**
+   * Sets the colour scale: fixed 0–100 by default (TODO-050); with "Boost contrast" on, fitted (TODO-032) to the
+   * buildings whose centroid is in the visible part of the map.
+   */
   const recolor = useCallback(() => {
     const scores = scoresRef.current
     if (!map || !data || !scores || !map.getLayer(FILL_LAYER_ID)) return
-    const [w, s, e, n] = visibleBounds(map)
-    const { lng, lat } = data.buildings.cols
     const inView: number[] = []
-    for (let i = 0; i < scores.length; i++) {
-      if (lng[i] >= w && lng[i] <= e && lat[i] >= s && lat[i] <= n) inView.push(scores[i])
+    if (contrastBoost) {
+      const [w, s, e, n] = visibleBounds(map)
+      const { lng, lat } = data.buildings.cols
+      for (let i = 0; i < scores.length; i++) {
+        if (lng[i] >= w && lng[i] <= e && lat[i] >= s && lat[i] <= n) inView.push(scores[i])
+      }
     }
-    const range = fitScoreRange(inView)
+    const range = colorRange(contrastBoost, inView)
     if (!range) return
-    useStore.getState().setCompositeColorRange(range)
+    const prev = useStore.getState().compositeColorRange
+    if (prev[0] !== range[0] || prev[1] !== range[1]) useStore.getState().setCompositeColorRange(range)
     const color = buildStateColorForRange(range[0], range[1])
     map.setPaintProperty(FILL_LAYER_ID, 'fill-color', color)
     map.setPaintProperty(DOT_LAYER_ID, 'circle-color', color)
-  }, [map, data])
+  }, [map, data, contrastBoost])
+
+  // Switching Boost contrast on or off recolours at once.
+  useEffect(() => { recolor() }, [recolor])
 
   // Source and layers, once the data is there.
   useEffect(() => {
@@ -139,7 +155,7 @@ export function BuildingsLayer() {
     return () => clearTimeout(timer)
   }, [map, data, weights, conditions, enabledLandmarkIds, enabledCategories, riskStrengths, ageEras, recolor])
 
-  // Refit the colour scale once the map stops moving.
+  // Refit the colour scale (Boost contrast only) once the map stops moving.
   useEffect(() => {
     if (!map) return
     const onMoveEnd = () => recolor()
@@ -166,6 +182,35 @@ export function BuildingsLayer() {
   useEffect(() => {
     if (!map) return
     let hovered: number | null = null
+    let tipTimer: ReturnType<typeof setTimeout> | undefined
+    let popup: maplibregl.Popup | null = null
+    const hideTip = () => {
+      clearTimeout(tipTimer)
+      popup?.remove()
+      popup = null
+    }
+    /** "Good match · 78 — meets 3 of 4" a moment after the pointer rests on a building (not on touch screens). */
+    const showTip = (id: number, lngLat: maplibregl.LngLat) => {
+      clearTimeout(tipTimer)
+      popup?.remove()
+      popup = null
+      if (map.getZoom() < TOOLTIP_MIN_ZOOM) return
+      if (typeof window.matchMedia === 'function' && window.matchMedia('(hover: none)').matches) return
+      tipTimer = setTimeout(() => {
+        const st = useStore.getState()
+        const buildings = buildingsRef.current
+        if (!buildings) return
+        const r = scoreBuilding(buildings.buildings, id, {
+          weights: st.compositeWeights, conditions: st.conditions, enabledLandmarkIds: st.enabledLandmarkIds,
+          enabledCategories: st.enabledWalkCategories, riskStrengths: st.compositeRiskStrengths, ageEras: st.ageEras,
+          vibe: buildings.vibe,
+        })
+        popup = new maplibregl.Popup({ closeButton: false, closeOnClick: false, offset: 10, className: 'match-tooltip' })
+          .setLngLat(lngLat)
+          .setText(matchTooltip(r.score, matchSummary(r, st.compositeWeights)))
+          .addTo(map)
+      }, TOOLTIP_DELAY_MS)
+    }
     const hover = (id: number, on: boolean) =>
       map.setFeatureState({ source: SOURCE_ID, sourceLayer: SOURCE_LAYER, id }, { hover: on })
     const onMove = (e: maplibregl.MapLayerMouseEvent) => {
@@ -176,15 +221,18 @@ export function BuildingsLayer() {
       if (hovered !== null) hover(hovered, false)
       hovered = id
       hover(id, true)
+      showTip(id, e.lngLat)
     }
     const onLeave = () => {
       map.getCanvas().style.cursor = ''
       if (hovered !== null) hover(hovered, false)
       hovered = null
+      hideTip()
     }
     const onClick = (e: maplibregl.MapLayerMouseEvent) => {
       const id = e.features?.[0]?.id
       if (typeof id !== 'number' || inBestZone(map, e)) return
+      hideTip()
       const st = useStore.getState()
       st.setSelectedBuilding(st.selectedBuilding === id ? null : id)
     }
@@ -194,6 +242,7 @@ export function BuildingsLayer() {
       map.on('click', layer, onClick)
     }
     return () => {
+      hideTip()
       for (const layer of [FILL_LAYER_ID, DOT_LAYER_ID]) {
         map.off('mousemove', layer, onMove)
         map.off('mouseleave', layer, onLeave)
