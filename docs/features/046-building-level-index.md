@@ -489,7 +489,7 @@ Run (~3 min after stages 1–3): `arch -x86_64 .venv-livability/bin/python scrip
   - A vector source with dots (z ≤ 13) and footprints (z ≥ 14).
   - Colour from `feature-state.score` (`buildStateColorForRange`), so refitting the visible range only swaps the
     stops.
-  - Black outline from `feature-state.gap`; white outline on hover and on the selected building; click selects
+  - Hatch layer `buildings-hatch` from `feature-state.gap` (060, replaced the black outline); white outline on hover and on the selected building; click selects
     the building (`selectedBuilding` in the store).
   - The first scoring runs at once. Later ones wait `RESCORE_DELAY_MS` (150 ms) after the last change, and only
     changed buildings get a new state.

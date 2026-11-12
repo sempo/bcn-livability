@@ -12,6 +12,7 @@ green = fits me. The card then shows five 0–100 bars with no single answer to 
 
 ## Decision
 
+- Incomplete data (060): the band, the colour and the tooltip use the max score; the tooltip reads `Good match · ~70`, the card shows the range `52–70` and "Incomplete data".
 - The score keeps its definition (mean over the conditions that are on, then risk penalties). What changes is
   how it is **shown**.
 - **Absolute colour scale by default**: 0–100 fixed, with four verbal bands. The fitted scale (032) stays as
@@ -92,3 +93,4 @@ with all conditions at 100 and no risk is `#1a9850` anywhere on the map.
 - The hover tooltip works from zoom 14 (footprints), appears after 60 ms of rest and is off on `(hover: none)`.
 - Header rows are compact single lines (`matchText.ts`); the full sentences stay in the per-condition blocks.
 - The "before risk penalties" line is replaced by the risk line in the header.
+- No condition on (061): the map is neutral — no fill, no hatch, no tooltip or card — and the editor says "No conditions yet. Add one below and the map will colour in."; see `061-no-conditions-neutral-map.md`.

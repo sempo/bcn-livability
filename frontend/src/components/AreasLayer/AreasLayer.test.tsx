@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, act } from '@testing-library/react'
 import { MapContext } from '../Map/MapContext'
-import { useStore } from '../../store'
+import { useStore, DEFAULT_COMPOSITE_WEIGHTS } from '../../store'
 import { useSearchStore } from '../../store/searchStore'
 import type { AreaFeature } from '../../services/areas'
 import type { AreaRank } from '../../services/areas/areaRank'
@@ -26,7 +26,7 @@ vi.mock('maplibre-gl', () => ({
   },
 }))
 
-import { AreasLayer, AREAS_SOURCE_ID, AREAS_FILL_ID, AREAS_LINE_ID, AREAS_LABEL_ID } from './AreasLayer'
+import { AreasLayer, AREAS_SOURCE_ID, AREAS_FILL_ID, AREAS_HATCH_ID, AREAS_LINE_ID, AREAS_LABEL_ID } from './AreasLayer'
 
 function makeFakeMap() {
   const sources = new Map<string, { data?: unknown }>()
@@ -36,6 +36,8 @@ function makeFakeMap() {
     states, layers, sources,
     getSource: (id: string) => sources.get(id),
     addSource: vi.fn((id: string, src: { data?: unknown }) => { sources.set(id, src) }),
+    hasImage: () => false,
+    addImage: vi.fn(),
     getLayer: (id: string) => layers.get(id),
     addLayer: (l: { id: string }) => { layers.set(l.id, l as unknown as Record<string, unknown>) },
     setLayoutProperty: vi.fn(),
@@ -54,7 +56,7 @@ const handler = (map: FakeMap, event: string) =>
 
 const rank = (index: number, extra: Partial<AreaRank> = {}): AreaRank => ({
   index, code: '01', name: `Area ${index}`, kind: 'barri', n: 1240, mean: 70, shareGood: 62, shareGreat: 10,
-  strongest: [], ranked: true, ...extra,
+  gapShare: 0, incomplete: false, strongest: [], ranked: true, ...extra,
 })
 
 function renderLayer(map: FakeMap) {
@@ -66,7 +68,7 @@ describe('AreasLayer (TODO-051)', () => {
     popups.length = 0
     join = new Map([[0, polygon('Raval')], [3, polygon('Gòtic')]])
     useSearchStore.setState({ selection: null })
-    useStore.setState({ compositeVisible: true, compositeColorRange: [0, 100], areaRanks: null })
+    useStore.setState({ compositeVisible: true, compositeWeights: DEFAULT_COMPOSITE_WEIGHTS, compositeColorRange: [0, 100], areaRanks: null })
   })
 
   it('adds nothing until the polygons are matched', () => {
@@ -84,11 +86,15 @@ describe('AreasLayer (TODO-051)', () => {
     expect(data.features.map((f) => [f.id, f.properties.areaIndex, f.properties.name])).toEqual([[0, 0, 'Raval'], [3, 3, 'Gòtic']])
   })
 
-  it('adds fill, outline and label that show only below the building zoom', () => {
+  it('adds fill, hatch, outline and label that show only below the building zoom', () => {
     const map = makeFakeMap()
     renderLayer(map)
-    expect([...map.layers.keys()]).toEqual([AREAS_FILL_ID, AREAS_LINE_ID, AREAS_LABEL_ID])
-    for (const id of [AREAS_FILL_ID, AREAS_LINE_ID, AREAS_LABEL_ID]) expect(map.layers.get(id)!.maxzoom).toBe(13)
+    expect([...map.layers.keys()]).toEqual([AREAS_FILL_ID, AREAS_HATCH_ID, AREAS_LINE_ID, AREAS_LABEL_ID])
+    for (const id of [AREAS_FILL_ID, AREAS_HATCH_ID, AREAS_LINE_ID, AREAS_LABEL_ID]) expect(map.layers.get(id)!.maxzoom).toBe(13)
+    // wide hatch (060), shown only where the area is marked incomplete in the feature state
+    expect(map.layers.get(AREAS_HATCH_ID)).toMatchObject({
+      type: 'fill', paint: { 'fill-pattern': 'hatch-wide', 'fill-opacity': ['case', ['boolean', ['feature-state', 'incomplete'], false], 1, 0] },
+    })
     expect(map.layers.get(AREAS_LABEL_ID)!.layout).toMatchObject({ 'text-field': ['get', 'name'] })
   })
 
@@ -96,9 +102,17 @@ describe('AreasLayer (TODO-051)', () => {
     const map = makeFakeMap()
     renderLayer(map)
     act(() => useStore.setState({ areaRanks: [rank(0, { mean: 81 }), rank(3, { mean: 42 }), rank(7, { mean: 10 })] }))
-    expect(map.states.get(0)).toEqual({ score: 81 })
-    expect(map.states.get(3)).toEqual({ score: 42 })
+    expect(map.states.get(0)).toEqual({ score: 81, incomplete: false })
+    expect(map.states.get(3)).toEqual({ score: 42, incomplete: false })
     expect(map.states.has(7)).toBe(false) // no polygon for it
+  })
+
+  it('marks the areas with too many incomplete homes for the hatch (060)', () => {
+    const map = makeFakeMap()
+    renderLayer(map)
+    act(() => useStore.setState({ areaRanks: [rank(0, { incomplete: true, gapShare: 0.5 }), rank(3)] }))
+    expect(map.states.get(0)).toMatchObject({ incomplete: true })
+    expect(map.states.get(3)).toMatchObject({ incomplete: false })
   })
 
   it('follows the colour range of the buildings (Boost contrast)', () => {
@@ -115,6 +129,18 @@ describe('AreasLayer (TODO-051)', () => {
     act(() => useStore.setState({ compositeVisible: false }))
     expect(map.setLayoutProperty).toHaveBeenCalledWith(AREAS_FILL_ID, 'visibility', 'none')
     act(() => useStore.setState({ compositeVisible: true }))
+    expect(map.setLayoutProperty).toHaveBeenLastCalledWith(AREAS_LABEL_ID, 'visibility', 'visible')
+  })
+
+  it('with no condition on the areas are hidden, with one they show (061)', () => {
+    const map = makeFakeMap()
+    renderLayer(map)
+    const none = { ...DEFAULT_COMPOSITE_WEIGHTS, poiAccess: 0, noise: 0, cityCore: 0, openPrice: 0 }
+    act(() => useStore.setState({ compositeWeights: none }))
+    for (const id of [AREAS_FILL_ID, AREAS_HATCH_ID, AREAS_LINE_ID, AREAS_LABEL_ID]) {
+      expect(map.setLayoutProperty).toHaveBeenCalledWith(id, 'visibility', 'none')
+    }
+    act(() => useStore.setState({ compositeWeights: { ...none, noise: 1 } }))
     expect(map.setLayoutProperty).toHaveBeenLastCalledWith(AREAS_LABEL_ID, 'visibility', 'visible')
   })
 

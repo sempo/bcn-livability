@@ -96,6 +96,9 @@ describe('matchTooltip', () => {
   it('names the band, the score and how many conditions are met', () => {
     expect(matchTooltip(78, { met: 3, total: 4, rows: [] })).toBe('Good match · 78 — meets 3 of 4')
   })
+  it('shows "~" before the score when the data is incomplete (060)', () => {
+    expect(matchTooltip(70, { met: 2, total: 4, rows: [] }, undefined, true)).toBe('Good match · ~70 — meets 2 of 4')
+  })
   it('leaves out the count when no condition is on', () => {
     expect(matchTooltip(0, { met: 0, total: 0, rows: [] })).toBe('Poor match · 0')
   })

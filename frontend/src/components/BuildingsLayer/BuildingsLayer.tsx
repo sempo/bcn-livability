@@ -13,6 +13,8 @@ import { inBestZone } from '../BestZones/inBestZone'
 import { addLayerOrdered } from '../Map/layerOrder'
 import { visibleBounds } from '../Map/visibleBounds'
 import { features } from '../../features'
+import { hasConditions } from '../../services/composite/compositeScore'
+import { ensureHatchImages, HATCH_THIN } from '../Map/hatchPattern'
 
 // Building-level Livability Index (TODO-046). Tiles carry only geometry and a numeric feature id (= row of the
 // score columns): dots up to z13, footprints from z14. Scores are computed in JS and set as feature state.
@@ -20,9 +22,10 @@ export const SOURCE_ID = 'buildings'
 export const SOURCE_LAYER = 'b'
 export const DOT_LAYER_ID = 'buildings-dots'
 export const FILL_LAYER_ID = 'buildings-fill'
-export const GAP_LAYER_ID = 'buildings-gap-outline'
+/** Light diagonal hatch over the footprints with an incomplete-data range (060); replaces the black gap outline. */
+export const HATCH_LAYER_ID = 'buildings-hatch'
 export const HOVER_LAYER_ID = 'buildings-hover-outline'
-const LAYER_IDS = [DOT_LAYER_ID, FILL_LAYER_ID, GAP_LAYER_ID, HOVER_LAYER_ID]
+const LAYER_IDS = [DOT_LAYER_ID, FILL_LAYER_ID, HATCH_LAYER_ID, HOVER_LAYER_ID]
 const PMTILES_URL = `pmtiles://${import.meta.env.BASE_URL}data/buildings.pmtiles`
 /** Pause after the last settings change before rescoring (scoring all buildings takes ~0.4 s). */
 const RESCORE_DELAY_MS = 150
@@ -38,7 +41,8 @@ interface Loaded { buildings: BuildingData; vibe: BarriVibeData | null }
 
 export function BuildingsLayer() {
   const map = useContext(MapContext)
-  const visible = useStore((s) => s.compositeVisible)
+  // Neutral map (061): nothing is drawn, hovered or clicked while no condition is on.
+  const visible = useStore((s) => s.compositeVisible && hasConditions(s.compositeWeights))
   const weights = useStore((s) => s.compositeWeights)
   const enabledLandmarkIds = useStore((s) => s.enabledLandmarkIds)
   const enabledCategories = useStore((s) => s.enabledWalkCategories)
@@ -97,6 +101,7 @@ export function BuildingsLayer() {
     map.addSource(SOURCE_ID, { type: 'vector', url: PMTILES_URL })
     const layout = { visibility: visible ? 'visible' : 'none' } as const
     const color = buildStateColorForRange(...useStore.getState().compositeColorRange)
+    ensureHatchImages(map)
     const base = { source: SOURCE_ID, 'source-layer': SOURCE_LAYER, layout }
     addLayerOrdered(map, {
       ...base, id: DOT_LAYER_ID, type: 'circle', filter: POINT,
@@ -112,9 +117,9 @@ export function BuildingsLayer() {
       paint: { 'fill-color': color, 'fill-opacity': 0.75 },
     }, FILL_LAYER_ID)
     addLayerOrdered(map, {
-      ...base, id: GAP_LAYER_ID, type: 'line', filter: POLYGON,
-      paint: { 'line-color': '#000', 'line-width': 1.2, 'line-opacity': ['case', state('gap'), 0.7, 0] },
-    }, GAP_LAYER_ID)
+      ...base, id: HATCH_LAYER_ID, type: 'fill', filter: POLYGON,
+      paint: { 'fill-pattern': HATCH_THIN.id, 'fill-opacity': ['case', state('gap'), 1, 0] },
+    }, HATCH_LAYER_ID)
     addLayerOrdered(map, {
       ...base, id: HOVER_LAYER_ID, type: 'line', filter: POLYGON,
       paint: {
@@ -153,7 +158,7 @@ export function BuildingsLayer() {
         if (components) {
           const on = (Object.keys(components) as ConditionId[]).filter((k) => (weights[k] ?? 0) > 0)
           useStore.getState().setAreaRanks(
-            rankAreas(score, data.buildings.cols.area, data.buildings.meta.areas, components, on),
+            rankAreas(score, data.buildings.cols.area, data.buildings.meta.areas, components, on, undefined, undefined, gap),
           )
         }
         recolor()
@@ -222,7 +227,7 @@ export function BuildingsLayer() {
         })
         popup = new maplibregl.Popup({ closeButton: false, closeOnClick: false, offset: 10, className: 'match-tooltip' })
           .setLngLat(lngLat)
-          .setText(matchTooltip(r.score, matchSummary(r, st.compositeWeights)))
+          .setText(matchTooltip(r.score, matchSummary(r, st.compositeWeights), undefined, r.hasGap))
           .addTo(map)
       }, TOOLTIP_DELAY_MS)
     }

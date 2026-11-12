@@ -16,7 +16,7 @@ Synced with the code on 2026-11-11 (`frontend/src/main.tsx`, `index.css`, layer 
 | Element | Value |
 |---|---|
 | Livability Index | RdYlGn ramp `#d73027` → `#fc8d59` → `#fee08b` → `#91cf60` → `#1a9850`, fixed on 0–100 with four named bands (Great / Good / Partial / Poor match, TODO-050); "Boost contrast" fits it to the visible area (032); fill opacity 0.75, dots 0.85 |
-| Missing data | black building outline, opacity 0.7 |
+| Incomplete data (060) | light diagonal hatch over the score colour: thin on buildings (6 px period), wide on areas (20 px period); white stripes at 60 % alpha |
 | Hovered / selected building | white outline, 2 px |
 | Best zones | `#6741d9`, dashed outline, light fill, numbered |
 | Search result (area) | `#1971c2`, solid 3 px outline, fill 6 %; address = marker of the same colour |

@@ -56,11 +56,12 @@ debounce as rescoring).
 - `services/areas/areaRank.ts`: `rankAreas(scores, areaCol, areas, components, active, bands, min) → AreaRank[]`.
   `scoreAll(..., withComponents)` returns a `Uint8Array` per condition (255 = no data); `BuildingsLayer` passes it
   when the flag is on.
+- Incomplete data (060): the shares and means are over the max scores; an area with more than `VITE_INCOMPLETE_AREA_MIN_SHARE` of homes with a range (`gapShare`, `incomplete`) gets the wide hatch.
 - Store: `areaRanks: AreaRank[] | null`, set by `BuildingsLayer` after each rescoring.
 - `components/AreasList/AreasList.tsx`, `AreaRow.tsx`; `components/AreasLayer/AreasLayer.tsx` (geojson source
   with the area index as feature id; the mean score as feature state `score`, so it uses the same ramp and
   follows Boost contrast; fill, outline and label with `maxzoom` = `VITE_AREA_VIEW_MAX_ZOOM`; hover popup;
-  click). `layerOrder.ts` has `areas-fill`, `areas-line`, `areas-label`; the stale `barrio-boundaries-*` ids are
+  click). `layerOrder.ts` has `areas-fill`, `areas-hatch` (060), `areas-line`, `areas-label`; the stale `barrio-boundaries-*` ids are
   gone. The dot layer of the buildings gets `minzoom` = the same value.
 - `FilterPanel.tsx`: Mantine `Tabs` (Settings / Your areas) when the flag is on.
 - Fly-to and outline: a click selects the area through the search store (`areaSelect.ts`), so `SearchLayer`
@@ -87,3 +88,5 @@ zooming out past z13 shows the area fill.
 - Municipalities and barris in one list, or two sections? Proposed: one list, kind as a chip.
 - Should the list respect the best-zones restriction (commute zone) when those flags are on? Proposed: yes. Not
   done in the first pass: the list ranks all areas.
+
+- No condition on (061): the list shows "Add a condition to rank the areas." instead of a ranking of zeros.

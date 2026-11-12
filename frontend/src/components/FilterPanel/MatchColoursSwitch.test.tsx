@@ -28,9 +28,9 @@ describe('MatchColoursSwitch (TODO-052)', () => {
     expect(useStore.getState().compositeVisible).toBe(true)
   })
 
-  it('says what the black outline means', () => {
+  it('says what the hatch means (060)', () => {
     renderWithMantine(<MatchColoursSwitch />)
-    expect(screen.getByText('Black outline = missing data')).toBeTruthy()
+    expect(screen.getByText('Hatched = incomplete data (score is a range, colour shows the best case)')).toBeTruthy()
   })
 
   it('opens and closes the explanation of the index', () => {

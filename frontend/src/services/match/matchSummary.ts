@@ -105,8 +105,10 @@ export function riskLine(
   return `Risk: −${points} points — ${names.join(', ')}`
 }
 
-/** Hover tooltip on a building: "Good match · 78 — meets 3 of 4". */
-export function matchTooltip(score: number, summary: Pick<MatchSummary, 'met' | 'total'>, bands: Bands = MATCH_BANDS): string {
-  const head = `${BAND_LABEL[matchBand(score, bands)]} · ${score}`
+/** Hover tooltip on a building: "Good match · 78 — meets 3 of 4"; "~78" when the data is incomplete (060). */
+export function matchTooltip(
+  score: number, summary: Pick<MatchSummary, 'met' | 'total'>, bands: Bands = MATCH_BANDS, incomplete = false,
+): string {
+  const head = `${BAND_LABEL[matchBand(score, bands)]} · ${incomplete ? '~' : ''}${score}`
   return summary.total > 0 ? `${head} — meets ${summary.met} of ${summary.total}` : head
 }

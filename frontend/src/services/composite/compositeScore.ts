@@ -15,6 +15,11 @@ export interface CompositeWeights {
   age?: number
 }
 
+/** True when at least one condition is on. With none, there is nothing to score and the map stays neutral (061). */
+export function hasConditions(weights: CompositeWeights): boolean {
+  return (['poiAccess', 'noise', 'cityCore', 'openPrice', 'localsOpinion', 'age'] as const).some((k) => (weights[k] ?? 0) > 0)
+}
+
 /** Score 0–100 of each component of one building against the user's conditions; null = no data. */
 export interface ComponentScores {
   poiAccess: number | null
@@ -28,7 +33,7 @@ export interface ComponentScores {
 /** Inputs of one building's score (services/buildings/buildingScore.ts builds them). */
 export interface ScoreInputs {
   components: ComponentScores
-  /** Locals' opinion from a small survey sample (042): counted, but marked like missing data. */
+  /** Locals' opinion from a small survey sample (042): treated as missing data (060). */
   localsLowN?: boolean
   /** Climate risks 0–1 (036, 037); missing = no risk. */
   risks?: Risks
@@ -38,8 +43,10 @@ const NO_RISK_PENALTY: RiskStrengths = { flood: 0, fire: 0, street: 0 }
 const NO_RISKS: Risks = { flood: 0, fire: 0, street: 0 }
 
 export interface CompositeResult {
-  /** Final score after climate-risk penalties. */
+  /** Final score after climate-risk penalties. With gaps this is the best case (060): the missing conditions are dropped. */
   score: number
+  /** Worst case (060): every missing condition counts 0. Equals `score` when there are no gaps. */
+  scoreMin: number
   /** Mean over the conditions that are on, before penalties. */
   baseScore: number
   hasGap: boolean
@@ -53,8 +60,9 @@ export interface CompositeResult {
  * Livability score (0–100) of one building: how well it meets the user's conditions, then the climate-risk
  * penalties (036), applied as multiplicative factors so safe buildings keep their score.
  *
- * Missing-data rule: a condition that is on but has no data counts 0 and stays in the mean; hasGap is set so the
- * building gets the black outline.
+ * Missing-data rule (060): a condition that is on but has no data makes the score a range. `scoreMin` counts it as
+ * 0 and keeps its weight in the mean; `score` (max) drops it and renormalises the remaining weights. hasGap is set
+ * so the building gets the hatch. Locals' opinion from a small sample counts as missing.
  */
 export function computeComposite(
   inputs: ScoreInputs,
@@ -64,22 +72,29 @@ export function computeComposite(
   const { components } = inputs
   let sum = 0
   let total = 0
+  let totalKnown = 0
   let hasGap = false
   for (const key of Object.keys(components) as (keyof ComponentScores)[]) {
     const w = weights[key] ?? 0
     if (w <= 0) continue
-    const v = components[key]
-    if (v === null) hasGap = true
-    sum += (v ?? 0) * w
+    const lowN = key === 'localsOpinion' && inputs.localsLowN === true
+    const v = lowN ? null : components[key]
     total += w
+    if (v === null) {
+      hasGap = true
+      continue
+    }
+    sum += v * w
+    totalKnown += w
   }
-  if ((weights.localsOpinion ?? 0) > 0 && inputs.localsLowN) hasGap = true
 
-  const baseScore = total === 0 ? 0 : Math.round(sum / total)
   const risks = inputs.risks ?? NO_RISKS
-  const { score, floodPenalty, firePenalty, streetPenalty } = applyRiskPenalties(baseScore, risks, riskStrengths)
+  const penalised = (base: number) => applyRiskPenalties(base, risks, riskStrengths)
+  const baseMin = total === 0 ? 0 : Math.round(sum / total)
+  const baseScore = totalKnown === 0 ? 0 : Math.round(sum / totalKnown)
+  const { score, floodPenalty, firePenalty, streetPenalty } = penalised(baseScore)
   return {
-    score, baseScore, hasGap, components, risks,
+    score, scoreMin: hasGap ? penalised(baseMin).score : score, baseScore, hasGap, components, risks,
     penalties: { flood: floodPenalty, fire: firePenalty, street: streetPenalty },
   }
 }
