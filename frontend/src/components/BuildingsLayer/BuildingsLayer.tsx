@@ -42,7 +42,7 @@ interface Loaded { buildings: BuildingData; vibe: BarriVibeData | null }
 export function BuildingsLayer() {
   const map = useContext(MapContext)
   // Neutral map (061): nothing is drawn, hovered or clicked while no condition is on.
-  const visible = useStore((s) => s.compositeVisible && hasConditions(s.compositeWeights))
+  const visible = useStore((s) => s.compositeVisible && hasConditions(s.compositeWeights, s.compositeRiskStrengths))
   const weights = useStore((s) => s.compositeWeights)
   const enabledLandmarkIds = useStore((s) => s.enabledLandmarkIds)
   const enabledCategories = useStore((s) => s.enabledWalkCategories)

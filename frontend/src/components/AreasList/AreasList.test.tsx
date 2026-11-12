@@ -109,7 +109,7 @@ describe('AreasList', () => {
   })
 
   it('asks for a condition instead of ranking when none is on (061)', () => {
-    useStore.setState({ compositeWeights: { ...DEFAULT_COMPOSITE_WEIGHTS, poiAccess: 0, noise: 0, cityCore: 0, openPrice: 0 } })
+    useStore.setState({ compositeRiskStrengths: { flood: 0, fire: 0, street: 0 }, compositeWeights: { ...DEFAULT_COMPOSITE_WEIGHTS, poiAccess: 0, noise: 0, cityCore: 0, openPrice: 0 } })
     render(<AreasList />)
     expect(screen.getByText('Add a condition to rank the areas.')).toBeTruthy()
     expect(screen.queryByRole('region', { name: 'Barcelona' })).toBeNull()
