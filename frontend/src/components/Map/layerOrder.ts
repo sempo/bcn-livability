@@ -32,6 +32,9 @@ export const LAYER_Z_ORDER: readonly string[] = [
   'best-zones-fill',
   'best-zones-line',
   'best-zones-label',
+  // Search result outline — TODO-044
+  'search-area-fill',
+  'search-area-line',
   // Idealista price overlay
   'idealista-prices-dots',
   'idealista-prices-labels',

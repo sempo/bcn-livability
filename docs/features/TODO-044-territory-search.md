@@ -2,7 +2,7 @@
 
 **Note (2026-11-04):** the hexes were removed in TODO-046; where this file says hex / cell, read building.
 
-**Status:** Draft. Not planned for the first release.
+**Status:** In progress (2026-11-11). Scope of this pass: area search + address search; the rest is under "Later".
 
 **Note (2026-11-11):** promoted to a prerequisite of the mass-market UX track (050–053): a public map needs a
 search box (address or area) before an onboarding quiz makes sense. Add a plain address geocoder (Geoapify,
@@ -15,6 +15,22 @@ names (El Born, Poblenou, …). Picking a result fits the hex map to the territo
 
 User story: *As someone relocating to Barcelona, I already know a few neighbourhood names, so I want to jump
 straight to one instead of hunting for it on the map.*
+
+## Built in this pass
+
+- One box, two groups: **Areas** (10 districts, 73 barris, 35 AMB municipalities from `areas.geojson`, plus a small
+  colloquial-name dictionary `areaAliases.ts`) and **Addresses** (Geoapify autocomplete, metro bbox).
+- Area pick: fit the map to the area (padding for the panel) and draw its outline. A colloquial name covering
+  several barris outlines all of them. Address pick: fly to it with a temporary marker. No card, no facts panel.
+- Esc or the × clears the pick. Without `VITE_GEOAPIFY_API_KEY` only areas are searched.
+- ENV: `VITE_SEARCH_MIN_CHARS`, `VITE_SEARCH_DEBOUNCE_MS`, `VITE_SEARCH_MAX_RESULTS`, `VITE_SEARCH_ADDRESS_ZOOM`.
+- Key: local `frontend/.env.local` (gitignored); CI secret `VITE_GEOAPIFY_API_KEY` in `deploy.yml`. The key ends up in
+  the public bundle, so restrict it by HTTP referrer in the Geoapify dashboard.
+- Not done: `search_used` analytics (the app has no product analytics yet).
+
+## Later (not in this pass)
+
+Territory URLs and the facts-only panel, metro stations and named places, SEO pages. Original notes:
 
 ## Notes
 

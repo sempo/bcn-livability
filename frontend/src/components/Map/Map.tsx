@@ -23,6 +23,7 @@ import { ExclusionDraw } from '../ExclusionDraw/ExclusionDraw'
 import { BestZones } from '../BestZones/BestZones'
 import { IdealistaPricesLayer } from '../IdealistaPricesLayer/IdealistaPricesLayer'
 import { LandmarksLayer } from '../LandmarksLayer/LandmarksLayer'
+import { SearchLayer } from '../SearchBox/SearchLayer'
 import { MapContextMenu } from './MapContextMenu'
 import { useExclusionsStore } from '../../store/exclusionsStore'
 import { features } from '../../features'
@@ -174,6 +175,7 @@ export function Map() {
       {features.exclusions && <ExclusionLayer />}
       {features.exclusions && <ExclusionDraw />}
       {features.bestZones && <BestZones />}
+      <SearchLayer />
       {features.idealistaPrices && <IdealistaPricesLayer />}
       {features.isochrone && <IsochroneLayer />}
       <MetroLayer />

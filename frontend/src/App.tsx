@@ -5,6 +5,7 @@ import { IconAdjustmentsHorizontal } from '@tabler/icons-react'
 import { Map } from './components/Map/Map'
 import { BrandBar } from './components/BrandBar/BrandBar'
 import { FilterPanel } from './components/FilterPanel/FilterPanel'
+import { SearchBox } from './components/SearchBox/SearchBox'
 import { ComparePane } from './components/PropertyPins/ComparePane'
 import { AddPinButton } from './components/PropertyPins/AddPinButton'
 import { ScreenshotDropZone } from './components/PropertyPins/ScreenshotDropZone'
@@ -58,6 +59,7 @@ export function App() {
       {!isMobile && (
         <div className="top-panel">
           <BrandBar />
+          <SearchBox />
           <FilterPanel />
         </div>
       )}
@@ -72,6 +74,7 @@ export function App() {
 
         <div className="brand-mobile">
           <BrandBar />
+          <SearchBox />
         </div>
 
         {features.pins && mobileView === 'compare' && pinCount > 0 && (

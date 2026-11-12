@@ -100,6 +100,10 @@ src/
 │   │                              below-ground uses, per-condition scores, noise by facade side, climate risk,
 │   │                              Barri-level / Municipality-level block (price, "What locals say");
 │   │                              MatchHeader.tsx on top: band, "Meets N of M", a row per condition, risk line (050)
+│   ├── SearchBox/
+│   │   ├── SearchBox.tsx          "Search a neighbourhood or address": areas (areaSearch) + Geoapify address suggestions
+│   │   │                          (debounced); writes the pick to searchStore. Top-left panel, under the brand bar
+│   │   └── SearchLayer.tsx        map side: area → fitBounds + blue outline; address → flyTo + temporary marker; Esc clears
 │   ├── BestZones/
 │   │   ├── BestZones.tsx          floating bar: Draw best zones / Clear zones (Esc), strictness slider (top 25…5 %),
 │   │   │                          ⚙ Idealista filters, "Inside commute zone, outside exclusion zones" (only when
@@ -132,6 +136,7 @@ src/
 │   ├── useSplitPane.ts       compare-pane width + collapse
 │   └── useBestZones.ts       building scores → mean per res-9 H3 cell → findZoneCells → outlines + Idealista URLs
 ├── store/
+│   ├── searchStore.ts         the search pick (area outline + bounds, or address point); read by SearchLayer
 │   ├── index.ts              main Zustand store (see "State and persistence")
 │   ├── pinsStore.ts          pins, add-pin mode; localStorage
 │   ├── exclusionsStore.ts    no-go zones, drawing mode, visibility; localStorage
@@ -161,6 +166,10 @@ src/
 │   ├── analytics.ts           pins: travel index + pin composite score
 │   ├── geocoding.ts           Geoapify search inside the metro bbox; for street-level hits, the whole street
 │   │                          from Overpass buffered by 80 m as the accuracy area
+│   │                          searchAddresses: Geoapify autocomplete for the search box (no key → no suggestions)
+│   ├── areaSearch.ts          searchAreas (accent/article-insensitive ranking over areas + colloquial aliases), areaIdsBounds
+│   ├── areaAliases.ts         colloquial names (El Born, Poblenou, …) → official barri ids
+│   ├── searchConfig.ts        search ENV settings (min chars, debounce, max results, address zoom)
 │   ├── exclusions.ts          subtractExclusions (Turf union + difference), isPointInExclusions
 │   ├── areas.ts               areas.geojson (districts, barris, AMB municipalities) for the exclusion picker
 │   ├── idealista/idealistaRawData.ts  loads data/idealista_prices.geojson (local only)
