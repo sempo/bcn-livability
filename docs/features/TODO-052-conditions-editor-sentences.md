@@ -1,7 +1,16 @@
 # TODO-052 — Conditions editor as sentences; one expert layer at a time
 
-**Status:** Planned, not started. Depends on 031 (the quiz sets the same values) and 050 (bands). Part of
-the mass-market UX track.
+**Status:** Planned, not started. Depends on 031 and 050 (bands). Part of the mass-market UX track.
+
+**Note (2026-11-12):** the sentence rows and word pickers (`SentenceRow`, `WordPicker`, option sets,
+`riskPreset`) are now built in **031**, where the onboarding uses the same component. 052 moves them into the
+panel for good and adds what is left: the old controls are removed, the **Map layers** segmented control,
+**Best areas** (More / Fewer) and an **Advanced** section (risk strengths, full lists, contrast boost, search
+URL). The mock-up ("Mad-libs Onboarding", screen 3) shows the target layout.
+
+Open copy issue found in 031: `noiseAnchor` (`services/buildings/conditions.ts`; 47 / 57 / 67 dB → courtyard / calm /
+busy / main road) does not match the picker words (50 / 58 / 65 dB → a courtyard / a calm street / normal city
+noise). Decide one set of words when the card and the panel are aligned.
 
 ## Problem
 

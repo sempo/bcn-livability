@@ -25,6 +25,10 @@ vi.mock('./ClimateLayerControls', () => ({
   ClimateLayerControls: () => <div data-testid="climate-layer-controls" />,
 }))
 
+vi.mock('./YourConditionsRow', () => ({
+  YourConditionsRow: () => <div data-testid="your-conditions" />,
+}))
+
 vi.mock('./CompositeControls', () => ({
   CompositeControls: () => <div data-testid="composite-controls" />,
 }))

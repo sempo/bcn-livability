@@ -80,9 +80,18 @@ src/
 │   │   ├── MapContextMenu.tsx     right-click → "Open in Google Maps" popup
 │   │   ├── googleMapsUrl.ts       Google Maps URL for a coordinate
 │   │   ├── layerOrder.ts          canonical bottom-to-top z-order; addLayerOrdered()
-│   │   └── visibleBounds.ts       viewport minus the left panel and the right building card
+│   │   └── visibleBounds.ts       viewport minus the left panel, the right building card and the bottom onboarding sheet
 │   ├── BrandBar/                  time2map mark (link to time2map.com) + the page <h1>
+│   ├── Conditions/                the sentence editor (TODO-031; 052 moves it into the panel for good)
+│   │   ├── ConditionsEditor.tsx   numbered sentence rows in priority order, "+ add" chips, match bar; adds / removes a
+│   │   │                          condition with one `applySettings`
+│   │   ├── SentenceRow.tsx        one condition as a sentence; its highlighted words are the controls
+│   │   ├── WordPicker.tsx / OptionList.tsx / CheckList.tsx   a tappable word → popover with verbal steps and
+│   │   │                          "Custom…" (slider, ranges from `CONDITION_RANGES`), or a checklist (services, places, eras)
+│   │   ├── AddConditionChips.tsx, MatchBar.tsx   conditions not on yet; share of homes per match band
+│   ├── Onboarding/                OnboardingPanel (profiles → sentence → "Show me the map"), PresetCards
 │   ├── FilterPanel/
+│   │   ├── YourConditionsRow.tsx  "Your conditions: Quiet · On foot · Budget — Change" at the top of the panel (flag)
 │   │   ├── FilterPanel.tsx        commute slider (flag), Idealista price controls (flag), exclusion controls (flag),
 │   │   │                          noise switch + legend, climate layers, Livability controls, map attribution
 │   │   ├── CompositeControls.tsx  Livability Index switch + info modal; one row per condition (checkbox, slider in
@@ -142,6 +151,9 @@ src/
 │   ├── exclusionsStore.ts    no-go zones, drawing mode, visibility; localStorage
 │   └── idealistaBaseUrlStore.ts  saved Idealista search URL; localStorage
 ├── services/
+│   ├── conditionOptions.ts    sentence-editor words (TODO-031): verbal steps from VITE_QUIZ_*, risk levels, which conditions are
+│   │                          on and in what order, profileToPatch(), budget shares ("≈ N % of homes")
+│   ├── presets.ts             the four profiles (Family, Remote worker, City life, Investor) + JSON overrides from ENV
 │   ├── buildings/
 │   │   ├── buildingData.ts    loads buildings-meta.json + buildings-scores.bin.gz → decoded Float32 columns
 │   │   ├── buildingScore.ts   columns → condition scores + risks for one building; scoreAll(); H3 cell means
@@ -301,10 +313,17 @@ the index settings, layer visibility, best-zones state, `selectedBuilding` and `
 The index settings are `compositeVisible`, `compositeWeights` (on/off), `conditions`, `enabledWalkCategories`,
 `enabledLandmarkIds`, `ageEras`, `compositeRiskStrengths` and `compositeColorRange`.
 
+Onboarding (TODO-031, flag `VITE_FEATURE_ONBOARDING`): `conditionOrder` (the order conditions were added =
+their priority), `onboarded`, `onboardingOpen`, and `applySettings(patch)`, which sets all index settings and the
+order with one store update, so the map rescores once. The panel opens only on a first visit: no `bcn_onboarded`
+flag and no saved settings (`hasSavedSettings()`); "Change" in the panel reopens it. On a phone it is a bottom sheet
+(`.onboarding-sheet`) and the map above it stays live.
+
 - **URL:** `minutes`, `zoom`, `cx`, `cy`. Read at startup, written on change. Index settings are **not** in the
   URL.
 - **localStorage** (`bcn_*` keys): workplace, isochrone cache, layer visibility, index on/off, conditions, weights,
-  walk categories, landmarks, eras, risk strengths, best-zones strictness and restriction, pins, exclusion zones,
+  walk categories, landmarks, eras, risk strengths, condition order (`bcn_condition_order`), onboarding done
+  (`bcn_onboarded`), best-zones strictness and restriction, pins, exclusion zones,
   Idealista base URL. Not persisted: the Idealista price window, the street-flooding return period, the selected
   building.
 
@@ -366,6 +385,12 @@ build, committed) and `frontend/.env.test` (all flags on). Every default below i
 | `VITE_RISK_STRENGTH_FLOOD` / `_FIRE` / `_STREET` | 5 / 5 / 5 | default risk strengths 0–10 |
 | `VITE_STREET_FLOOD_MIN_CM` / `_MAX_CM` | 10 / 50 | water at the door: counts from / fully at |
 | `VITE_MATCH_BANDS` | 85,65,40 | lower edges of Great / Good / Partial match (050) |
+| `VITE_QUIZ_NOISE_OPTIONS` | 50,58,65 | steps of the noise word, dB (031; 052 reuses them) |
+| `VITE_QUIZ_WALK_OPTIONS` / `_CENTRE_OPTIONS` | 5,10,15 / 15,30,45 | steps of the "within N min" words |
+| `VITE_QUIZ_PRICE_OPTIONS` | 2500,3500,4500,6000 | steps of the budget word, €/m² (each shows "≈ N % of homes") |
+| `VITE_QUIZ_LOCALS_OPTIONS` | 7.0,7.5,8.0 | steps of the residents' satisfaction word |
+| `VITE_RISK_PRESET_AVOID` / `_STRONG` | 5 / 8 | strength of each risk for "Avoid" / "Strongly avoid" |
+| `VITE_PRESET_FAMILY` / `_REMOTE` / `_CITY` / `_INVESTOR` | (in code) | optional JSON overriding a profile's fields |
 | `VITE_SCORE_SCALE_TRIM_PCT` | 2 | Boost contrast: scale ignores this % at each end |
 | `VITE_SCORE_SCALE_MIN_SPAN` | 20 | Boost contrast: scale minimum span, points |
 | `VITE_BEST_ZONES_TOP_PCT` | 15 | default strictness |
@@ -417,7 +442,8 @@ More constants are documented in each script's docstring.
 
 ## Planned changes that touch this file
 
-Mass-market UX track: TODO-050 (absolute match bands, card header), 031 (quiz, presets), 051 (ranked areas,
+Mass-market UX track: TODO-050 (absolute match bands, card header), 031 (profiles + sentence editor, built behind
+`VITE_FEATURE_ONBOARDING`), 051 (ranked areas,
 area view at z < 13), 052 (sentence editor, one expert layer at a time), 053 (settings in the URL).
 Scale track: TODO-054 (hosting), 055 (basemap, metro, Catastro offline), 056 (observability), 057 (CI,
 data out of git), 058 (worker scoring, bundle budget), 059 (API for the personal mode, design only).
