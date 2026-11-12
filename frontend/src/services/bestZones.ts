@@ -7,19 +7,10 @@ import { buildIdealistaUrl } from './idealista'
 // Feature 038: up to MAX_ZONES compact zones of the best-scoring hexes in the viewport, each simple
 // enough for one Idealista `shape=` search (single hole-free ring, short URL).
 
-export type Bounds = [west: number, south: number, east: number, north: number]
+// Re-exported: the UI imports these from bestZonesConfig so that it does not load h3-js and turf.
+export { DEFAULT_TOP_PCT, TOP_PCT_STEPS, stepIndex, type Bounds } from './bestZonesConfig'
+import type { Bounds } from './bestZonesConfig'
 
-export const DEFAULT_TOP_PCT = Number(import.meta.env.VITE_BEST_ZONES_TOP_PCT ?? 15)
-
-// Strictness steps as "top X% of the visible grid cells": first = loose, last = strict. Above ~25% the good
-// areas merge into one city-wide blob, so the loose end stops there.
-export const TOP_PCT_STEPS = [25, 20, 15, 10, 7, 5]
-
-/** Index of the step at or just below `topPct` (the strictest step when it is below all of them). */
-export function stepIndex(topPct: number): number {
-  const i = TOP_PCT_STEPS.findIndex((p) => p <= topPct)
-  return i === -1 ? TOP_PCT_STEPS.length - 1 : i
-}
 const MAX_ZONES = Number(import.meta.env.VITE_BEST_ZONES_MAX ?? 3)
 // Near-ties of the last zone are shown too (mass ≥ TIE_RATIO × its mass), up to MAX_WITH_TIES —
 // so an equally good area isn't hidden behind an arbitrary cut-off.

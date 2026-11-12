@@ -49,6 +49,11 @@ jobs:
           if [ "$GITHUB_REPOSITORY" != "time2map/bcn-property-finder" ]; then rm -f public/CNAME; fi
           npm run build
 
+      - name: Check the bundle size
+        working-directory: frontend
+        # The JavaScript loaded at start must stay within the budget in frontend/package.json (TODO-058).
+        run: npm run check:bundle
+
       - uses: actions/upload-pages-artifact@v3
         with:
           path: frontend/dist

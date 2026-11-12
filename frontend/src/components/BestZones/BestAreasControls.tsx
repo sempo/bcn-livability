@@ -2,7 +2,7 @@ import { ActionIcon, Button, Checkbox, Group, Popover, Stack, Text } from '@mant
 import { IconSettings } from '@tabler/icons-react'
 import { useStore } from '../../store'
 import { useMapStore } from '../../store/mapStore'
-import { TOP_PCT_STEPS, stepIndex } from '../../services/bestZones'
+import { TOP_PCT_STEPS, stepIndex } from '../../services/bestZonesConfig'
 import { visibleBounds } from '../Map/visibleBounds'
 import { BaseUrlInput } from './BaseUrlInput'
 import { features } from '../../features'

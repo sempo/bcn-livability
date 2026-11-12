@@ -1,4 +1,3 @@
-import buffer from '@turf/buffer'
 import type { MultiLineString, Polygon, MultiPolygon } from 'geojson'
 
 const GEOAPIFY_URL = 'https://api.geoapify.com/v1/geocode/search'
@@ -50,8 +49,10 @@ async function fetchFullStreetGeometry(streetName: string): Promise<MultiLineStr
   }
 }
 
-function bufferLine(line: MultiLineString): Polygon | MultiPolygon | undefined {
+/** turf's buffer is a big library: it is loaded here, when a street is buffered, not with the page (TODO-058). */
+async function bufferLine(line: MultiLineString): Promise<Polygon | MultiPolygon | undefined> {
   try {
+    const { default: buffer } = await import('@turf/buffer')
     const result = buffer(line, 80, { units: 'meters' })
     const geom = result?.geometry
     if (geom && (geom.type === 'Polygon' || geom.type === 'MultiPolygon')) {
@@ -84,7 +85,7 @@ async function tryGeoapify(query: string): Promise<GeocodedLocation | null> {
   const { result_type, street } = feature.properties as { result_type: string; street?: string }
   if (result_type === 'street' && street) {
     const fullGeometry = await fetchFullStreetGeometry(street)
-    if (fullGeometry) accuracyPolygon = bufferLine(fullGeometry)
+    if (fullGeometry) accuracyPolygon = await bufferLine(fullGeometry)
   }
 
   return { coords, accuracyPolygon }
