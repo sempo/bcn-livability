@@ -2,6 +2,7 @@ import buffer from '@turf/buffer'
 import type { MultiLineString, Polygon, MultiPolygon } from 'geojson'
 
 const GEOAPIFY_URL = 'https://api.geoapify.com/v1/geocode/search'
+const GEOAPIFY_AUTOCOMPLETE_URL = 'https://api.geoapify.com/v1/geocode/autocomplete'
 const GEOAPIFY_API_KEY = import.meta.env.VITE_GEOAPIFY_API_KEY as string
 const OVERPASS_URL = 'https://overpass-api.de/api/interpreter'
 
@@ -99,6 +100,41 @@ export async function geocodeAddress(address: string | null | undefined): Promis
     return null
   } catch {
     return null
+  }
+}
+
+export interface AddressSuggestion {
+  label: string
+  coords: [number, number]
+}
+
+/** Address autocomplete for the search box (TODO-044). No API key → no suggestions, no request. */
+export async function searchAddresses(
+  text: string,
+  signal?: AbortSignal,
+  limit = 5,
+): Promise<AddressSuggestion[]> {
+  const apiKey = import.meta.env.VITE_GEOAPIFY_API_KEY as string | undefined
+  if (!apiKey) return []
+  const params = new URLSearchParams({
+    text,
+    filter: `rect:${BCN_METRO_BBOX}`,
+    lang: 'en',
+    limit: String(limit),
+    apiKey,
+  })
+  try {
+    const res = await fetch(`${GEOAPIFY_AUTOCOMPLETE_URL}?${params}`, { signal })
+    if (!res.ok) return []
+    const data = await res.json()
+    return (data.features ?? []).map(
+      (f: { geometry: { coordinates: [number, number] }; properties: { formatted?: string } }) => ({
+        label: f.properties.formatted ?? '',
+        coords: f.geometry.coordinates,
+      }),
+    ).filter((s: AddressSuggestion) => s.label)
+  } catch {
+    return []
   }
 }
 

@@ -19,13 +19,14 @@ Synced with the code on 2026-11-11 (`frontend/src/main.tsx`, `index.css`, layer 
 | Missing data | black building outline, opacity 0.7 |
 | Hovered / selected building | white outline, 2 px |
 | Best zones | `#6741d9`, dashed outline, light fill, numbered |
+| Search result (area) | `#1971c2`, solid 3 px outline, fill 6 %; address = marker of the same colour |
 | Isochrone | black mask at 25 % outside the zone, white 1.5 px outline, label "N min from work" |
 | Exclusion zones | `#555555`, fill 28 %, outline 1.5 px |
 | Noise, flood, wildfire, street flooding | official palettes of each source (see the legend components) |
 
 ## Layout
 
-- Desktop: brand bar and filter panel at the top left, over the map. The building card opens on the right. With
+- Desktop: brand bar, search box and filter panel at the top left, over the map. The building card opens on the right. With
   pins on, the compare pane sits on the left in a resizable split.
 - Mobile (≤ 768 px): filters in a bottom drawer (adjustments button). The brand bar sits on top. With pins on,
   there is a Map / Compare toggle.

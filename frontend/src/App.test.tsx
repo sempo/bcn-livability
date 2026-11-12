@@ -77,6 +77,11 @@ describe('App (integration)', () => {
     expect(screen.getByText('Commute from work')).toBeInTheDocument()
   })
 
+  it('renders the search box', () => {
+    renderApp()
+    expect(screen.getByPlaceholderText('Search a neighbourhood or address')).toBeInTheDocument()
+  })
+
   it('renders the travel time slider label', () => {
     renderApp()
     expect(screen.getByText(/Travel time by public transport/)).toBeInTheDocument()
