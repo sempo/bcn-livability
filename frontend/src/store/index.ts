@@ -7,6 +7,11 @@ import { DEFAULT_TOP_PCT, type Bounds } from '../services/bestZones'
 import { ALL_AGE_ERA_IDS } from '../services/buildings/buildingAge'
 import { DEFAULT_CONDITIONS, type Conditions } from '../services/buildings/conditions'
 import { features } from '../features'
+import type { AreaRank } from '../services/areas/areaRank'
+import {
+  CONDITION_KEYS, DEFAULT_FLAT_AREA_M2, FLAT_AREA_RANGE, activeConditions, priceAfterAreaChange,
+  type ConditionKey, type SettingsPatch,
+} from '../services/conditionOptions'
 
 /** Which Livability conditions are on: 1 = on, 0 = off (049). */
 export interface CompositeWeights {
@@ -71,10 +76,20 @@ export interface AppState {
   ageEras: readonly string[]
   /** What is OK for the user, in real units (049). */
   conditions: Conditions
+  /** Size (m²) of the flat the budget word is for (TODO-031); the budget shown is `priceMaxEurM2` × this. */
+  flatAreaM2: number
+  /** Order in which the conditions were added = their priority (TODO-031; used by the ranked list, 051). */
+  conditionOrder: ConditionKey[]
+  /** The person has been through the onboarding (or skipped it). */
+  onboarded: boolean
+  /** The onboarding panel is showing: first visit, or "Change" in the panel. */
+  onboardingOpen: boolean
   /** Row (= feature id) of the clicked building; null = no card. */
   selectedBuilding: number | null
   /** Latest score of every building (by row), set by BuildingsLayer; Best zones average it per cell. */
   buildingScores: Uint8Array | null
+  /** Areas ranked by how many of their homes fit (TODO-051), set by BuildingsLayer after each rescoring. */
+  areaRanks: AreaRank[] | null
   setWorkplace: (wp: [number, number] | null) => void
   setMinutes: (minutes: number) => void
   setZoom: (zoom: number) => void
@@ -101,8 +116,15 @@ export interface AppState {
   setEnabledWalkCategories: (ids: readonly string[]) => void
   setAgeEras: (ids: readonly string[]) => void
   setConditions: (conditions: Conditions) => void
+  /** Another flat size keeps the budget in euros, so the price per m² moves; one update, one rescoring. */
+  setFlatArea: (areaM2: number) => void
+  /** Sets everything a profile or the sentence editor can set, with one store update (one rescoring). */
+  applySettings: (patch: SettingsPatch) => void
+  completeOnboarding: () => void
+  openOnboarding: () => void
   setSelectedBuilding: (row: number | null) => void
   setBuildingScores: (scores: Uint8Array | null) => void
+  setAreaRanks: (ranks: AreaRank[] | null) => void
 }
 
 function isValidMinutes(n: number): boolean {
@@ -140,6 +162,44 @@ const WALK_CATEGORIES_KEY = 'bcn_walk_categories'
 const CONTRAST_BOOST_KEY = 'bcn_contrast_boost'
 const AGE_ERAS_KEY = 'bcn_age_eras'
 const CONDITIONS_KEY = 'bcn_conditions'
+const CONDITION_ORDER_KEY = 'bcn_condition_order'
+const ONBOARDED_KEY = 'bcn_onboarded'
+const FLAT_AREA_KEY = 'bcn_flat_area_m2'
+
+function loadFlatArea(): number {
+  try {
+    const v = Number(localStorage.getItem(FLAT_AREA_KEY))
+    if (Number.isFinite(v) && v >= FLAT_AREA_RANGE.min && v <= FLAT_AREA_RANGE.max) return v
+  } catch { /* ignore */ }
+  return DEFAULT_FLAT_AREA_M2
+}
+
+/** Settings a returning visitor has saved; the onboarding does not overwrite them (TODO-031). */
+const SAVED_SETTINGS_KEYS = [
+  COMPOSITE_WEIGHTS_KEY, CONDITIONS_KEY, WALK_CATEGORIES_KEY, CITY_CORE_LANDMARKS_KEY, AGE_ERAS_KEY,
+  COMPOSITE_RISK_STRENGTHS_KEY,
+]
+
+export function hasSavedSettings(): boolean {
+  try {
+    return SAVED_SETTINGS_KEYS.some((k) => localStorage.getItem(k) !== null)
+  } catch {
+    return false
+  }
+}
+
+function loadConditionOrder(): ConditionKey[] {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(CONDITION_ORDER_KEY) ?? 'null') as unknown
+    return Array.isArray(parsed) ? parsed.filter((k): k is ConditionKey => CONDITION_KEYS.includes(k as ConditionKey)) : []
+  } catch {
+    return []
+  }
+}
+
+function persist(key: string, value: unknown): void {
+  try { localStorage.setItem(key, JSON.stringify(value)) } catch { /* ignore */ }
+}
 
 function loadConditions(): Conditions {
   try {
@@ -237,9 +297,12 @@ function loadBoolKey(key: string, dflt = false): boolean {
   }
 }
 
-export const useStore = create<AppState>((set) => {
+export const useStore = create<AppState>((set, get) => {
   const { minutes, zoom, mapCenter } = readUrlParams()
   const workplace = readWorkplaceFromStorage()
+  const weights = loadCompositeWeights()
+  const riskStrengths = loadRiskStrengths()
+  const onboarded = loadBoolKey(ONBOARDED_KEY)
   return {
     workplace,
     minutes,
@@ -304,7 +367,7 @@ export const useStore = create<AppState>((set) => {
     setIdealistaPriceRange: (idealistaPriceRange) => set({ idealistaPriceRange }),
     setIdealistaPriceBounds: (idealistaPriceBounds) => set({ idealistaPriceBounds }),
     compositeVisible: loadBoolKey(COMPOSITE_VISIBLE_KEY, true),
-    compositeWeights: loadCompositeWeights(),
+    compositeWeights: weights,
     compositeColorRange: [0, 100],
     setCompositeVisible: (visible) => {
       try { localStorage.setItem(COMPOSITE_VISIBLE_KEY, String(visible)) } catch { /* ignore */ }
@@ -321,7 +384,7 @@ export const useStore = create<AppState>((set) => {
       // Off: the scale is the fixed one at once; on: BuildingsLayer fits it to the view.
       set(contrastBoost ? { contrastBoost } : { contrastBoost, compositeColorRange: [0, 100] })
     },
-    compositeRiskStrengths: loadRiskStrengths(),
+    compositeRiskStrengths: riskStrengths,
     setCompositeRiskStrengths: (strengths) => {
       try { localStorage.setItem(COMPOSITE_RISK_STRENGTHS_KEY, JSON.stringify(strengths)) } catch { /* ignore */ }
       set({ compositeRiskStrengths: strengths })
@@ -358,9 +421,39 @@ export const useStore = create<AppState>((set) => {
       try { localStorage.setItem(CONDITIONS_KEY, JSON.stringify(conditions)) } catch { /* ignore */ }
       set({ conditions })
     },
+    flatAreaM2: loadFlatArea(),
+    setFlatArea: (areaM2) => {
+      const { flatAreaM2, conditions } = get()
+      if (areaM2 === flatAreaM2) return
+      const next = { ...conditions, priceMaxEurM2: priceAfterAreaChange(conditions.priceMaxEurM2, flatAreaM2, areaM2) }
+      try { localStorage.setItem(FLAT_AREA_KEY, String(areaM2)) } catch { /* ignore */ }
+      persist(CONDITIONS_KEY, next)
+      set({ flatAreaM2: areaM2, conditions: next })
+    },
+    conditionOrder: activeConditions(weights, riskStrengths, loadConditionOrder()),
+    onboarded,
+    onboardingOpen: features.onboarding && !onboarded && !hasSavedSettings(),
+    applySettings: (patch) => {
+      const next: Partial<AppState> = {}
+      if (patch.weights) { persist(COMPOSITE_WEIGHTS_KEY, patch.weights); next.compositeWeights = patch.weights }
+      if (patch.conditions) { persist(CONDITIONS_KEY, patch.conditions); next.conditions = patch.conditions }
+      if (patch.walkCategories) { persist(WALK_CATEGORIES_KEY, patch.walkCategories); next.enabledWalkCategories = patch.walkCategories }
+      if (patch.landmarkIds) { persist(CITY_CORE_LANDMARKS_KEY, patch.landmarkIds); next.enabledLandmarkIds = patch.landmarkIds }
+      if (patch.eras) { persist(AGE_ERAS_KEY, patch.eras); next.ageEras = patch.eras }
+      if (patch.riskStrengths) { persist(COMPOSITE_RISK_STRENGTHS_KEY, patch.riskStrengths); next.compositeRiskStrengths = patch.riskStrengths }
+      if (patch.order) { persist(CONDITION_ORDER_KEY, patch.order); next.conditionOrder = patch.order }
+      set(next)
+    },
+    completeOnboarding: () => {
+      try { localStorage.setItem(ONBOARDED_KEY, 'true') } catch { /* ignore */ }
+      set({ onboarded: true, onboardingOpen: false })
+    },
+    openOnboarding: () => set({ onboardingOpen: true }),
     selectedBuilding: null,
     setSelectedBuilding: (selectedBuilding) => set({ selectedBuilding }),
     buildingScores: null,
     setBuildingScores: (buildingScores) => set({ buildingScores }),
+    areaRanks: null,
+    setAreaRanks: (areaRanks) => set({ areaRanks }),
   }
 })

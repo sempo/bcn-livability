@@ -5,6 +5,8 @@ import { IconAdjustmentsHorizontal } from '@tabler/icons-react'
 import { Map } from './components/Map/Map'
 import { BrandBar } from './components/BrandBar/BrandBar'
 import { FilterPanel } from './components/FilterPanel/FilterPanel'
+import { OnboardingPanel } from './components/Onboarding/OnboardingPanel'
+import { useStore } from './store'
 import { SearchBox } from './components/SearchBox/SearchBox'
 import { ComparePane } from './components/PropertyPins/ComparePane'
 import { AddPinButton } from './components/PropertyPins/AddPinButton'
@@ -25,6 +27,7 @@ export function App() {
   const [mobileView, setMobileView] = useState<'map' | 'compare'>('map')
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const pinCount = usePinsStore((s) => s.pins.length)
+  const onboardingOpen = useStore((s) => s.onboardingOpen)
 
   useIsochrone((err) => {
     setErrorMsg(err.message)
@@ -57,10 +60,10 @@ export function App() {
         <Map />
       )}
       {!isMobile && (
-        <div className="top-panel">
+        <div className={onboardingOpen ? 'top-panel top-panel--wide' : 'top-panel'}>
           <BrandBar />
           <SearchBox />
-          <FilterPanel />
+          {onboardingOpen ? <OnboardingPanel /> : <FilterPanel />}
         </div>
       )}
       <BuildingCard />
@@ -83,16 +86,24 @@ export function App() {
           </div>
         )}
 
-        <ActionIcon
-          className="filter-toggle"
-          size="xl"
-          radius="xl"
-          variant="white"
-          onClick={() => setDrawerOpen(true)}
-          aria-label="Open filters"
-        >
-          <IconAdjustmentsHorizontal size={22} />
-        </ActionIcon>
+        {onboardingOpen && (
+          <div className="onboarding-sheet">
+            <OnboardingPanel />
+          </div>
+        )}
+
+        {!onboardingOpen && (
+          <ActionIcon
+            className="filter-toggle"
+            size="xl"
+            radius="xl"
+            variant="white"
+            onClick={() => setDrawerOpen(true)}
+            aria-label="Open filters"
+          >
+            <IconAdjustmentsHorizontal size={22} />
+          </ActionIcon>
+        )}
         <Drawer
           opened={drawerOpen}
           onClose={() => setDrawerOpen(false)}

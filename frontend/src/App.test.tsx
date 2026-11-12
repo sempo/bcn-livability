@@ -4,6 +4,7 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import { MantineProvider } from '@mantine/core'
 import App from './App'
 import { useStore } from './store'
+import { useSearchStore } from './store/searchStore'
 
 vi.mock('@mantine/core', async () => {
   const actual = await vi.importActual<typeof import('@mantine/core')>('@mantine/core')
@@ -45,6 +46,8 @@ vi.mock('./hooks/useIsochrone', () => ({
   useIsochrone: vi.fn().mockReturnValue({ isLoading: false }),
 }))
 
+beforeEach(() => { useSearchStore.setState({ open: false, selection: null }) })
+
 function renderApp() {
   return render(
     <MantineProvider>
@@ -59,6 +62,8 @@ describe('App (integration)', () => {
       workplace: [2.1687, 41.3874],
       minutes: 60,
       resultPolygon: null,
+      onboardingOpen: false,
+      onboarded: true,
     })
     vi.spyOn(window.history, 'replaceState')
   })
@@ -77,9 +82,11 @@ describe('App (integration)', () => {
     expect(screen.getByText('Commute from work')).toBeInTheDocument()
   })
 
-  it('renders the search box', () => {
+  it('shows a search button, and the search field opens when it is pressed', () => {
     renderApp()
-    expect(screen.getByPlaceholderText('Search a neighbourhood or address')).toBeInTheDocument()
+    expect(screen.queryByLabelText('Search an area or address', { selector: 'input' })).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Search an area or address' }))
+    expect(screen.getByLabelText('Search an area or address', { selector: 'input' })).toBeInTheDocument()
   })
 
   it('renders the travel time slider label', () => {
@@ -97,12 +104,54 @@ describe('App (integration)', () => {
   })
 })
 
+describe('App (integration) - first visit (TODO-031)', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    useStore.setState({
+      workplace: [2.1687, 41.3874], minutes: 60, resultPolygon: null,
+      onboardingOpen: true, onboarded: false,
+    })
+  })
+
+  it('shows the onboarding instead of the filter panel, with the search box still there', () => {
+    renderApp()
+    expect(screen.getByRole('heading', { name: 'Where in Barcelona would you like to live?' })).toBeInTheDocument()
+    expect(screen.queryByText('Commute from work')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Search an area or address' })).toBeInTheDocument()
+  })
+
+  it('a profile and "Show me the map" lead to the filter panel with "Your conditions"', () => {
+    renderApp()
+    fireEvent.click(screen.getByRole('button', { name: /^Family/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Show me the map' }))
+    expect(screen.queryByRole('heading', { name: /Where in Barcelona/ })).not.toBeInTheDocument()
+    expect(screen.getByText('Commute from work')).toBeInTheDocument()
+    expect(screen.getByText('Your conditions')).toBeInTheDocument()
+    expect(screen.getByText('Quiet · On foot · Budget · Risks')).toBeInTheDocument()
+  })
+
+  it('"Change" brings the onboarding back', () => {
+    useStore.setState({ onboardingOpen: false, onboarded: true })
+    renderApp()
+    fireEvent.click(screen.getByRole('button', { name: 'Change' }))
+    expect(screen.getByRole('heading', { name: /Where in Barcelona/ })).toBeInTheDocument()
+  })
+
+  it('does not show for a returning visitor', () => {
+    useStore.setState({ onboardingOpen: false, onboarded: false })
+    renderApp()
+    expect(screen.queryByRole('heading', { name: /Where in Barcelona/ })).not.toBeInTheDocument()
+  })
+})
+
 describe('App (integration) - mobile', () => {
   beforeEach(() => {
     useStore.setState({
       workplace: [2.1687, 41.3874],
       minutes: 60,
       resultPolygon: null,
+      onboardingOpen: false,
+      onboarded: true,
     })
     vi.spyOn(window.history, 'replaceState')
     Object.defineProperty(window, 'matchMedia', {
@@ -133,5 +182,16 @@ describe('App (integration) - mobile', () => {
     const closeBtn = screen.getByRole('button', { name: /close/i })
     fireEvent.click(closeBtn)
     expect(screen.queryByRole('dialog', { name: 'Filters' })).not.toBeInTheDocument()
+  })
+
+  it('first visit: the onboarding is a sheet over the map and the filter button waits', () => {
+    useStore.setState({ onboardingOpen: true, onboarded: false })
+    const { container } = renderApp()
+    expect(container.querySelector('.onboarding-sheet')).toBeTruthy()
+    expect(screen.getByRole('heading', { name: /Where in Barcelona/ })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /open filters/i })).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Just show me the map' }))
+    expect(container.querySelector('.onboarding-sheet')).toBeNull()
+    expect(screen.getByRole('button', { name: /open filters/i })).toBeInTheDocument()
   })
 })

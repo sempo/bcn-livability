@@ -9,6 +9,9 @@ export type SearchSelection =
 
 interface SearchState {
   selection: SearchSelection | null
+  /** The search field is open (the brand bar's search button toggles it). */
+  open: boolean
+  setOpen: (open: boolean) => void
   selectArea: (label: string, bounds: Bounds, outline: FeatureCollection) => void
   selectAddress: (label: string, coords: [number, number]) => void
   clear: () => void
@@ -18,6 +21,9 @@ let nextRequestId = 1
 
 export const useSearchStore = create<SearchState>((set) => ({
   selection: null,
+  open: false,
+  // Closing also drops the picked place, so the field and the outline never disagree.
+  setOpen: (open) => set(open ? { open } : { open, selection: null }),
   selectArea: (label, bounds, outline) =>
     set({ selection: { kind: 'area', requestId: nextRequestId++, label, bounds, outline } }),
   selectAddress: (label, coords) =>

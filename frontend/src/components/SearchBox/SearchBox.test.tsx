@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import { MantineProvider } from '@mantine/core'
 import { SearchBox } from './SearchBox'
 import { useSearchStore } from '../../store/searchStore'
@@ -35,12 +35,13 @@ function renderBox() {
 }
 
 function type(text: string) {
-  fireEvent.change(screen.getByPlaceholderText('Search a neighbourhood or address'), { target: { value: text } })
+  fireEvent.change(screen.getByLabelText('Search an area or address'), { target: { value: text } })
 }
 
 describe('SearchBox', () => {
   beforeEach(() => {
     useSearchStore.getState().clear()
+    useSearchStore.setState({ open: true })
     searchAddresses.mockReset().mockResolvedValue([])
   })
 
@@ -73,13 +74,34 @@ describe('SearchBox', () => {
     expect(searchAddresses).not.toHaveBeenCalled()
   })
 
-  it('the clear button empties the field and the selection', async () => {
+  it('the close button empties the field, drops the selection and closes the search', async () => {
     renderBox()
     type('gracia')
     fireEvent.click(await screen.findByText('la Vila de Gràcia'))
-    fireEvent.click(screen.getByLabelText('Clear search'))
+    fireEvent.click(screen.getByLabelText('Close search'))
     expect(useSearchStore.getState().selection).toBeNull()
-    expect(screen.getByPlaceholderText('Search a neighbourhood or address')).toHaveValue('')
+    expect(useSearchStore.getState().open).toBe(false)
+    expect(screen.queryByLabelText('Search an area or address')).toBeNull()
+  })
+
+  it('is hidden until the search button opens it, and forgets the text when closed', () => {
+    useSearchStore.setState({ open: false })
+    renderBox()
+    expect(screen.queryByLabelText('Search an area or address')).toBeNull()
+    act(() => useSearchStore.getState().setOpen(true))
+    type('gracia')
+    expect(screen.getByLabelText('Search an area or address')).toHaveValue('gracia')
+    act(() => useSearchStore.getState().setOpen(false))
+    act(() => useSearchStore.getState().setOpen(true))
+    expect(screen.getByLabelText('Search an area or address')).toHaveValue('')
+  })
+
+  it('opens focused, and Escape closes it', () => {
+    renderBox()
+    const input = screen.getByLabelText('Search an area or address')
+    expect(input).toHaveFocus()
+    fireEvent.keyDown(input, { key: 'Escape' })
+    expect(useSearchStore.getState().open).toBe(false)
   })
 
   it('shows a hint when nothing matches', async () => {

@@ -1,7 +1,16 @@
 # TODO-052 — Conditions editor as sentences; one expert layer at a time
 
-**Status:** Planned, not started. Depends on 031 (the quiz sets the same values) and 050 (bands). Part of
-the mass-market UX track.
+**Status:** Planned, not started. Depends on 031 and 050 (bands). Part of the mass-market UX track.
+
+**Note (2026-11-12):** the sentence rows and word pickers (`SentenceRow`, `WordPicker`, option sets,
+`riskPreset`) are now built in **031**, where the onboarding uses the same component. 052 moves them into the
+panel for good and adds what is left: the old controls are removed, the **Map layers** segmented control,
+**Best areas** (More / Fewer) and an **Advanced** section (risk strengths, full lists, contrast boost, search
+URL). The mock-up ("Mad-libs Onboarding", screen 3) shows the target layout.
+
+Open copy issue found in 031: `noiseAnchor` (`services/buildings/conditions.ts`; 47 / 57 / 67 dB → courtyard / calm /
+busy / main road) does not match the picker words (50 / 58 / 65 dB → a courtyard / a calm street / normal city
+noise). Decide one set of words when the card and the panel are aligned.
 
 ## Problem
 
@@ -14,8 +23,8 @@ climate layers) compete with the main controls for the same space.
 ## Decision
 
 - **The sentence is the control.** Each condition is one line of plain English with tappable words that
-  open a small picker: *"Up to [a busy street · 65 dB] outside my window"*, *"[Everyday services] within
-  [10 min] on foot"*, *"[My places] within [30 min] on foot"*, *"Up to [€4,000/m²] in the area"*,
+  open a small picker: *"No louder than [a busy street · 65 dB] outside my window"*, *"[Everyday services] within
+  [10 min] on foot"*, *"[My places] within [30 min] on foot"*, *"A [70 m²] flat costs up to [€280,000] on average"*,
   *"Residents rate the barri at least [7.5]"*, *"Built in [any era]"*.
 - Pickers offer **verbal steps**, not continuous sliders: the same option sets as the quiz (031) plus
   "Custom…" which reveals the existing slider for power users.

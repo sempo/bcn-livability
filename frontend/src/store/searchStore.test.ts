@@ -4,7 +4,7 @@ import { useSearchStore } from './searchStore'
 const outline = { type: 'FeatureCollection', features: [] } as const
 
 describe('searchStore', () => {
-  beforeEach(() => useSearchStore.getState().clear())
+  beforeEach(() => { useSearchStore.getState().clear(); useSearchStore.setState({ open: false }) })
 
   it('starts empty', () => {
     expect(useSearchStore.getState().selection).toBeNull()
@@ -34,6 +34,18 @@ describe('searchStore', () => {
   it('clears', () => {
     useSearchStore.getState().selectAddress('A', [1, 1])
     useSearchStore.getState().clear()
+    expect(useSearchStore.getState().selection).toBeNull()
+  })
+
+  it('the search field is closed at first; closing it also drops the picked place', () => {
+    const st = useSearchStore.getState()
+    expect(st.open).toBe(false)
+    st.setOpen(true)
+    st.selectAddress('Carrer X 1', [2.1, 41.4])
+    expect(useSearchStore.getState().open).toBe(true)
+    expect(useSearchStore.getState().selection).not.toBeNull()
+    useSearchStore.getState().setOpen(false)
+    expect(useSearchStore.getState().open).toBe(false)
     expect(useSearchStore.getState().selection).toBeNull()
   })
 })

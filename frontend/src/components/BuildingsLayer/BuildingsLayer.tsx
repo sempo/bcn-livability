@@ -4,7 +4,8 @@ import { MapContext } from '../Map/MapContext'
 import { useStore } from '../../store'
 import { loadBuildings, type BuildingData } from '../../services/buildings/buildingData'
 import { scoreAll, scoreBuilding } from '../../services/buildings/buildingScore'
-import { matchSummary, matchTooltip } from '../../services/match/matchSummary'
+import { matchSummary, matchTooltip, type ConditionId } from '../../services/match/matchSummary'
+import { AREA_VIEW_MAX_ZOOM, rankAreas } from '../../services/areas/areaRank'
 import { loadBarriVibe, type BarriVibeData } from '../../services/localsOpinion/localsOpinion'
 import { buildStateColorForRange, colorRange } from './scoreRamp'
 import { inBestZone } from '../BestZones/inBestZone'
@@ -98,6 +99,8 @@ export function BuildingsLayer() {
     const base = { source: SOURCE_ID, 'source-layer': SOURCE_LAYER, layout }
     addLayerOrdered(map, {
       ...base, id: DOT_LAYER_ID, type: 'circle', filter: POINT,
+      // The area view (TODO-051) takes over below this zoom.
+      ...(features.areas ? { minzoom: AREA_VIEW_MAX_ZOOM } : {}),
       paint: {
         'circle-color': color, 'circle-opacity': 0.85,
         'circle-radius': ['interpolate', ['linear'], ['zoom'], 10, 1, 13, 2.5],
@@ -129,9 +132,9 @@ export function BuildingsLayer() {
     if (!map || !data || !map.getSource(SOURCE_ID)) return
     const run = () => {
       const t0 = performance.now()
-      const { score, gap } = scoreAll(data.buildings, {
+      const { score, gap, components } = scoreAll(data.buildings, {
         weights, conditions, enabledLandmarkIds, enabledCategories, riskStrengths, ageEras, vibe: data.vibe,
-      })
+      }, features.areas)
       const [prevScore, prevGap] = [scoresRef.current, gapRef.current]
       let changed = 0
       for (let i = 0; i < score.length; i++) {
@@ -142,6 +145,12 @@ export function BuildingsLayer() {
       scoresRef.current = score
       gapRef.current = gap
       useStore.getState().setBuildingScores(score)
+      if (components) {
+        const on = (Object.keys(components) as ConditionId[]).filter((k) => (weights[k] ?? 0) > 0)
+        useStore.getState().setAreaRanks(
+          rankAreas(score, data.buildings.cols.area, data.buildings.meta.areas, components, on),
+        )
+      }
       recolor()
       if (import.meta.env.DEV) {
         console.debug(`buildings: ${score.length} scored, ${changed} changed, ${Math.round(performance.now() - t0)} ms`)

@@ -105,6 +105,19 @@ describe('BuildingsLayer (TODO-046)', () => {
     expect(map.layers.get(FILL_LAYER_ID)).toMatchObject({ 'source-layer': 'b', filter: ['==', ['geometry-type'], 'Polygon'] })
   })
 
+  it('ranks the areas after scoring, and the dots give way to the area view below z13 (TODO-051)', async () => {
+    const map = makeFakeMap()
+    await renderLayer(map)
+    expect(map.layers.get(DOT_LAYER_ID)).toMatchObject({ minzoom: 13 })
+    const ranks = useStore.getState().areaRanks!
+    expect(ranks.map((r) => r.name).sort()).toEqual(['Hospitalet', 'el Raval'])
+    const raval = ranks.find((r) => r.name === 'el Raval')!
+    expect(raval.n).toBe(1)
+    expect(raval.mean).toBe(map.states.get(0)!.score)
+    expect(raval.strongest.length).toBeGreaterThan(0)
+    expect(raval.ranked).toBe(false) // one building is below the minimum
+  })
+
   it('sets every building score as feature state; the quiet central one scores higher', async () => {
     const map = makeFakeMap()
     await renderLayer(map)

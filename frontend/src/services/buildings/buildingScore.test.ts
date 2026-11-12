@@ -115,6 +115,21 @@ describe('scoreAll', () => {
     expect(score[0]).toBe(scoreBuilding(DATA, 0, SETTINGS).score)
     expect([...gap]).toEqual([0, 1]) // building 1 has no noise data and no Locals' opinion (outside Barcelona)
   })
+
+  it('returns no component arrays unless asked', () => {
+    expect(scoreAll(DATA, SETTINGS).components).toBeUndefined()
+  })
+
+  it('withComponents: one array per condition, equal to scoreBuilding, 255 = no data', () => {
+    const { components } = scoreAll(DATA, SETTINGS, true)
+    for (const i of [0, 1]) {
+      const r = scoreBuilding(DATA, i, SETTINGS)
+      for (const key of ['poiAccess', 'noise', 'cityCore', 'openPrice', 'localsOpinion', 'age'] as const) {
+        expect(components![key][i]).toBe(r.components[key] ?? 255)
+      }
+    }
+    expect(components!.noise[1]).toBe(255) // building 1 has no noise map
+  })
 })
 
 describe('Best zones grid (TODO-046)', () => {

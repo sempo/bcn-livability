@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Divider, Modal, Paper, Slider, Stack, Switch, Table, Text } from '@mantine/core'
+import { Divider, Modal, Paper, Slider, Stack, Switch, Table, Tabs, Text } from '@mantine/core'
 import { IconInfoCircle } from '@tabler/icons-react'
 import { useStore } from '../../store'
 import { NoiseLegend } from '../NoiseLayer/NoiseLegend'
@@ -7,6 +7,8 @@ import { ClimateLayerControls } from './ClimateLayerControls'
 import { CompositeControls } from './CompositeControls'
 import { IdealistaPricesControls } from '../IdealistaPricesLayer/IdealistaPricesControls'
 import { ExclusionControls } from './ExclusionControls'
+import { YourConditionsRow } from './YourConditionsRow'
+import { AreasList } from '../AreasList/AreasList'
 import { features } from '../../features'
 
 const TIME_MARKS = [
@@ -83,16 +85,29 @@ export function FilterPanel() {
     mapAttribution,
   } = useStore()
   const [isoModalOpen, setIsoModalOpen] = useState(false)
+  const [tab, setTab] = useState<'settings' | 'areas'>('settings')
 
   return (
     <Paper
       className="glass-panel"
       p="md"
       radius="md"
-      style={{ minHeight: 0, overflowY: 'auto' }}
+      // The tabs stay put; only the body below them scrolls (panel on desktop, drawer on a phone).
+      style={{ minHeight: 0, display: 'flex', flexDirection: 'column', maxHeight: 'calc(100dvh - 130px)' }}
     >
       {features.isochrone && <IsochroneInfoModal opened={isoModalOpen} onClose={() => setIsoModalOpen(false)} />}
+      {features.areas && (
+        <Tabs value={tab} onChange={(v) => setTab(v === 'areas' ? 'areas' : 'settings')} mb="sm" style={{ flex: 'none' }}>
+          <Tabs.List grow>
+            <Tabs.Tab value="settings">Settings</Tabs.Tab>
+            <Tabs.Tab value="areas">Your areas</Tabs.Tab>
+          </Tabs.List>
+        </Tabs>
+      )}
+      <div className="filter-panel__body">
+      {features.areas && tab === 'areas' ? <AreasList /> : (
       <Stack gap="md">
+          <YourConditionsRow />
           {features.isochrone && (
             <>
               <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -162,6 +177,8 @@ export function FilterPanel() {
             </>
           )}
       </Stack>
+      )}
+      </div>
     </Paper>
   )
 }

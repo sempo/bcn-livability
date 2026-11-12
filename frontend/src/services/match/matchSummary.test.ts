@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { computeComposite, type ComponentScores, type CompositeWeights } from '../composite/compositeScore'
 import {
-  BAND_COLOR, BAND_LABEL, conditionStatus, matchBand, matchSummary, matchTooltip, parseBands, riskLine,
+  BAND_COLOR, BAND_LABEL, bandShares, conditionStatus, matchBand, matchSummary, matchTooltip, parseBands, riskLine,
 } from './matchSummary'
 import { ageText, cityCoreText, localsText, noiseText, poiText, priceText } from './matchText'
 
@@ -130,5 +130,18 @@ describe('row texts', () => {
     expect(localsText(7.6, 7.5)).toBe('rated 7.6, your minimum 7.5')
     expect(ageText('Historic')).toBe('Historic')
     expect(ageText(null)).toBe('year of construction unknown')
+  })
+})
+
+describe('bandShares', () => {
+  it('counts the share of homes per band, in the order great / good / partial / poor', () => {
+    const scores = Uint8Array.from([100, 90, 70, 50, 10, 0, 85, 65])
+    // bands 85,65,40: great = 100, 90, 85; good = 70, 65; partial = 50; poor = 10, 0
+    expect(bandShares(scores).map((p) => Math.round(p))).toEqual([38, 25, 13, 25])
+  })
+  it('adds up to 100 and is all zeros without scores', () => {
+    const shares = bandShares(Uint8Array.from([100, 50, 0]))
+    expect(shares.reduce((a, b) => a + b, 0)).toBeCloseTo(100)
+    expect(bandShares(new Uint8Array())).toEqual([0, 0, 0, 0])
   })
 })
