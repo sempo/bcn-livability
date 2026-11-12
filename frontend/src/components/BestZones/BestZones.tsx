@@ -8,7 +8,7 @@ import { BestZonesLayer } from './BestZonesLayer'
 import { BaseUrlInput } from './BaseUrlInput'
 import { visibleBounds } from '../Map/visibleBounds'
 import { features } from '../../features'
-import { TOP_PCT_STEPS, stepIndex } from '../../services/bestZones'
+import { TOP_PCT_STEPS, stepIndex } from '../../services/bestZonesConfig'
 
 /**
  * Floating best-zones bar (feature 038) + the zones it draws. "Draw best zones" turns zones on for
@@ -30,6 +30,7 @@ export function BestZones({ withBar = true }: { /** The floating bar; the new fi
   // The panel's "Best areas" block says how many areas there are.
   const count = bounds && ready ? zones.length : null
   useEffect(() => { setCount(count) }, [count, setCount])
+  useEffect(() => () => setCount(null), [setCount])
 
   // While zones are on, they follow the map: every pan/zoom redraws them for the new view.
   useEffect(() => {

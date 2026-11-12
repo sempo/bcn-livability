@@ -8,7 +8,6 @@
  * - building age: the year built against the eras the user likes (047);
  * - risks: the ACA zone the footprint touches, wildfire, and water depth at the door (penalties, 036 / 037).
  */
-import { latLngToCell } from 'h3-js'
 import { computeComposite, type CompositeResult, type CompositeWeights, type ScoreInputs } from '../composite/compositeScore'
 import {
   fireRisk, floodRisk, streetFloodRisk, type Risks, type RiskStrengths,
@@ -117,22 +116,4 @@ export function scoreAll(
     if (components) for (const k of COMPONENT_KEYS) components[k][i] = r.components[k] ?? 255
   }
   return { score, gap, components }
-}
-
-/** H3 cell of every building centroid — Best zones (038) work on the res-9 grid. */
-export function centroidCells(data: BuildingData, res: number): string[] {
-  const cells = new Array<string>(data.count)
-  for (let i = 0; i < data.count; i++) cells[i] = latLngToCell(data.cols.lat[i], data.cols.lng[i], res)
-  return cells
-}
-
-/** Mean building score per cell. */
-export function cellMeans(score: ArrayLike<number>, cells: readonly string[]): Map<string, number> {
-  const sums = new Map<string, number>()
-  const counts = new Map<string, number>()
-  for (let i = 0; i < cells.length; i++) {
-    sums.set(cells[i], (sums.get(cells[i]) ?? 0) + score[i])
-    counts.set(cells[i], (counts.get(cells[i]) ?? 0) + 1)
-  }
-  return new Map([...sums].map(([h, sum]) => [h, sum / counts.get(h)!]))
 }

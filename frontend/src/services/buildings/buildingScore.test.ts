@@ -1,11 +1,10 @@
 import { describe, it, expect } from 'vitest'
-import { latLngToCell } from 'h3-js'
 import { floodRisk } from '../climateRisk/climateRisk'
 import type { BarriVibeData } from '../localsOpinion/localsOpinion'
 import type { BuildingArea, BuildingData } from './buildingData'
 import { DEFAULT_CONDITIONS } from './conditions'
 import {
-  buildingBundle, buildingRisks, cellMeans, centroidCells, doorWaterSeverity, riverZoneShares, scoreAll, scoreBuilding,
+  buildingBundle, buildingRisks, doorWaterSeverity, riverZoneShares, scoreAll, scoreBuilding,
   type BuildingSettings,
 } from './buildingScore'
 
@@ -129,16 +128,5 @@ describe('scoreAll', () => {
       }
     }
     expect(components!.noise[1]).toBe(255) // building 1 has no noise map
-  })
-})
-
-describe('Best zones grid (TODO-046)', () => {
-  it('puts each centroid in its H3 cell and averages the scores per cell', () => {
-    const data = makeData({ lat: [41.39, 41.39001, 41.42], lng: [2.17, 2.17001, 2.2] })
-    const cells = centroidCells(data, 9)
-    expect(cells[0]).toBe(latLngToCell(41.39, 2.17, 9))
-    expect(cells[1]).toBe(cells[0])
-    expect(cells[2]).not.toBe(cells[0])
-    expect(cellMeans([60, 81, 10], cells)).toEqual(new Map([[cells[0], 70.5], [cells[2], 10]]))
   })
 })

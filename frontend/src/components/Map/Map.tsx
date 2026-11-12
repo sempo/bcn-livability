@@ -1,16 +1,13 @@
 import { useMapStore } from '../../store/mapStore'
-import { useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import * as maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 import { useStore } from '../../store'
 import { usePinsStore } from '../../store/pinsStore'
 import { MapContext } from './MapContext'
-import { IsochroneLayer } from '../IsochroneLayer/IsochroneLayer'
 import { MetroLayer } from '../MetroLayer/MetroLayer'
 import { FgcLayer } from '../FgcLayer/FgcLayer'
-import { PinLayer } from '../PropertyPins/PinLayer'
-import { PinAccuracyLayer } from '../PropertyPins/PinAccuracyLayer'
 import { NoiseLayer } from '../NoiseLayer/NoiseLayer'
 import { FloodZonesLayer } from '../FloodZonesLayer/FloodZonesLayer'
 import { WildfireLayer } from '../WildfireLayer/WildfireLayer'
@@ -18,16 +15,24 @@ import { StreetFloodingLayer } from '../StreetFloodingLayer/StreetFloodingLayer'
 import { AreasLayer } from '../AreasLayer/AreasLayer'
 import { BuildingsLayer } from '../BuildingsLayer/BuildingsLayer'
 import { FacadeNoiseLayer } from '../BuildingsLayer/FacadeNoiseLayer'
-import { WalkabilityLayer } from '../WalkabilityLayer/WalkabilityLayer'
 import { PoiLayer } from '../PoiLayer/PoiLayer'
-import { ExclusionLayer } from '../ExclusionLayer/ExclusionLayer'
-import { ExclusionDraw } from '../ExclusionDraw/ExclusionDraw'
-import { BestZones } from '../BestZones/BestZones'
-import { IdealistaPricesLayer } from '../IdealistaPricesLayer/IdealistaPricesLayer'
 import { LandmarksLayer } from '../LandmarksLayer/LandmarksLayer'
 import { SearchLayer } from '../SearchBox/SearchLayer'
 import { MapContextMenu } from './MapContextMenu'
 import { useExclusionsStore } from '../../store/exclusionsStore'
+
+// Code that most visitors never run is loaded when it is needed, not with the page (TODO-058): the layers behind
+// feature flags, and Best zones (h3-js and turf) until the zones are asked for.
+const lazyNamed = <T extends Record<string, React.ComponentType<never>>>(load: () => Promise<T>, name: keyof T) =>
+  lazy(() => load().then((m) => ({ default: m[name] as React.ComponentType<Record<string, unknown>> })))
+const IsochroneLayer = lazyNamed(() => import('../IsochroneLayer/IsochroneLayer'), 'IsochroneLayer')
+const PinLayer = lazyNamed(() => import('../PropertyPins/PinLayer'), 'PinLayer')
+const PinAccuracyLayer = lazyNamed(() => import('../PropertyPins/PinAccuracyLayer'), 'PinAccuracyLayer')
+const WalkabilityLayer = lazyNamed(() => import('../WalkabilityLayer/WalkabilityLayer'), 'WalkabilityLayer')
+const ExclusionLayer = lazyNamed(() => import('../ExclusionLayer/ExclusionLayer'), 'ExclusionLayer')
+const ExclusionDraw = lazyNamed(() => import('../ExclusionDraw/ExclusionDraw'), 'ExclusionDraw')
+const BestZones = lazyNamed(() => import('../BestZones/BestZones'), 'BestZones')
+const IdealistaPricesLayer = lazyNamed(() => import('../IdealistaPricesLayer/IdealistaPricesLayer'), 'IdealistaPricesLayer')
 import { features } from '../../features'
 
 // MapLibre v6 is ESM-only: bundlers must hand it the worker URL explicitly.
@@ -60,6 +65,8 @@ export function Map() {
   }, [])
 
   const { workplace, zoom, mapCenter, setWorkplace, setZoom, setMapCenter, setMapAttribution } = useStore()
+  // With the new panel, Best zones is loaded when the zones are asked for (it brings h3-js and turf).
+  const zonesOn = useStore((s) => s.bestZonesBounds !== null)
   const { isAddingPin, setIsAddingPin, addPin } = usePinsStore()
   const drawingMode = useExclusionsStore((s) => s.drawingMode)
 
@@ -177,18 +184,24 @@ export function Map() {
       <FloodZonesLayer />
       <WildfireLayer />
       <StreetFloodingLayer />
-      {features.exclusions && <ExclusionLayer />}
-      {features.exclusions && <ExclusionDraw />}
-      {features.bestZones && <BestZones withBar={!features.onboarding} />}
+      <Suspense fallback={null}>
+        {features.exclusions && <ExclusionLayer />}
+        {features.exclusions && <ExclusionDraw />}
+        {features.bestZones && (zonesOn || !features.onboarding) && <BestZones withBar={!features.onboarding} />}
+      </Suspense>
       <SearchLayer />
-      {features.idealistaPrices && <IdealistaPricesLayer />}
-      {features.isochrone && <IsochroneLayer />}
+      <Suspense fallback={null}>
+        {features.idealistaPrices && <IdealistaPricesLayer />}
+        {features.isochrone && <IsochroneLayer />}
+      </Suspense>
       <MetroLayer />
       <FgcLayer />
       <PoiLayer />
-      {features.pins && <PinAccuracyLayer />}
-      {features.pins && <PinLayer />}
-      {features.pins && <WalkabilityLayer />}
+      <Suspense fallback={null}>
+        {features.pins && <PinAccuracyLayer />}
+        {features.pins && <PinLayer />}
+        {features.pins && <WalkabilityLayer />}
+      </Suspense>
       <MapContextMenu />
     </MapContext.Provider>
   )

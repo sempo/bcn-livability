@@ -1,6 +1,8 @@
 # TODO-058 — Frontend performance budget: scoring in a worker, code splitting, lazy data, cache headers
 
-**Status:** Planned, not started. Scale track; after 054 (cache headers need nginx on our server).
+**Status:** Partly done 2026-11-12 (what needs no server): scoring in a worker, code splitting, the bundle budget.
+Still open: cache headers and the data preload (need 054), a Lighthouse run, a real low-end phone, `manualChunks`
+tuning below 450 KB. See "As built" at the end. Scale track.
 
 ## Problem
 
@@ -52,3 +54,31 @@ anything is coloured. No measurement exists: no bundle report, no Lighthouse run
 
 Per `CLAUDE.md`, plus: Lighthouse mobile performance ≥ 80 on the public map; moving a condition picker does
 not drop frames (DevTools performance trace attached in `local-docs/architecture/07-perf-baseline.md`).
+
+## As built (2026-11-12)
+
+Measured on a laptop, `npm run build` + the dev server; numbers in `local-docs/architecture/07-perf-baseline.md`.
+
+- **Scoring in a worker.** `workers/score.worker.ts` (5 KB: only the pure scoring code, no h3-js) owns its own copy of
+  the score columns; `services/buildings/scoreClient.ts` hands it the raw blob once (transferred, not copied:
+  `buildingData.takeRawScores()`) and then sends only the settings. The score of every building (and the score of
+  each condition for the area ranking) comes back as transferable `Uint8Array`s. Where there is no worker (jsdom, an
+  old browser, a worker that fails or crashes) the same `scoreAll` runs on the main thread. Of several settings
+  changes while one scoring runs, only the newest is computed (the ones in between resolve with `null`), and
+  `BuildingsLayer` drops a result that arrives after a newer change. A condition change took a **330 ms** long task
+  on the main thread; with the worker it is **50 ms** (applying the changed feature states). The area ranking
+  (051) stays on the main thread (a few ms).
+- **Initial JavaScript: 647 → 482 KB gzip** (budget 500 KB; the target of 450 is not reached: maplibre 270, mantine
+  82, react 54, our code 60, tiles 14). Done by loading later what most visitors never run:
+  `Map.tsx` lazy-loads Best zones (h3-js 64 KB, turf), the isochrone, exclusion and pin layers and the Idealista
+  layer; `terra-draw` (23 KB) is only loaded with the exclusions flag; `@turf/buffer` is imported where a street is
+  buffered; `services/bestZonesConfig.ts` (strictness steps, `Bounds`) and `services/exclusionsGeometry.ts` (turf
+  union / difference) are split from the code that needs only a constant or a point test; `bestZoneGrid.ts` (h3)
+  is split from `buildingScore.ts`. With the new panel Best zones is mounted when the zones are asked for.
+- **Budget check:** `npm run check:bundle` (after `npm run build`) sums the gzip size of the scripts and modulepreload
+  links of `dist/index.html` against `bundleBudget.initialJsGzipKB` in `package.json`; the deploy workflow runs it
+  after the build and fails when the budget is exceeded.
+- Not done: `rollup-plugin-visualizer` (the sizes come from the vendor groups in `vite.config.ts`, `build.rolldownOptions
+  .output.codeSplitting`); the `fetchpriority=high` preload of the score blob and the inlined `buildings-meta.json`;
+  cache headers; Lighthouse; a low-end phone.
+

@@ -1,7 +1,7 @@
 import bbox from '@turf/bbox'
 import type { AreaFeature, AreaKind } from './areas'
 import { AREA_ALIASES } from './areaAliases'
-import type { Bounds } from './bestZones'
+import type { Bounds } from './bestZonesConfig'
 
 const STOP_WORDS = new Set(['el', 'la', 'les', 'els', 'l', 'los', 'las', 'de', 'del', 'dels', 'd', 'i'])
 
