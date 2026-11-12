@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { ActionIcon, Combobox, Loader, TextInput, useCombobox } from '@mantine/core'
-import { IconSearch, IconX } from '@tabler/icons-react'
+import { IconX } from '@tabler/icons-react'
 import { loadAreas, type AreaFeature } from '../../services/areas'
 import { searchAreas, areaIdsBounds } from '../../services/areaSearch'
 import { searchAddresses, type AddressSuggestion } from '../../services/geocoding'
@@ -8,7 +8,7 @@ import { SEARCH_DEBOUNCE_MS, SEARCH_MAX_RESULTS, SEARCH_MIN_CHARS } from '../../
 import { useSearchStore } from '../../store/searchStore'
 
 /**
- * "Search a neighbourhood or address" (TODO-044): districts, barris, municipalities and colloquial names
+ * "Search an area or address" (TODO-044), opened by the search button of the brand bar: districts, barris, municipalities and colloquial names
  * from the areas dataset, plus Geoapify address suggestions. Writes the pick to the search store; the
  * map side is SearchLayer.
  */
@@ -21,6 +21,8 @@ export function SearchBox() {
   const selectArea = useSearchStore((s) => s.selectArea)
   const selectAddress = useSearchStore((s) => s.selectAddress)
   const clear = useSearchStore((s) => s.clear)
+  const open = useSearchStore((s) => s.open)
+  const setOpen = useSearchStore((s) => s.setOpen)
   const combobox = useCombobox()
 
   useEffect(() => { loadAreas().then(setAreas) }, [])
@@ -31,6 +33,11 @@ export function SearchBox() {
     if (hadSelection.current && !selection) setText('')
     hadSelection.current = selection !== null
   }, [selection])
+
+  // Closed: forget what was typed.
+  useEffect(() => {
+    if (!open) { setText(''); setAddresses([]) }
+  }, [open])
 
   const query = text.trim()
   const areaMatches = useMemo(() => searchAreas(areas, query, SEARCH_MAX_RESULTS), [areas, query])
@@ -79,27 +86,32 @@ export function SearchBox() {
     clear()
   }
 
+  const close = () => { reset(); setOpen(false) }
+
   const showEmpty = query.length >= SEARCH_MIN_CHARS && !loading && areaMatches.length === 0 && addresses.length === 0
+
+  if (!open) return null
 
   return (
     <Combobox store={combobox} onOptionSubmit={pick} withinPortal={false}>
       <Combobox.Target>
         <TextInput
           className="glass-panel search-box"
-          size="sm"
-          radius="md"
-          placeholder="Search a neighbourhood or address"
-          aria-label="Search a neighbourhood or address"
-          leftSection={loading ? <Loader size={14} /> : <IconSearch size={16} />}
+          size="md"
+          radius="lg"
+          placeholder="Search area or address"
+          aria-label="Search an area or address"
+          autoFocus
+          leftSection={loading ? <Loader size={14} /> : null}
           rightSection={
-            text ? (
-              <ActionIcon variant="subtle" color="gray" size="sm" aria-label="Clear search" onClick={reset}>
-                <IconX size={14} />
-              </ActionIcon>
-            ) : null
+            <ActionIcon variant="subtle" color="gray" size="md" aria-label="Close search" onClick={close}>
+              <IconX size={16} />
+            </ActionIcon>
           }
+          rightSectionPointerEvents="all"
           value={text}
           onChange={(e) => { setText(e.currentTarget.value); combobox.openDropdown() }}
+          onKeyDown={(e) => { if (e.key === 'Escape') close() }}
           onFocus={() => combobox.openDropdown()}
           onBlur={() => combobox.closeDropdown()}
         />

@@ -330,7 +330,7 @@ flag and no saved settings (`hasSavedSettings()`); "Change" in the panel reopens
   URL.
 - **localStorage** (`bcn_*` keys): workplace, isochrone cache, layer visibility, index on/off, conditions, weights,
   walk categories, landmarks, eras, risk strengths, condition order (`bcn_condition_order`), onboarding done
-  (`bcn_onboarded`), best-zones strictness and restriction, pins, exclusion zones,
+  (`bcn_onboarded`), flat size of the budget word (`bcn_flat_area_m2`), best-zones strictness and restriction, pins, exclusion zones,
   Idealista base URL. Not persisted: the Idealista price window, the street-flooding return period, the selected
   building.
 
@@ -394,7 +394,8 @@ build, committed) and `frontend/.env.test` (all flags on). Every default below i
 | `VITE_MATCH_BANDS` | 85,65,40 | lower edges of Great / Good / Partial match (050) |
 | `VITE_QUIZ_NOISE_OPTIONS` | 50,58,65 | steps of the noise word, dB (031; 052 reuses them) |
 | `VITE_QUIZ_WALK_OPTIONS` / `_CENTRE_OPTIONS` | 5,10,15 / 15,30,45 | steps of the "within N min" words |
-| `VITE_QUIZ_PRICE_OPTIONS` | 2500,3500,4500,6000 | steps of the budget word, €/m² (each shows "≈ N % of homes") |
+| `VITE_QUIZ_BUDGET_OPTIONS` | 150000,250000,350000,500000 | steps of the budget word, € for a flat (÷ its size = the price per m²; each shows "≈ N % of homes") |
+| `VITE_QUIZ_FLAT_AREA_OPTIONS` / `VITE_FLAT_AREA_M2` | 50,70,90,120 / 70 | steps of the flat-size word, m² / the size to start with |
 | `VITE_QUIZ_LOCALS_OPTIONS` | 7.0,7.5,8.0 | steps of the residents' satisfaction word |
 | `VITE_RISK_PRESET_AVOID` / `_STRONG` | 5 / 8 | strength of each risk for "Avoid" / "Strongly avoid" |
 | `VITE_AREA_MIN_BUILDINGS` | 50 | areas with fewer homes are listed after the ranked ones (051) |

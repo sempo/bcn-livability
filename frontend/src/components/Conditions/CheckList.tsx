@@ -1,4 +1,5 @@
-import { Checkbox } from '@mantine/core'
+import { useState } from 'react'
+import { Checkbox, Text } from '@mantine/core'
 
 export interface CheckItem {
   id: string
@@ -6,36 +7,56 @@ export interface CheckItem {
   hint?: string
 }
 
-/** Pick several of a list; "All" selects everything and at least one stays selected. */
+/**
+ * Pick several of a list. The "All" box toggles every tick: all on → all off → all on. A condition needs at
+ * least one thing to measure, so an empty selection is only a draft: it is not saved until something is ticked,
+ * and until then the map keeps the last real choice.
+ */
 export function CheckList({ items, selected, onChange, allLabel }: {
   items: readonly CheckItem[]
   selected: readonly string[]
   onChange: (ids: string[]) => void
   allLabel: string
 }) {
-  const allSelected = items.every((i) => selected.includes(i.id))
-  const toggle = (id: string) => {
-    const next = selected.includes(id) ? selected.filter((x) => x !== id) : [...selected, id]
-    // Keep the list order, and never an empty selection: a condition needs at least one thing to measure.
-    const ordered = items.map((i) => i.id).filter((x) => next.includes(x))
-    if (ordered.length > 0) onChange(ordered)
+  // null = follow the saved selection; [] = the person cleared everything and has not ticked anything yet.
+  const [draft, setDraft] = useState<string[] | null>(null)
+  const current = draft ?? selected
+  const ids = items.map((i) => i.id)
+  const allSelected = ids.every((id) => current.includes(id))
+
+  const commit = (next: string[]) => {
+    if (next.length > 0) {
+      onChange(next)
+      setDraft(null)
+    } else {
+      setDraft([])
+    }
   }
+  const toggle = (id: string) => {
+    // Keep the list order.
+    commit(ids.filter((x) => (x === id ? !current.includes(x) : current.includes(x))))
+  }
+
   return (
     <div className="check-list">
       <Checkbox
         label={allLabel}
         checked={allSelected}
-        onChange={() => onChange(items.map((i) => i.id))}
+        indeterminate={!allSelected && current.length > 0}
+        onChange={() => commit(allSelected ? [] : ids)}
         styles={{ label: { fontWeight: 600 } }}
       />
       {items.map((i) => (
         <Checkbox
           key={i.id}
           label={i.hint ? `${i.label} · ${i.hint}` : i.label}
-          checked={selected.includes(i.id)}
+          checked={current.includes(i.id)}
           onChange={() => toggle(i.id)}
         />
       ))}
+      {current.length === 0 && (
+        <Text size="xs" c="dimmed">Tick at least one. The map keeps your last choice until you do.</Text>
+      )}
     </div>
   )
 }

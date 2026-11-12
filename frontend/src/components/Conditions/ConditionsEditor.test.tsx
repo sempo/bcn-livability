@@ -21,7 +21,7 @@ describe('ConditionsEditor', () => {
     act(() => useStore.setState({ conditionOrder: ['openPrice', 'noise', 'poiAccess', 'cityCore', 'risk'] }))
     renderWithMantine(<ConditionsEditor />)
     const first = screen.getAllByLabelText(/^Priority \d$/)[0].parentElement!
-    expect(within(first).getByText(/in the area/)).toBeTruthy()
+    expect(within(first).getByText(/flat costs up to/)).toBeTruthy()
   })
 
   it('× turns a condition off in one update and keeps the others in order', () => {

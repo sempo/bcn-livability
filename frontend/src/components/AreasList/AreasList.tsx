@@ -28,21 +28,22 @@ export function AreasList() {
       <p className="areas-list__note">
         {showAll || ranked.length <= TOP ? `All ${ranked.length} areas` : `Top ${TOP} of ${ranked.length} areas`}, by the share of homes that fit.
       </p>
+      {/* The note above stays put; the rows, "Show all" and the small print scroll together. */}
       <div className="areas-list__rows">
         {shown.map((r, i) => (
           <AreaRow key={r.index} rank={r} position={i + 1} onPick={join?.has(r.index) ? pick : undefined} />
         ))}
+        {!showAll && ranked.length > TOP && (
+          <button type="button" className="areas-list__more" onClick={() => setShowAll(true)}>
+            Show all {ranked.length}
+          </button>
+        )}
+        {small.length > 0 && (
+          <p className="areas-list__small">
+            Too few homes to rank: {small.map((r) => r.name).join(', ')}.
+          </p>
+        )}
       </div>
-      {!showAll && ranked.length > TOP && (
-        <button type="button" className="areas-list__more" onClick={() => setShowAll(true)}>
-          Show all {ranked.length}
-        </button>
-      )}
-      {small.length > 0 && (
-        <p className="areas-list__small">
-          Too few homes to rank: {small.map((r) => r.name).join(', ')}.
-        </p>
-      )}
     </div>
   )
 }

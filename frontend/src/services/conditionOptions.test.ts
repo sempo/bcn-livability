@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest'
 import {
-  CENTRE_OPTIONS, LOCALS_OPTIONS, NOISE_OPTIONS, PRICE_OPTIONS, WALK_OPTIONS,
-  activeConditions, formatEuroM2, optionFor, parseNumberList, profileToPatch,
-  riskLevel, shareUnder, sortedPrices, strengthsFor,
+  BUDGET_OPTIONS, BUDGET_RANGE, CENTRE_OPTIONS, DEFAULT_FLAT_AREA_M2, FLAT_AREA_OPTIONS, FLAT_AREA_RANGE, LOCALS_OPTIONS,
+  NOISE_OPTIONS, WALK_OPTIONS,
+  activeConditions, budgetFor, formatEuro, formatEuroM2, optionFor, parseNumberList, priceAfterAreaChange,
+  priceForBudget, profileToPatch, riskLevel, shareUnder, sortedPrices, strengthsFor,
 } from './conditionOptions'
 import { CONDITION_RANGES, DEFAULT_CONDITIONS } from './buildings/conditions'
 import { DEFAULT_COMPOSITE_WEIGHTS } from '../store'
@@ -19,8 +20,7 @@ describe('parseNumberList', () => {
 
 describe('option sets', () => {
   const sets = {
-    noiseMaxDb: NOISE_OPTIONS, walkMaxMin: WALK_OPTIONS, cityCoreMaxMin: CENTRE_OPTIONS,
-    priceMaxEurM2: PRICE_OPTIONS, localsMin: LOCALS_OPTIONS,
+    noiseMaxDb: NOISE_OPTIONS, walkMaxMin: WALK_OPTIONS, cityCoreMaxMin: CENTRE_OPTIONS, localsMin: LOCALS_OPTIONS,
   } as const
 
   it.each(Object.entries(sets))('%s: values are unique, ascending and inside the slider range', (key, options) => {
@@ -42,6 +42,50 @@ describe('option sets', () => {
   it('optionFor finds a step and returns null for a custom value', () => {
     expect(optionFor(NOISE_OPTIONS, 58)?.label).toBe('a calm street')
     expect(optionFor(NOISE_OPTIONS, 62)).toBeNull()
+  })
+})
+
+describe('flat budget (area × average price per m²)', () => {
+  it('the default flat is 70 m²', () => expect(DEFAULT_FLAT_AREA_M2).toBe(70))
+
+  it('budget and flat-size steps are ascending, unique and inside their custom ranges', () => {
+    for (const [options, range] of [[BUDGET_OPTIONS, BUDGET_RANGE], [FLAT_AREA_OPTIONS, FLAT_AREA_RANGE]] as const) {
+      const values = options.map((o) => o.value)
+      expect(new Set(values).size).toBe(values.length)
+      expect([...values].sort((a, b) => a - b)).toEqual(values)
+      for (const v of values) { expect(v).toBeGreaterThanOrEqual(range.min); expect(v).toBeLessThanOrEqual(range.max) }
+    }
+  })
+
+  it('labels: €250,000 and 70 m²', () => {
+    expect(BUDGET_OPTIONS.map((o) => o.label)).toContain('€250,000')
+    expect(FLAT_AREA_OPTIONS.map((o) => o.label)).toContain('70 m²')
+    expect(formatEuro(1250000)).toBe('€1,250,000')
+  })
+
+  it('a budget for a flat of a given size is a price per m²', () => {
+    expect(priceForBudget(245000, 70)).toBe(3500)
+    expect(priceForBudget(250000, 70)).toBe(3571.43)
+  })
+
+  it('and back: the budget shown is the price per m² times the size, to the nearest €1,000', () => {
+    expect(budgetFor(3500, 70)).toBe(245000)
+    expect(budgetFor(priceForBudget(250000, 70), 70)).toBe(250000)
+    expect(budgetFor(4000, 70)).toBe(280000)
+    expect(budgetFor(3555, 70)).toBe(249000) // 248,850
+  })
+
+  it('changing the size keeps the budget: a bigger flat for the same money is a lower price per m²', () => {
+    const price = priceAfterAreaChange(3500, 70, 90)
+    expect(price).toBeCloseTo(2722.22, 2)
+    expect(budgetFor(price, 90)).toBe(245000)
+  })
+
+  it('stays put when the size does not change, and survives a round trip through other sizes', () => {
+    expect(priceAfterAreaChange(3571.43, 70, 70)).toBe(3571.43)
+    const there = priceAfterAreaChange(3571.43, 70, 120)
+    const back = priceAfterAreaChange(there, 120, 70)
+    expect(budgetFor(back, 70)).toBe(250000)
   })
 })
 

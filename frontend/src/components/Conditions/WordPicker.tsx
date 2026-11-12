@@ -2,9 +2,11 @@ import { useState, type ReactNode } from 'react'
 import { Popover, Text } from '@mantine/core'
 
 /** A tappable word of a sentence; opens a small picker under it. `children` gets a function that closes it. */
-export function WordPicker({ label, title, children }: {
+export function WordPicker({ label, title, note, children }: {
   label: string
   title?: string
+  /** A second, smaller line under the title: what happens beyond the limit. */
+  note?: string
   children: (close: () => void) => ReactNode
 }) {
   const [opened, setOpened] = useState(false)
@@ -31,7 +33,8 @@ export function WordPicker({ label, title, children }: {
         </button>
       </Popover.Target>
       <Popover.Dropdown className="word-picker">
-        {title && <Text size="xs" c="dimmed" mb={4}>{title}</Text>}
+        {title && <Text size="xs" c="dimmed" mb={note ? 2 : 4}>{title}</Text>}
+        {note && <Text size="xs" c="dimmed" mb={4}>{note}</Text>}
         {children(() => setOpened(false))}
       </Popover.Dropdown>
     </Popover>

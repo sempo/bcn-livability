@@ -76,3 +76,17 @@ describe('applyOverride', () => {
     expect(p.order).toEqual(['noise'])
   })
 })
+
+describe('profile budgets (a flat, not a price per m²)', () => {
+  it('Family and Investor say what they spend on a flat, and the limit is that budget ÷ the flat size', () => {
+    for (const id of ['family', 'investor']) {
+      const p = PRESETS.find((x) => x.id === id)!
+      expect(p.blurb).toMatch(/70 m² flat up to €250,000/i)
+      expect(p.conditions?.priceMaxEurM2).toBe(3571.43)
+    }
+  })
+
+  it('the others do not mention a budget', () => {
+    for (const id of ['remote', 'city']) expect(PRESETS.find((x) => x.id === id)!.blurb).not.toMatch(/€/)
+  })
+})

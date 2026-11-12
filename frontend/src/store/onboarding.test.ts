@@ -93,7 +93,7 @@ describe('applySettings', () => {
     expect(st.enabledWalkCategories).toEqual(['school', 'kindergarten', 'park', 'supermarket', 'pharmacy'])
     expect(st.compositeRiskStrengths).toEqual(strengthsFor('avoid'))
     expect(st.conditionOrder).toEqual(['noise', 'poiAccess', 'openPrice', 'risk'])
-    expect(JSON.parse(localStorage.getItem('bcn_conditions')!).priceMaxEurM2).toBe(3500)
+    expect(JSON.parse(localStorage.getItem('bcn_conditions')!).priceMaxEurM2).toBe(3571.43) // €250,000 for 70 m²
     expect(JSON.parse(localStorage.getItem('bcn_walk_categories')!)).toContain('school')
     expect(JSON.parse(localStorage.getItem('bcn_condition_order')!)).toEqual(['noise', 'poiAccess', 'openPrice', 'risk'])
     expect(JSON.parse(localStorage.getItem('bcn_composite_weights')!).cityCore).toBe(0)
@@ -117,5 +117,41 @@ describe('applySettings', () => {
     expect(again.getState().conditions.cityCoreMaxMin).toBe(15)
     expect(again.getState().conditionOrder).toEqual(['cityCore', 'poiAccess', 'noise'])
     expect(again.getState().onboardingOpen).toBe(false)
+  })
+})
+
+describe('flat size (the budget word, TODO-031)', () => {
+  it('starts at the default size and loads a saved one, ignoring junk', async () => {
+    localStorage.clear()
+    expect((await freshStore()).getState().flatAreaM2).toBe(70)
+    localStorage.setItem('bcn_flat_area_m2', '90')
+    expect((await freshStore()).getState().flatAreaM2).toBe(90)
+    for (const junk of ['abc', '0', '-5', '5000', '']) {
+      localStorage.setItem('bcn_flat_area_m2', junk)
+      expect((await freshStore()).getState().flatAreaM2).toBe(70)
+    }
+  })
+
+  it('a new size keeps the budget: the price per m² moves, in one update, and both are saved', async () => {
+    localStorage.clear()
+    const s = await freshStore()
+    s.getState().setConditions({ ...s.getState().conditions, priceMaxEurM2: 3500 })
+    let updates = 0
+    const unsub = s.subscribe(() => { updates++ })
+    s.getState().setFlatArea(90)
+    unsub()
+    expect(updates).toBe(1)
+    expect(s.getState().flatAreaM2).toBe(90)
+    expect(s.getState().conditions.priceMaxEurM2).toBeCloseTo(2722.22, 2) // €245,000 / 90 m²
+    expect(JSON.parse(localStorage.getItem('bcn_conditions')!).priceMaxEurM2).toBeCloseTo(2722.22, 2)
+    expect(localStorage.getItem('bcn_flat_area_m2')).toBe('90')
+  })
+
+  it('the same size changes nothing', async () => {
+    localStorage.clear()
+    const s = await freshStore()
+    const before = s.getState().conditions
+    s.getState().setFlatArea(70)
+    expect(s.getState().conditions.priceMaxEurM2).toBe(before.priceMaxEurM2)
   })
 })
