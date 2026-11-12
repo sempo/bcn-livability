@@ -30,7 +30,7 @@ describe('OnboardingPanel', () => {
     expect(st.conditions.priceMaxEurM2).toBe(3500)
     expect(st.compositeWeights.cityCore).toBe(0)
     expect(st.conditionOrder).toEqual(['noise', 'poiAccess', 'openPrice', 'risk'])
-    expect(screen.getByText('from Family')).toBeTruthy()
+    expect(screen.getByText('Family profile')).toBeTruthy()
     expect(screen.getByText(/outside my window/)).toBeTruthy()
     expect(screen.queryByRole('heading', { name: /Where in Barcelona/ })).toBeNull()
   })
@@ -42,7 +42,7 @@ describe('OnboardingPanel', () => {
     expect(st.conditionOrder).toEqual(['noise', 'poiAccess', 'openPrice'])
     expect(st.compositeWeights).toMatchObject({ noise: 1, poiAccess: 1, openPrice: 1, cityCore: 0 })
     expect(st.compositeRiskStrengths).toEqual({ flood: 0, fire: 0, street: 0 })
-    expect(screen.queryByText(/^from /)).toBeNull()
+    expect(screen.queryByText(/ profile$/)).toBeNull()
   })
 
   it('"Show me the map" finishes the onboarding and keeps the settings', () => {

@@ -18,7 +18,7 @@ quiz) start with a few choices and show a result; the settings panel comes after
 ## Decision
 
 - The first screen offers **four profiles** (Family, Remote worker, City life, Investor) and "Build your own".
-- Both paths lead to **one sentence** made of tappable words ("mad-libs"): *"Up to [a calm street] outside my
+- Both paths lead to **one sentence** made of tappable words ("mad-libs"): *"No louder than [a calm street] outside my
   window"*, *"[Everyday services] within [10 min] on foot"*. The sentence **is** the control for each
   condition; the same component later becomes the conditions panel (052). One component, two places.
 - **The map is live**: every tap recolours it. On desktop, hovering a profile previews it on the map.
@@ -40,7 +40,7 @@ live, without learning what Lden or €/m² of a barri means.*
    own map), "Build your own", link "Just show me the map" (keeps the app defaults).
 2. **Sentence** — heading *I'd like to live somewhere…*, one row per condition (number = priority, sentence,
    × to remove), "Add" chips for the missing conditions, a bar "Homes by match" (Great / Good / Partial / Poor
-   shares), primary button **Show me the map**, Back. A profile pre-fills the rows (tag "from Family"); "Build
+   shares), primary button **Show me the map**, Back. A profile pre-fills the rows (tag "Family profile"); "Build
    your own" starts with quiet, on foot and budget at their defaults.
 3. **In the panel** — only the chip row "Your conditions: Quiet · On foot · Budget — Change" (Change → screen 1)
    at the top of the existing filter panel. Replacing the old condition controls with the same rows, Map layers,
@@ -54,7 +54,7 @@ for numeric values, "Custom…" with a slider. A value that is not one of the st
 
 | Condition | Sentence | Picker options |
 |---|---|---|
-| Quiet | Up to **[a calm street]** outside my window | a courtyard 50 dB · a calm street 58 dB · normal city noise 65 dB |
+| Quiet | No louder than **[a calm street]** outside my window | a courtyard 50 dB · a calm street 58 dB · normal city noise 65 dB |
 | On foot | **[Everyday services]** within **[10 min]** on foot | services: all 10 / profile sets / checklist · 5 · 10 · 15 min |
 | Centre | **[The centre]** within **[30 min]** on foot | the centre (13 landmarks) / my places · 15 · 30 · 45 min |
 | Budget | Up to **[€3,500/m²]** in the area | €2,500 · €3,500 · €4,500 · €6,000, each with "≈ N % of homes" |

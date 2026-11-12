@@ -135,7 +135,7 @@ export function SentenceRow({ condition }: { condition: ConditionKey }) {
     case 'noise':
       return (
         <p className="sentence">
-          Up to <LimitWord field="noiseMaxDb" options={NOISE_OPTIONS} title="How quiet should it be outside your window?" format={dB} /> outside my window
+          No louder than <LimitWord field="noiseMaxDb" options={NOISE_OPTIONS} title="How quiet should it be outside your window?" format={dB} /> outside my window
         </p>
       )
     case 'poiAccess':
