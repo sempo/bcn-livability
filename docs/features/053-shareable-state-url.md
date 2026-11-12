@@ -1,7 +1,7 @@
-# TODO-053 — Shareable state: conditions in the URL
+# 053 — Shareable state: conditions in the URL
 
-**Status:** Planned, not started. Enables preset links (031), editorial links (SEO) and "send this to my
-partner". Independent of the other UX features; small.
+**Status:** Implemented 2026-11-12, checked in the browser (sender, then the link in a private window). Enables
+profile links (031), editorial links (SEO) and "send this to my partner". See "As built" at the end.
 
 ## Problem
 
@@ -59,3 +59,25 @@ Per `CLAUDE.md`. Manual: open a shared link in a private window → same map; ch
 ## Open questions
 
 - Should the share link also pin the map view? Proposed: yes, the four view params are already there.
+
+## As built (2026-11-12)
+
+- **`c` is a complete configuration.** What a link leaves out is the default, not what the recipient saved earlier;
+  otherwise two people would see different maps from the same link. `c=default` means "all defaults".
+- Format as in the spec, with these additions: `on` also lists `risk` (its place in the priority order); `fa` is the
+  size of the flat of the budget word (031); a profile link is `c=preset:family`, optionally with overrides
+  (`c=preset:family;n:55`). Numbers outside a sane range, unknown ids and unknown keys are ignored key by key; a list
+  with no valid id is the default (all).
+- **Reading** (`services/urlConfig.ts`, pure, `decodeConfig(raw, defaults)`) happens once, when the store is created
+  (`readUrlSettings` in `store/index.ts`); the result is saved to localStorage so the recipient keeps it, and a link
+  never opens the onboarding. **Writing** (`useUrlState`): the view parameters at once, `c` 300 ms after the last
+  change, and only when it differs from the defaults (so a plain visit has a plain address). A profile link is
+  rewritten as the expanded configuration.
+- The separators `: ; ,` are written as they are, not percent-encoded, so a link can be read and edited by hand
+  (`withConfig`, `shareUrl`).
+- **Share** is a button in the brand bar. It builds the link from the settings as they are now (the address follows
+  after a pause) with `c=default` when everything is default; on a phone (≤ 768 px) with `navigator.share` it opens
+  the share sheet, otherwise it copies the link and says "Link copied. It opens your map with your conditions."
+  (a closed share sheet is silent; a refused copy says to copy the address bar). The map view is part of the link.
+- Not done: the map layer, "Show match colours" and the best areas are not in `c`.
+

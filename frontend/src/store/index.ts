@@ -8,6 +8,7 @@ import { ALL_AGE_ERA_IDS } from '../services/buildings/buildingAge'
 import { DEFAULT_CONDITIONS, type Conditions } from '../services/buildings/conditions'
 import { features } from '../features'
 import type { AreaRank } from '../services/areas/areaRank'
+import { allowLocals, decodeConfig, type UrlSettings } from '../services/urlConfig'
 import {
   CONDITION_KEYS, DEFAULT_FLAT_AREA_M2, FLAT_AREA_RANGE, activeConditions, priceAfterAreaChange,
   type ConditionKey, type SettingsPatch,
@@ -314,11 +315,60 @@ function loadBoolKey(key: string, dflt = false): boolean {
   }
 }
 
+/** What the map starts with when nothing is saved and the link says nothing (the base of a `c` link). */
+export const URL_DEFAULTS: UrlSettings = {
+  weights: DEFAULT_COMPOSITE_WEIGHTS,
+  conditions: DEFAULT_CONDITIONS,
+  walkCategories: ALL_WALK_CATEGORY_IDS,
+  landmarkIds: ALL_LANDMARK_IDS,
+  eras: ALL_AGE_ERA_IDS,
+  riskStrengths: DEFAULT_RISK_STRENGTHS,
+  order: activeConditions(DEFAULT_COMPOSITE_WEIGHTS, DEFAULT_RISK_STRENGTHS, []),
+  flatAreaM2: DEFAULT_FLAT_AREA_M2,
+  contrastBoost: false,
+}
+
+/** The settings that define the map, as a link carries them (TODO-053). */
+export function settingsOf(s: AppState): UrlSettings {
+  return {
+    weights: s.compositeWeights, conditions: s.conditions, walkCategories: s.enabledWalkCategories,
+    landmarkIds: s.enabledLandmarkIds, eras: s.ageEras, riskStrengths: s.compositeRiskStrengths,
+    order: s.conditionOrder, flatAreaM2: s.flatAreaM2, contrastBoost: s.contrastBoost,
+  }
+}
+
+/** The configuration in the address (`c`, TODO-053); it wins over what is saved. Null when there is none. */
+function readUrlSettings(): UrlSettings | null {
+  try {
+    const s = decodeConfig(new URLSearchParams(window.location.search).get('c'), URL_DEFAULTS)
+    return s && { ...s, weights: allowLocals(s.weights) }
+  } catch {
+    return null
+  }
+}
+
+/** A configuration from a link is kept, so the recipient has it on the next visit too. */
+function saveUrlSettings(s: UrlSettings): void {
+  persist(COMPOSITE_WEIGHTS_KEY, s.weights)
+  persist(CONDITIONS_KEY, s.conditions)
+  persist(WALK_CATEGORIES_KEY, s.walkCategories)
+  persist(CITY_CORE_LANDMARKS_KEY, s.landmarkIds)
+  persist(AGE_ERAS_KEY, s.eras)
+  persist(COMPOSITE_RISK_STRENGTHS_KEY, s.riskStrengths)
+  persist(CONDITION_ORDER_KEY, s.order)
+  try {
+    localStorage.setItem(FLAT_AREA_KEY, String(s.flatAreaM2))
+    localStorage.setItem(CONTRAST_BOOST_KEY, String(s.contrastBoost))
+  } catch { /* ignore */ }
+}
+
 export const useStore = create<AppState>((set, get) => {
   const { minutes, zoom, mapCenter } = readUrlParams()
   const workplace = readWorkplaceFromStorage()
-  const weights = loadCompositeWeights()
-  const riskStrengths = loadRiskStrengths()
+  const url = readUrlSettings()
+  if (url) saveUrlSettings(url)
+  const weights = url ? url.weights : loadCompositeWeights()
+  const riskStrengths = url ? url.riskStrengths : loadRiskStrengths()
   const onboarded = loadBoolKey(ONBOARDED_KEY)
   // The new panel shows one layer at a time: of several saved ones only the first stays on.
   const saved = {
@@ -336,7 +386,7 @@ export const useStore = create<AppState>((set, get) => {
     mapCenter,
     resultPolygon: workplace ? readIsochroneCache(workplace, minutes) : null,
     noiseLayerVisible: layerFlag('noise', 'noiseLayerVisible'),
-    enabledLandmarkIds: (() => {
+    enabledLandmarkIds: url ? url.landmarkIds : (() => {
       try {
         const raw = localStorage.getItem(CITY_CORE_LANDMARKS_KEY)
         if (!raw) return ALL_LANDMARK_IDS
@@ -419,7 +469,7 @@ export const useStore = create<AppState>((set, get) => {
       set({ compositeWeights: weights })
     },
     setCompositeColorRange: (compositeColorRange) => set({ compositeColorRange }),
-    contrastBoost: loadBoolKey(CONTRAST_BOOST_KEY),
+    contrastBoost: url ? url.contrastBoost : loadBoolKey(CONTRAST_BOOST_KEY),
     setContrastBoost: (contrastBoost) => {
       try { localStorage.setItem(CONTRAST_BOOST_KEY, String(contrastBoost)) } catch { /* ignore */ }
       // Off: the scale is the fixed one at once; on: BuildingsLayer fits it to the view.
@@ -447,22 +497,22 @@ export const useStore = create<AppState>((set, get) => {
     },
     streetFloodingReturnPeriod: 't10',
     setStreetFloodingReturnPeriod: (streetFloodingReturnPeriod) => set({ streetFloodingReturnPeriod }),
-    enabledWalkCategories: loadIds(WALK_CATEGORIES_KEY, ALL_WALK_CATEGORY_IDS),
+    enabledWalkCategories: url ? url.walkCategories : loadIds(WALK_CATEGORIES_KEY, ALL_WALK_CATEGORY_IDS),
     setEnabledWalkCategories: (ids) => {
       try { localStorage.setItem(WALK_CATEGORIES_KEY, JSON.stringify(ids)) } catch { /* ignore */ }
       set({ enabledWalkCategories: ids })
     },
-    ageEras: loadIds(AGE_ERAS_KEY, ALL_AGE_ERA_IDS),
+    ageEras: url ? url.eras : loadIds(AGE_ERAS_KEY, ALL_AGE_ERA_IDS),
     setAgeEras: (ids) => {
       try { localStorage.setItem(AGE_ERAS_KEY, JSON.stringify(ids)) } catch { /* ignore */ }
       set({ ageEras: ids })
     },
-    conditions: loadConditions(),
+    conditions: url ? url.conditions : loadConditions(),
     setConditions: (conditions) => {
       try { localStorage.setItem(CONDITIONS_KEY, JSON.stringify(conditions)) } catch { /* ignore */ }
       set({ conditions })
     },
-    flatAreaM2: loadFlatArea(),
+    flatAreaM2: url ? url.flatAreaM2 : loadFlatArea(),
     setFlatArea: (areaM2) => {
       const { flatAreaM2, conditions } = get()
       if (areaM2 === flatAreaM2) return
@@ -471,9 +521,9 @@ export const useStore = create<AppState>((set, get) => {
       persist(CONDITIONS_KEY, next)
       set({ flatAreaM2: areaM2, conditions: next })
     },
-    conditionOrder: activeConditions(weights, riskStrengths, loadConditionOrder()),
+    conditionOrder: url ? url.order : activeConditions(weights, riskStrengths, loadConditionOrder()),
     onboarded,
-    onboardingOpen: features.onboarding && !onboarded && !hasSavedSettings(),
+    onboardingOpen: features.onboarding && !onboarded && !url && !hasSavedSettings(),
     applySettings: (patch) => {
       const next: Partial<AppState> = {}
       if (patch.weights) { persist(COMPOSITE_WEIGHTS_KEY, patch.weights); next.compositeWeights = patch.weights }
