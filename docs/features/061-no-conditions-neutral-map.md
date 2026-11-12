@@ -17,14 +17,15 @@ When no condition is on (all weights 0), the map is **neutral**:
     "Homes by match" bar is simply not shown.
   - "Your areas" list: "Add a condition to rank the areas."
   - The "Hatched = incomplete data" legend note is not shown either.
-- Risk penalties alone are not a condition: with only "Avoid risks" on, the map is neutral too.
+- "Avoid flood and wildfire risk" is a condition: on its own it colours the map by risk (every home starts at 100
+  and loses points to flood / wildfire risk). The map is neutral only when the risks are off too.
 
 Not chosen: all green ("everything fits" — reads like a verdict, and the ranking turns into noise) and a mid colour
 (reads like a score of 50).
 
 ## Implementation
 
-- `hasConditions(weights)` in `services/composite/compositeScore.ts`.
+- `hasConditions(weights, riskStrengths)` in `services/composite/compositeScore.ts`.
 - `BuildingsLayer`, `AreasLayer`: layers visible = "Show match colours" on **and** a condition on.
 - `MatchBar`, `AreasList`, `MatchColoursSwitch`: no bar / the hint / no hatch note.
 

@@ -119,4 +119,19 @@ describe('hasConditions (061)', () => {
     expect(hasConditions({ poiAccess: 0, noise: 0, cityCore: 0, openPrice: 0, age: 1 })).toBe(true)
     expect(hasConditions({ poiAccess: 0, noise: 0, cityCore: 0, openPrice: 0, localsOpinion: 1 })).toBe(true)
   })
+
+  it('counts "avoid risks" as a condition', () => {
+    const none = { poiAccess: 0, noise: 0, cityCore: 0, openPrice: 0 }
+    expect(hasConditions(none, { flood: 5, fire: 5, street: 5 })).toBe(true)
+    expect(hasConditions(none, { flood: 0, fire: 0, street: 0 })).toBe(false)
+  })
+
+  it('with only risks on, a safe home scores 100 and a risky one loses points', () => {
+    const none = { poiAccess: 0, noise: 0, cityCore: 0, openPrice: 0 }
+    const strengths = { flood: 5, fire: 5, street: 5 }
+    expect(computeComposite({ components: components({}) }, none, strengths).score).toBe(100)
+    const r = computeComposite({ components: components({}), risks: { flood: 1, fire: 0, street: 0 } }, none, strengths)
+    expect(r.score).toBe(50)
+    expect(r.hasGap).toBe(false)
+  })
 })

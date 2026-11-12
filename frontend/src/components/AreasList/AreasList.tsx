@@ -47,7 +47,7 @@ function Section({ id, title, ranks, join, onPick }: {
 export function AreasList() {
   const ranks = useStore((s) => s.areaRanks)
   const join = useAreaJoin()
-  const anyCondition = useStore((s) => hasConditions(s.compositeWeights))
+  const anyCondition = useStore((s) => hasConditions(s.compositeWeights, s.compositeRiskStrengths))
 
   if (!anyCondition) return <p className="areas-list__note">Add a condition to rank the areas.</p>
   if (!ranks) return <p className="areas-list__note">Scoring the homes…</p>

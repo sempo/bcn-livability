@@ -27,7 +27,7 @@ const group = (n: number) => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))
 export function AreasLayer() {
   const map = useMap()
   const join = useAreaJoin()
-  const visible = useStore((s) => s.compositeVisible && hasConditions(s.compositeWeights))
+  const visible = useStore((s) => s.compositeVisible && hasConditions(s.compositeWeights, s.compositeRiskStrengths))
   const ranks = useStore((s) => s.areaRanks)
   const range = useStore((s) => s.compositeColorRange)
 

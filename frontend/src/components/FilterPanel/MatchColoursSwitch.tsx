@@ -9,7 +9,7 @@ import { LivabilityInfoModal } from './LivabilityInfoModal'
 export function MatchColoursSwitch() {
   const visible = useStore((s) => s.compositeVisible)
   const setVisible = useStore((s) => s.setCompositeVisible)
-  const anyCondition = useStore((s) => hasConditions(s.compositeWeights))
+  const anyCondition = useStore((s) => hasConditions(s.compositeWeights, s.compositeRiskStrengths))
   const [info, setInfo] = useState(false)
   return (
     <Stack gap={4}>

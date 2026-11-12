@@ -16,7 +16,7 @@ describe('MatchBar', () => {
   })
 
   it('with no condition on, shows no bar of "Poor" (061)', () => {
-    useStore.setState({ compositeWeights: NONE })
+    useStore.setState({ compositeRiskStrengths: { flood: 0, fire: 0, street: 0 }, compositeWeights: NONE })
     render(<MatchBar />)
     expect(screen.queryByText('Homes by match')).toBeNull()
   })

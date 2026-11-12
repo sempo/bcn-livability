@@ -136,7 +136,7 @@ describe('AreasLayer (TODO-051)', () => {
     const map = makeFakeMap()
     renderLayer(map)
     const none = { ...DEFAULT_COMPOSITE_WEIGHTS, poiAccess: 0, noise: 0, cityCore: 0, openPrice: 0 }
-    act(() => useStore.setState({ compositeWeights: none }))
+    act(() => useStore.setState({ compositeRiskStrengths: { flood: 0, fire: 0, street: 0 }, compositeWeights: none }))
     for (const id of [AREAS_FILL_ID, AREAS_HATCH_ID, AREAS_LINE_ID, AREAS_LABEL_ID]) {
       expect(map.setLayoutProperty).toHaveBeenCalledWith(id, 'visibility', 'none')
     }
