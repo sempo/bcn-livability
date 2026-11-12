@@ -62,8 +62,39 @@ export const WALK_OPTIONS: WordOption[] = parseNumberList(import.meta.env.VITE_Q
   .map((v) => ({ value: v, label: `${v} min` }))
 export const CENTRE_OPTIONS: WordOption[] = parseNumberList(import.meta.env.VITE_QUIZ_CENTRE_OPTIONS, [15, 30, 45])
   .map((v) => ({ value: v, label: `${v} min` }))
-export const PRICE_OPTIONS: WordOption[] = parseNumberList(import.meta.env.VITE_QUIZ_PRICE_OPTIONS, [2500, 3500, 4500, 6000])
-  .map((v) => ({ value: v, label: formatEuroM2(v) }))
+
+// ---- budget: "A [70 m²] flat costs up to [€250,000] on average" ----
+// The data is the average sale price per m² of the area, so a budget for a flat of a given size is a price per
+// m²: budget ÷ size. The condition still stores the price per m² (`priceMaxEurM2`); the size is a preference.
+
+export function formatEuro(v: number): string {
+  return `€${group(v)}`
+}
+
+/** Size of the flat the budget is for, until the person picks another. */
+export const DEFAULT_FLAT_AREA_M2 = Number(import.meta.env.VITE_FLAT_AREA_M2 ?? 70)
+export const FLAT_AREA_RANGE = { min: 25, max: 250, step: 5 }
+export const BUDGET_RANGE = { min: 50_000, max: 1_500_000, step: 10_000 }
+
+export const FLAT_AREA_OPTIONS: WordOption[] = parseNumberList(import.meta.env.VITE_QUIZ_FLAT_AREA_OPTIONS, [50, 70, 90, 120])
+  .map((v) => ({ value: v, label: `${v} m²` }))
+export const BUDGET_OPTIONS: WordOption[] = parseNumberList(import.meta.env.VITE_QUIZ_BUDGET_OPTIONS, [150_000, 250_000, 350_000, 500_000])
+  .map((v) => ({ value: v, label: formatEuro(v) }))
+
+/** Price per m² that a budget for a flat of `areaM2` stands for (kept to cents). */
+export function priceForBudget(budgetEur: number, areaM2: number): number {
+  return Math.round((budgetEur / areaM2) * 100) / 100
+}
+
+/** The budget shown for a price per m² and a flat size, to the nearest €1,000. */
+export function budgetFor(pricePerM2: number, areaM2: number): number {
+  return Math.round((pricePerM2 * areaM2) / 1000) * 1000
+}
+
+/** A new flat size keeps the budget (the money a person has), so the price per m² moves. */
+export function priceAfterAreaChange(pricePerM2: number, oldAreaM2: number, newAreaM2: number): number {
+  return Math.round(((pricePerM2 * oldAreaM2) / newAreaM2) * 100) / 100
+}
 export const LOCALS_OPTIONS: WordOption[] = parseNumberList(import.meta.env.VITE_QUIZ_LOCALS_OPTIONS, [7, 7.5, 8])
   .map((v) => ({ value: v, label: v.toFixed(1), hint: LOCALS_NAMES[v] }))
 

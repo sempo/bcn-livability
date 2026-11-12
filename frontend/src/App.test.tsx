@@ -4,6 +4,7 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import { MantineProvider } from '@mantine/core'
 import App from './App'
 import { useStore } from './store'
+import { useSearchStore } from './store/searchStore'
 
 vi.mock('@mantine/core', async () => {
   const actual = await vi.importActual<typeof import('@mantine/core')>('@mantine/core')
@@ -45,6 +46,8 @@ vi.mock('./hooks/useIsochrone', () => ({
   useIsochrone: vi.fn().mockReturnValue({ isLoading: false }),
 }))
 
+beforeEach(() => { useSearchStore.setState({ open: false, selection: null }) })
+
 function renderApp() {
   return render(
     <MantineProvider>
@@ -79,9 +82,11 @@ describe('App (integration)', () => {
     expect(screen.getByText('Commute from work')).toBeInTheDocument()
   })
 
-  it('renders the search box', () => {
+  it('shows a search button, and the search field opens when it is pressed', () => {
     renderApp()
-    expect(screen.getByPlaceholderText('Search a neighbourhood or address')).toBeInTheDocument()
+    expect(screen.queryByLabelText('Search an area or address', { selector: 'input' })).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Search an area or address' }))
+    expect(screen.getByLabelText('Search an area or address', { selector: 'input' })).toBeInTheDocument()
   })
 
   it('renders the travel time slider label', () => {
@@ -112,7 +117,7 @@ describe('App (integration) - first visit (TODO-031)', () => {
     renderApp()
     expect(screen.getByRole('heading', { name: 'Where in Barcelona would you like to live?' })).toBeInTheDocument()
     expect(screen.queryByText('Commute from work')).not.toBeInTheDocument()
-    expect(screen.getByPlaceholderText('Search a neighbourhood or address')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Search an area or address' })).toBeInTheDocument()
   })
 
   it('a profile and "Show me the map" lead to the filter panel with "Your conditions"', () => {

@@ -1,10 +1,11 @@
 import { useStore } from '../../store'
 import { useBudgetShares } from '../../hooks/useBudgetShares'
 import {
-  CENTRE_OPTIONS, LOCALS_OPTIONS, NOISE_OPTIONS, PRICE_OPTIONS, WALK_OPTIONS,
-  formatEuroM2, optionFor, riskLevel, strengthsFor, type ConditionKey, type WordOption,
+  BUDGET_OPTIONS, BUDGET_RANGE, CENTRE_OPTIONS, FLAT_AREA_OPTIONS, FLAT_AREA_RANGE, LOCALS_OPTIONS, NOISE_OPTIONS,
+  WALK_OPTIONS, budgetFor, formatEuro, optionFor, priceForBudget, riskLevel, strengthsFor,
+  type ConditionKey, type WordOption,
 } from '../../services/conditionOptions'
-import { CONDITION_RANGES, type Conditions } from '../../services/buildings/conditions'
+import { CONDITION_RANGES, PRICE_FALLOFF_PCT, type Conditions } from '../../services/buildings/conditions'
 import { AGE_ERAS } from '../../services/buildings/buildingAge'
 import { LANDMARKS } from '../../services/cityCore/landmarks'
 import { SERVICE_CATEGORIES } from '../../services/walkability/serviceCategories'
@@ -13,10 +14,11 @@ import { OptionList, type Choice } from './OptionList'
 import { CheckList } from './CheckList'
 
 /** A number of a condition ("58 dB", "10 min") as a tappable word with verbal steps and a custom slider. */
-function LimitWord({ field, options, title, format }: {
+function LimitWord({ field, options, title, note, format }: {
   field: keyof Conditions
   options: readonly WordOption[]
   title: string
+  note?: string
   format: (v: number) => string
 }) {
   const conditions = useStore((s) => s.conditions)
@@ -25,13 +27,64 @@ function LimitWord({ field, options, title, format }: {
   const set = (v: number) => setConditions({ ...conditions, [field]: v })
   const range = CONDITION_RANGES[field]
   return (
-    <WordPicker label={optionFor(options, value)?.label ?? format(value)} title={title}>
+    <WordPicker label={optionFor(options, value)?.label ?? format(value)} title={title} note={note}>
       {(close) => (
         <OptionList
           options={options}
           value={value}
           onChange={(v) => { set(v); close() }}
           custom={{ ...range, format, onChange: set }}
+        />
+      )}
+    </WordPicker>
+  )
+}
+
+/** "70 m²": the size of the flat the budget is for. Another size keeps the budget in euros. */
+function FlatAreaWord() {
+  const area = useStore((s) => s.flatAreaM2)
+  const setFlatArea = useStore((s) => s.setFlatArea)
+  const format = (v: number) => `${v} m²`
+  return (
+    <WordPicker label={optionFor(FLAT_AREA_OPTIONS, area)?.label ?? format(area)} title="How big is the flat?">
+      {(close) => (
+        <OptionList
+          options={FLAT_AREA_OPTIONS}
+          value={area}
+          onChange={(v) => { setFlatArea(v); close() }}
+          custom={{ ...FLAT_AREA_RANGE, format, onChange: setFlatArea }}
+        />
+      )}
+    </WordPicker>
+  )
+}
+
+/**
+ * "€250,000": what a flat of that size costs on average in the area. The data is the area's average price per
+ * m², so the limit that is stored is the budget ÷ the size of the flat.
+ */
+function BudgetWord() {
+  const conditions = useStore((s) => s.conditions)
+  const setConditions = useStore((s) => s.setConditions)
+  const area = useStore((s) => s.flatAreaM2)
+  const share = useBudgetShares()
+  const budget = budgetFor(conditions.priceMaxEurM2, area)
+  const set = (b: number) => setConditions({ ...conditions, priceMaxEurM2: priceForBudget(b, area) })
+  const options = BUDGET_OPTIONS.map((o) => ({
+    ...o, hint: share ? `≈ ${share(priceForBudget(o.value, area))}% of homes` : undefined,
+  }))
+  return (
+    <WordPicker
+      label={optionFor(BUDGET_OPTIONS, budget)?.label ?? formatEuro(budget)}
+      title="What a flat of this size costs on average in the area (area price per m² × size)"
+      note={`Homes in pricier areas lose points; ${PRICE_FALLOFF_PCT}% over scores zero.`}
+    >
+      {(close) => (
+        <OptionList
+          options={options}
+          value={budget}
+          onChange={(v) => { set(v); close() }}
+          custom={{ ...BUDGET_RANGE, format: formatEuro, onChange: set }}
         />
       )}
     </WordPicker>
@@ -129,8 +182,6 @@ function RiskWord() {
 
 /** One condition as a sentence whose highlighted words are the controls (TODO-031). */
 export function SentenceRow({ condition }: { condition: ConditionKey }) {
-  const share = useBudgetShares()
-  const priceOptions = PRICE_OPTIONS.map((o) => ({ ...o, hint: share ? `≈ ${share(o.value)}% of homes` : undefined }))
   switch (condition) {
     case 'noise':
       return (
@@ -151,11 +202,7 @@ export function SentenceRow({ condition }: { condition: ConditionKey }) {
         </p>
       )
     case 'openPrice':
-      return (
-        <p className="sentence">
-          Up to <LimitWord field="priceMaxEurM2" options={priceOptions} title="Budget per m² in the area (average sale price, not one flat)" format={formatEuroM2} /> in the area
-        </p>
-      )
+      return <p className="sentence">A <FlatAreaWord /> flat costs up to <BudgetWord /> on average</p>
     case 'localsOpinion':
       return (
         <p className="sentence">

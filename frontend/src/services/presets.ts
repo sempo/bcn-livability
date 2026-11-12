@@ -1,4 +1,10 @@
-import { CONDITION_KEYS, type ConditionKey, type Profile } from './conditionOptions'
+import {
+  CONDITION_KEYS, DEFAULT_FLAT_AREA_M2, formatEuro, priceForBudget, type ConditionKey, type Profile,
+} from './conditionOptions'
+
+/** What the budget profiles can spend on a flat of the default size. */
+const BUDGET_EUR = 250_000
+const BUDGET_TEXT = `a ${DEFAULT_FLAT_AREA_M2} m² flat up to ${formatEuro(BUDGET_EUR)}`
 
 // Profiles of the first onboarding screen (TODO-031). A profile is a sentence that is already filled in; the
 // person can still change every word. Override one with ENV `VITE_PRESET_<ID>` = JSON of the fields to change.
@@ -6,9 +12,9 @@ import { CONDITION_KEYS, type ConditionKey, type Profile } from './conditionOpti
 const BASE: Profile[] = [
   {
     id: 'family', name: 'Family',
-    blurb: 'Quiet street, school and park on foot, up to €3,500/m²',
+    blurb: `Quiet street, school and park on foot, ${BUDGET_TEXT}`,
     order: ['noise', 'poiAccess', 'openPrice', 'risk'],
-    conditions: { noiseMaxDb: 58, walkMaxMin: 10, priceMaxEurM2: 3500 },
+    conditions: { noiseMaxDb: 58, walkMaxMin: 10, priceMaxEurM2: priceForBudget(BUDGET_EUR, DEFAULT_FLAT_AREA_M2) },
     walkCategories: ['school', 'kindergarten', 'park', 'supermarket', 'pharmacy'],
     risk: 'avoid',
   },
@@ -28,9 +34,9 @@ const BASE: Profile[] = [
   },
   {
     id: 'investor', name: 'Investor',
-    blurb: 'Up to €3,500/m², happy residents',
+    blurb: `${BUDGET_TEXT[0].toUpperCase()}${BUDGET_TEXT.slice(1)}, happy residents`,
     order: ['openPrice', 'cityCore', 'localsOpinion'],
-    conditions: { priceMaxEurM2: 3500, cityCoreMaxMin: 30, localsMin: 7.5 },
+    conditions: { priceMaxEurM2: priceForBudget(BUDGET_EUR, DEFAULT_FLAT_AREA_M2), cityCoreMaxMin: 30, localsMin: 7.5 },
   },
 ]
 

@@ -92,17 +92,19 @@ export function FilterPanel() {
       className="glass-panel"
       p="md"
       radius="md"
-      style={{ minHeight: 0, overflowY: 'auto' }}
+      // The tabs stay put; only the body below them scrolls (panel on desktop, drawer on a phone).
+      style={{ minHeight: 0, display: 'flex', flexDirection: 'column', maxHeight: 'calc(100dvh - 130px)' }}
     >
       {features.isochrone && <IsochroneInfoModal opened={isoModalOpen} onClose={() => setIsoModalOpen(false)} />}
       {features.areas && (
-        <Tabs value={tab} onChange={(v) => setTab(v === 'areas' ? 'areas' : 'settings')} mb="sm">
+        <Tabs value={tab} onChange={(v) => setTab(v === 'areas' ? 'areas' : 'settings')} mb="sm" style={{ flex: 'none' }}>
           <Tabs.List grow>
             <Tabs.Tab value="settings">Settings</Tabs.Tab>
             <Tabs.Tab value="areas">Your areas</Tabs.Tab>
           </Tabs.List>
         </Tabs>
       )}
+      <div className="filter-panel__body">
       {features.areas && tab === 'areas' ? <AreasList /> : (
       <Stack gap="md">
           <YourConditionsRow />
@@ -176,6 +178,7 @@ export function FilterPanel() {
           )}
       </Stack>
       )}
+      </div>
     </Paper>
   )
 }

@@ -57,14 +57,19 @@ for numeric values, "Custom…" with a slider. A value that is not one of the st
 | Quiet | No louder than **[a calm street]** outside my window | a courtyard 50 dB · a calm street 58 dB · normal city noise 65 dB |
 | On foot | **[Everyday services]** within **[10 min]** on foot | services: all 10 / profile sets / checklist · 5 · 10 · 15 min |
 | Centre | **[The centre]** within **[30 min]** on foot | the centre (13 landmarks) / my places · 15 · 30 · 45 min |
-| Budget | Up to **[€3,500/m²]** in the area | €2,500 · €3,500 · €4,500 · €6,000, each with "≈ N % of homes" |
+| Budget | A **[70 m²]** flat costs up to **[€250,000]** on average | size: 50 · 70 · 90 · 120 m²; budget: €150,000 · €250,000 · €350,000 · €500,000, each with "≈ N % of homes" |
 | Locals | Residents rate the area at least **[7.5]** out of 10 | 7.0 Happy · 7.5 Very happy · 8.0 Among the happiest (only with `VITE_FEATURE_LOCALS_OPINION`) |
 | Buildings | Built in **[1900–1939]** | the 5 eras with their one-line text (`AGE_ERAS`), several can be picked |
 | Risks | **[Avoid]** flood and wildfire risk | Avoid (strength 5) · Strongly avoid (8); "Don't care" = remove the row |
 
-Budget share per option is computed at load from the building rows and the area price table in
-`buildings-meta.json` (`price_bounds` only holds p5/p95). The budget is the area's average sale price per m²,
-not a flat's price; the picker title says so.
+**Budget.** The data is the average sale price per m² of the area (INCASOL), not the price of a flat, so a budget
+for a flat of a given size is a price per m²: budget ÷ size. The condition still stores `priceMaxEurM2`; the size
+is a separate preference (`flatAreaM2`, key `bcn_flat_area_m2`, default 70 m²) and the budget shown is
+`priceMaxEurM2 × flatAreaM2` to the nearest €1,000. Changing the size keeps the budget in euros and moves the
+price per m² (`setFlatArea`); changing the budget sets `priceMaxEurM2 = budget ÷ size`. "On average" is in the
+sentence because it is an estimate from the area's average price. Scoring and the 25 % fall-off are unchanged.
+The share per option ("≈ N % of homes") is computed at load from the building rows and the area price table in
+`buildings-meta.json` (`price_bounds` only holds p5/p95), for the limit budget ÷ size.
 
 ## Profiles
 
@@ -72,12 +77,12 @@ Values in `services/presets.ts`, overridable by ENV `VITE_PRESET_<NAME>` as JSON
 Order of the rows = order listed.
 
 - **Family** — quiet 58, on foot 10 min with school + kindergarten + park + supermarket + pharmacy, budget
-  3,500, risks avoid. *Quiet street, school and park on foot, up to €3,500/m²*
+  €250,000 for 70 m², risks avoid. *Quiet street, school and park on foot, a 70 m² flat up to €250,000*
 - **Remote worker** — on foot 10 min with café + supermarket + park, centre 30, quiet 58. *Café and park
   nearby, 30 min to the centre*
 - **City life** — centre 15, on foot 5 min with café + restaurant + metro, noise 65. *15 min to the centre,
   bars and metro at the door*
-- **Investor** — budget 3,500, centre 30, locals 7.5. *Up to €3,500/m², happy residents*
+- **Investor** — budget €250,000 for 70 m², centre 30, locals 7.5. *A 70 m² flat up to €250,000, happy residents*
 
 A profile is just the sentence pre-filled; the user can edit every word.
 
@@ -122,7 +127,7 @@ current values differ from every profile and from the defaults).
   `.onboarding-sheet` (no overlay) and hides the filter button meanwhile. `visibleBounds` subtracts the sheet.
 - Flag `VITE_FEATURE_ONBOARDING` (off in production until 052 lands; on in `.env.test`).
 - ENV: `VITE_QUIZ_NOISE_OPTIONS=50,58,65`, `VITE_QUIZ_WALK_OPTIONS=5,10,15`,
-  `VITE_QUIZ_CENTRE_OPTIONS=15,30,45`, `VITE_QUIZ_PRICE_OPTIONS=2500,3500,4500,6000`,
+  `VITE_QUIZ_CENTRE_OPTIONS=15,30,45`, `VITE_QUIZ_BUDGET_OPTIONS=150000,250000,350000,500000`, `VITE_QUIZ_FLAT_AREA_OPTIONS=50,70,90,120`, `VITE_FLAT_AREA_M2=70`,
   `VITE_QUIZ_LOCALS_OPTIONS=7.0,7.5,8.0`. Add to `.env.local.example`, `.env.production`, `ARCHITECTURE.md`.
   (052 reuses them.)
 
@@ -149,4 +154,3 @@ Per `CLAUDE.md`, plus:
 ## Open questions
 
 - Cap on the number of conditions (the old quiz allowed 1–4)? Decide after seeing screen 2 on a phone.
-- Budget as price of a flat (e.g. "a ~70 m² home up to €245k") instead of €/m²? Needs the area in ENV.

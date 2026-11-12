@@ -12,6 +12,7 @@ export function resetStore(): void {
   useStore.setState({
     compositeWeights: { ...DEFAULT_COMPOSITE_WEIGHTS },
     conditions: { ...DEFAULT_CONDITIONS },
+    flatAreaM2: 70,
     enabledWalkCategories: ALL_WALK_CATEGORY_IDS,
     enabledLandmarkIds: ALL_LANDMARK_IDS,
     ageEras: ALL_AGE_ERA_IDS,

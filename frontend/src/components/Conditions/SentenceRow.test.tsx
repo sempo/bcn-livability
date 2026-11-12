@@ -69,12 +69,50 @@ describe('SentenceRow', () => {
     expect(screen.getByRole('button', { name: 'My 3 places' })).toBeTruthy()
   })
 
-  it('budget: every step says how many homes it covers', () => {
+  it('budget: "A [70 m²] flat costs up to [€280,000] on average" for the default limit of €4,000/m²', () => {
+    const { container } = renderWithMantine(<SentenceRow condition="openPrice" />)
+    expect(screen.getByRole('button', { name: '70 m²' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: '€280,000' })).toBeTruthy()
+    expect(container.querySelector('.sentence')!.textContent).toBe('A 70 m² flat costs up to €280,000 on average')
+  })
+
+  it('budget: every step says how many homes it covers (price per m² = budget ÷ size)', () => {
     renderWithMantine(<SentenceRow condition="openPrice" />)
-    fireEvent.click(screen.getByRole('button', { name: '€4,000/m²' }))
-    expect(screen.getByRole('radio', { name: /€3,500\/m².*≈ 35% of homes/ })).toBeTruthy()
-    fireEvent.click(screen.getByRole('radio', { name: /€2,500\/m²/ }))
-    expect(useStore.getState().conditions.priceMaxEurM2).toBe(2500)
+    fireEvent.click(screen.getByRole('button', { name: '€280,000' }))
+    expect(screen.getByText('Homes in pricier areas lose points; 25% over scores zero.')).toBeTruthy()
+    // €250,000 / 70 m² = €3,571/m², the mock covers limit / 100 percent
+    expect(screen.getByRole('radio', { name: /€250,000.*≈ 36% of homes/ })).toBeTruthy()
+    fireEvent.click(screen.getByRole('radio', { name: /€150,000/ }))
+    expect(useStore.getState().conditions.priceMaxEurM2).toBe(2142.86)
+    expect(screen.getByRole('button', { name: '€150,000' })).toBeTruthy()
+  })
+
+  it('budget: a budget between the steps is set with the slider, in steps of €10,000', () => {
+    renderWithMantine(<SentenceRow condition="openPrice" />)
+    fireEvent.click(screen.getByRole('button', { name: '€280,000' }))
+    fireEvent.click(screen.getByRole('radio', { name: /Custom/ }))
+    fireEvent.keyDown(screen.getByLabelText('Custom value'), { key: 'ArrowRight' })
+    expect(useStore.getState().conditions.priceMaxEurM2).toBe(4142.86) // €290,000 / 70 m²
+    expect(screen.getByRole('button', { name: '€290,000' })).toBeTruthy()
+  })
+
+  it('flat size: picking another size keeps the budget in euros and moves the price per m²', () => {
+    renderWithMantine(<SentenceRow condition="openPrice" />)
+    fireEvent.click(screen.getByRole('button', { name: '70 m²' }))
+    fireEvent.click(screen.getByRole('radio', { name: '90 m²' }))
+    expect(useStore.getState().flatAreaM2).toBe(90)
+    expect(useStore.getState().conditions.priceMaxEurM2).toBeCloseTo(3111.11, 2) // €280,000 / 90 m²
+    expect(screen.getByRole('button', { name: '90 m²' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: '€280,000' })).toBeTruthy()
+  })
+
+  it('flat size: a size between the steps comes from the slider; the budget hints follow the size', () => {
+    renderWithMantine(<SentenceRow condition="openPrice" />)
+    fireEvent.click(screen.getByRole('button', { name: '70 m²' }))
+    fireEvent.click(screen.getByRole('radio', { name: /Custom/ }))
+    fireEvent.keyDown(screen.getByLabelText('Custom value'), { key: 'ArrowRight' })
+    expect(useStore.getState().flatAreaM2).toBe(75)
+    expect(screen.getByRole('button', { name: '75 m²' })).toBeTruthy()
   })
 
   it('locals: sets the satisfaction limit', () => {

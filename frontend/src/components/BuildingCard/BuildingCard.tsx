@@ -1,3 +1,4 @@
+import { IconX } from '@tabler/icons-react'
 import { useEffect, useState } from 'react'
 import { ActionIcon, Anchor, Divider, Group, Paper, Stack, Text } from '@mantine/core'
 import { useStore } from '../../store'
@@ -201,21 +202,24 @@ export function BuildingCard() {
 
   return (
     <div className="building-card-overlay">
-      <Paper shadow="md" p="md" radius="md" w={300} style={{ maxHeight: 'calc(100vh - 96px)', overflowY: 'auto' }}>
+      <Paper shadow="md" radius="md" w={300} className="building-card">
+        {/* The header stays in view while the details scroll under it. */}
+        <Group justify="space-between" align="flex-start" wrap="nowrap" className="building-card__header">
+          <Stack gap={0}>
+            <Text size="sm" fw={700}>{prettyAddress(d?.address) ?? (d ? 'Building' : 'Loading…')}</Text>
+            {d && (
+              <Text size="xs" c="dimmed">
+                {d.student ? 'Student residence' : USE_LABEL[d.use ?? ''] ?? 'Building'}
+              </Text>
+            )}
+          </Stack>
+          <ActionIcon size={36} radius="md" variant="subtle" color="gray" onClick={() => setSelected(null)}
+            aria-label="Close building card" style={{ flex: 'none', marginTop: -6, marginRight: -8 }}>
+            <IconX size={24} stroke={2} />
+          </ActionIcon>
+        </Group>
+        <div className="building-card__body">
         <Stack gap="sm">
-          <Group justify="space-between" align="flex-start" wrap="nowrap">
-            <Stack gap={0}>
-              <Text size="sm" fw={700}>{prettyAddress(d?.address) ?? (d ? 'Building' : 'Loading…')}</Text>
-              {d && (
-                <Text size="xs" c="dimmed">
-                  {d.student ? 'Student residence' : USE_LABEL[d.use ?? ''] ?? 'Building'}
-                </Text>
-              )}
-            </Stack>
-            <ActionIcon size="xs" variant="subtle" color="gray" onClick={() => setSelected(null)}
-              aria-label="Close building card">×</ActionIcon>
-          </Group>
-
           {d && features.facadePhoto && (
             <Stack gap={2}>
               <img src={facadePhotoUrl(d.id)} alt={`Facade of ${prettyAddress(d.address) ?? 'the building'}`}
@@ -365,6 +369,7 @@ export function BuildingCard() {
             </>
           )}
         </Stack>
+        </div>
       </Paper>
     </div>
   )

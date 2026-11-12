@@ -27,7 +27,9 @@ describe('OnboardingPanel', () => {
     expect(updates).toBe(1)
     const st = useStore.getState()
     expect(st.conditions.noiseMaxDb).toBe(58)
-    expect(st.conditions.priceMaxEurM2).toBe(3500)
+    expect(st.conditions.priceMaxEurM2).toBe(3571.43) // a 70 m² flat up to €250,000
+    expect(screen.getByRole('button', { name: '€250,000' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: '70 m²' })).toBeTruthy()
     expect(st.compositeWeights.cityCore).toBe(0)
     expect(st.conditionOrder).toEqual(['noise', 'poiAccess', 'openPrice', 'risk'])
     expect(screen.getByText('Family profile')).toBeTruthy()

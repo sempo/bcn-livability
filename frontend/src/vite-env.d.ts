@@ -16,6 +16,9 @@ interface ImportMetaEnv {
   readonly VITE_FEATURE_FACADE_PHOTO?: string
   readonly VITE_FEATURE_ONBOARDING?: string
   readonly VITE_FEATURE_AREAS?: string
+  readonly VITE_FLAT_AREA_M2?: string
+  readonly VITE_QUIZ_FLAT_AREA_OPTIONS?: string
+  readonly VITE_QUIZ_BUDGET_OPTIONS?: string
 }
 
 interface ImportMeta {

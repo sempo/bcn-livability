@@ -8,7 +8,10 @@ import { ALL_AGE_ERA_IDS } from '../services/buildings/buildingAge'
 import { DEFAULT_CONDITIONS, type Conditions } from '../services/buildings/conditions'
 import { features } from '../features'
 import type { AreaRank } from '../services/areas/areaRank'
-import { CONDITION_KEYS, activeConditions, type ConditionKey, type SettingsPatch } from '../services/conditionOptions'
+import {
+  CONDITION_KEYS, DEFAULT_FLAT_AREA_M2, FLAT_AREA_RANGE, activeConditions, priceAfterAreaChange,
+  type ConditionKey, type SettingsPatch,
+} from '../services/conditionOptions'
 
 /** Which Livability conditions are on: 1 = on, 0 = off (049). */
 export interface CompositeWeights {
@@ -73,6 +76,8 @@ export interface AppState {
   ageEras: readonly string[]
   /** What is OK for the user, in real units (049). */
   conditions: Conditions
+  /** Size (m²) of the flat the budget word is for (TODO-031); the budget shown is `priceMaxEurM2` × this. */
+  flatAreaM2: number
   /** Order in which the conditions were added = their priority (TODO-031; used by the ranked list, 051). */
   conditionOrder: ConditionKey[]
   /** The person has been through the onboarding (or skipped it). */
@@ -111,6 +116,8 @@ export interface AppState {
   setEnabledWalkCategories: (ids: readonly string[]) => void
   setAgeEras: (ids: readonly string[]) => void
   setConditions: (conditions: Conditions) => void
+  /** Another flat size keeps the budget in euros, so the price per m² moves; one update, one rescoring. */
+  setFlatArea: (areaM2: number) => void
   /** Sets everything a profile or the sentence editor can set, with one store update (one rescoring). */
   applySettings: (patch: SettingsPatch) => void
   completeOnboarding: () => void
@@ -157,6 +164,15 @@ const AGE_ERAS_KEY = 'bcn_age_eras'
 const CONDITIONS_KEY = 'bcn_conditions'
 const CONDITION_ORDER_KEY = 'bcn_condition_order'
 const ONBOARDED_KEY = 'bcn_onboarded'
+const FLAT_AREA_KEY = 'bcn_flat_area_m2'
+
+function loadFlatArea(): number {
+  try {
+    const v = Number(localStorage.getItem(FLAT_AREA_KEY))
+    if (Number.isFinite(v) && v >= FLAT_AREA_RANGE.min && v <= FLAT_AREA_RANGE.max) return v
+  } catch { /* ignore */ }
+  return DEFAULT_FLAT_AREA_M2
+}
 
 /** Settings a returning visitor has saved; the onboarding does not overwrite them (TODO-031). */
 const SAVED_SETTINGS_KEYS = [
@@ -281,7 +297,7 @@ function loadBoolKey(key: string, dflt = false): boolean {
   }
 }
 
-export const useStore = create<AppState>((set) => {
+export const useStore = create<AppState>((set, get) => {
   const { minutes, zoom, mapCenter } = readUrlParams()
   const workplace = readWorkplaceFromStorage()
   const weights = loadCompositeWeights()
@@ -404,6 +420,15 @@ export const useStore = create<AppState>((set) => {
     setConditions: (conditions) => {
       try { localStorage.setItem(CONDITIONS_KEY, JSON.stringify(conditions)) } catch { /* ignore */ }
       set({ conditions })
+    },
+    flatAreaM2: loadFlatArea(),
+    setFlatArea: (areaM2) => {
+      const { flatAreaM2, conditions } = get()
+      if (areaM2 === flatAreaM2) return
+      const next = { ...conditions, priceMaxEurM2: priceAfterAreaChange(conditions.priceMaxEurM2, flatAreaM2, areaM2) }
+      try { localStorage.setItem(FLAT_AREA_KEY, String(areaM2)) } catch { /* ignore */ }
+      persist(CONDITIONS_KEY, next)
+      set({ flatAreaM2: areaM2, conditions: next })
     },
     conditionOrder: activeConditions(weights, riskStrengths, loadConditionOrder()),
     onboarded,

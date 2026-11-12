@@ -24,7 +24,7 @@ climate layers) compete with the main controls for the same space.
 
 - **The sentence is the control.** Each condition is one line of plain English with tappable words that
   open a small picker: *"No louder than [a busy street · 65 dB] outside my window"*, *"[Everyday services] within
-  [10 min] on foot"*, *"[My places] within [30 min] on foot"*, *"Up to [€4,000/m²] in the area"*,
+  [10 min] on foot"*, *"[My places] within [30 min] on foot"*, *"A [70 m²] flat costs up to [€280,000] on average"*,
   *"Residents rate the barri at least [7.5]"*, *"Built in [any era]"*.
 - Pickers offer **verbal steps**, not continuous sliders: the same option sets as the quiz (031) plus
   "Custom…" which reveals the existing slider for power users.
