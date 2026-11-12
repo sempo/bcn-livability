@@ -18,7 +18,7 @@ describe('SentenceRow', () => {
 
   it('noise: shows the word for the limit and sets the limit from a step', () => {
     renderWithMantine(<SentenceRow condition="noise" />)
-    expect(screen.getByText(/Up to/).textContent).toBe('Up to normal city noise outside my window')
+    expect(screen.getByText(/No louder than/).textContent).toBe('No louder than normal city noise outside my window')
     pick('normal city noise', /a calm street/)
     expect(useStore.getState().conditions.noiseMaxDb).toBe(58)
     expect(JSON.parse(localStorage.getItem('bcn_conditions')!).noiseMaxDb).toBe(58)
