@@ -46,11 +46,11 @@ export function OnboardingPanel() {
 
   return (
     <section className="onboarding-panel glass-panel" aria-label="Your conditions">
-      <button type="button" className="onboarding-panel__back" onClick={() => setScreen('start')}>‹ Back</button>
-      <h2>
-        I&apos;d like to live somewhere…
+      <div className="onboarding-panel__top">
+        <button type="button" className="onboarding-panel__back" onClick={() => setScreen('start')}>‹ Back</button>
         {from && <span className="onboarding-panel__tag">{from} profile</span>}
-      </h2>
+      </div>
+      <h2>I&apos;d like to live somewhere…</h2>
       <p className="onboarding-panel__sub">Tap a highlighted word to change it.</p>
       <ConditionsEditor />
       <div className="onboarding-panel__cta">
