@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { computeComposite, type ComponentScores, type CompositeWeights } from './compositeScore'
+import { computeComposite, hasConditions, type ComponentScores, type CompositeWeights } from './compositeScore'
 
 const NONE: ComponentScores = { poiAccess: null, noise: null, cityCore: null, openPrice: null, localsOpinion: null, age: null }
 const components = (c: Partial<ComponentScores>): ComponentScores => ({ ...NONE, ...c })
@@ -105,5 +105,18 @@ describe('computeComposite — climate risk penalties (036)', () => {
     )
     expect(r.score).toBe(40)
     expect(r.scoreMin).toBe(20)
+  })
+})
+
+describe('hasConditions (061)', () => {
+  it('is false when every weight is 0 or absent', () => {
+    expect(hasConditions({ poiAccess: 0, noise: 0, cityCore: 0, openPrice: 0 })).toBe(false)
+    expect(hasConditions({ poiAccess: 0, noise: 0, cityCore: 0, openPrice: 0, localsOpinion: 0, age: 0 })).toBe(false)
+  })
+
+  it('is true when any condition is on, including the optional ones', () => {
+    expect(hasConditions({ poiAccess: 0, noise: 1, cityCore: 0, openPrice: 0 })).toBe(true)
+    expect(hasConditions({ poiAccess: 0, noise: 0, cityCore: 0, openPrice: 0, age: 1 })).toBe(true)
+    expect(hasConditions({ poiAccess: 0, noise: 0, cityCore: 0, openPrice: 0, localsOpinion: 1 })).toBe(true)
   })
 })

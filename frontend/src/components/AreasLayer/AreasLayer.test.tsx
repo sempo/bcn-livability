@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, act } from '@testing-library/react'
 import { MapContext } from '../Map/MapContext'
-import { useStore } from '../../store'
+import { useStore, DEFAULT_COMPOSITE_WEIGHTS } from '../../store'
 import { useSearchStore } from '../../store/searchStore'
 import type { AreaFeature } from '../../services/areas'
 import type { AreaRank } from '../../services/areas/areaRank'
@@ -68,7 +68,7 @@ describe('AreasLayer (TODO-051)', () => {
     popups.length = 0
     join = new Map([[0, polygon('Raval')], [3, polygon('Gòtic')]])
     useSearchStore.setState({ selection: null })
-    useStore.setState({ compositeVisible: true, compositeColorRange: [0, 100], areaRanks: null })
+    useStore.setState({ compositeVisible: true, compositeWeights: DEFAULT_COMPOSITE_WEIGHTS, compositeColorRange: [0, 100], areaRanks: null })
   })
 
   it('adds nothing until the polygons are matched', () => {
@@ -129,6 +129,18 @@ describe('AreasLayer (TODO-051)', () => {
     act(() => useStore.setState({ compositeVisible: false }))
     expect(map.setLayoutProperty).toHaveBeenCalledWith(AREAS_FILL_ID, 'visibility', 'none')
     act(() => useStore.setState({ compositeVisible: true }))
+    expect(map.setLayoutProperty).toHaveBeenLastCalledWith(AREAS_LABEL_ID, 'visibility', 'visible')
+  })
+
+  it('with no condition on the areas are hidden, with one they show (061)', () => {
+    const map = makeFakeMap()
+    renderLayer(map)
+    const none = { ...DEFAULT_COMPOSITE_WEIGHTS, poiAccess: 0, noise: 0, cityCore: 0, openPrice: 0 }
+    act(() => useStore.setState({ compositeWeights: none }))
+    for (const id of [AREAS_FILL_ID, AREAS_HATCH_ID, AREAS_LINE_ID, AREAS_LABEL_ID]) {
+      expect(map.setLayoutProperty).toHaveBeenCalledWith(id, 'visibility', 'none')
+    }
+    act(() => useStore.setState({ compositeWeights: { ...none, noise: 1 } }))
     expect(map.setLayoutProperty).toHaveBeenLastCalledWith(AREAS_LABEL_ID, 'visibility', 'visible')
   })
 

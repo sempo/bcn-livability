@@ -88,3 +88,5 @@ zooming out past z13 shows the area fill.
 - Municipalities and barris in one list, or two sections? Proposed: one list, kind as a chip.
 - Should the list respect the best-zones restriction (commute zone) when those flags are on? Proposed: yes. Not
   done in the first pass: the list ranks all areas.
+
+- No condition on (061): the list shows "Add a condition to rank the areas." instead of a ranking of zeros.

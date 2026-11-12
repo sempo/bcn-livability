@@ -13,6 +13,7 @@ import { inBestZone } from '../BestZones/inBestZone'
 import { addLayerOrdered } from '../Map/layerOrder'
 import { visibleBounds } from '../Map/visibleBounds'
 import { features } from '../../features'
+import { hasConditions } from '../../services/composite/compositeScore'
 import { ensureHatchImages, HATCH_THIN } from '../Map/hatchPattern'
 
 // Building-level Livability Index (TODO-046). Tiles carry only geometry and a numeric feature id (= row of the
@@ -40,7 +41,8 @@ interface Loaded { buildings: BuildingData; vibe: BarriVibeData | null }
 
 export function BuildingsLayer() {
   const map = useContext(MapContext)
-  const visible = useStore((s) => s.compositeVisible)
+  // Neutral map (061): nothing is drawn, hovered or clicked while no condition is on.
+  const visible = useStore((s) => s.compositeVisible && hasConditions(s.compositeWeights))
   const weights = useStore((s) => s.compositeWeights)
   const enabledLandmarkIds = useStore((s) => s.enabledLandmarkIds)
   const enabledCategories = useStore((s) => s.enabledWalkCategories)

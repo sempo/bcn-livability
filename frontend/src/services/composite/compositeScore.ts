@@ -15,6 +15,11 @@ export interface CompositeWeights {
   age?: number
 }
 
+/** True when at least one condition is on. With none, there is nothing to score and the map stays neutral (061). */
+export function hasConditions(weights: CompositeWeights): boolean {
+  return (['poiAccess', 'noise', 'cityCore', 'openPrice', 'localsOpinion', 'age'] as const).some((k) => (weights[k] ?? 0) > 0)
+}
+
 /** Score 0–100 of each component of one building against the user's conditions; null = no data. */
 export interface ComponentScores {
   poiAccess: number | null

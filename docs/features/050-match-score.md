@@ -93,3 +93,4 @@ with all conditions at 100 and no risk is `#1a9850` anywhere on the map.
 - The hover tooltip works from zoom 14 (footprints), appears after 60 ms of rest and is off on `(hover: none)`.
 - Header rows are compact single lines (`matchText.ts`); the full sentences stay in the per-condition blocks.
 - The "before risk penalties" line is replaced by the risk line in the header.
+- No condition on (061): the map is neutral — no fill, no hatch, no tooltip or card — and the editor says "No conditions yet. Add one below and the map will colour in."; see `061-no-conditions-neutral-map.md`.

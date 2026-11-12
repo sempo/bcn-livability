@@ -5,6 +5,7 @@ import { useMap } from '../Map/MapContext'
 import { addLayerOrdered } from '../Map/layerOrder'
 import { ensureHatchImages, HATCH_WIDE } from '../Map/hatchPattern'
 import { useStore } from '../../store'
+import { hasConditions } from '../../services/composite/compositeScore'
 import { useAreaJoin } from '../../hooks/useAreaJoin'
 import { buildStateColorForRange } from '../BuildingsLayer/scoreRamp'
 import { AREA_VIEW_MAX_ZOOM } from '../../services/areas/areaRank'
@@ -26,7 +27,7 @@ const group = (n: number) => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))
 export function AreasLayer() {
   const map = useMap()
   const join = useAreaJoin()
-  const visible = useStore((s) => s.compositeVisible)
+  const visible = useStore((s) => s.compositeVisible && hasConditions(s.compositeWeights))
   const ranks = useStore((s) => s.areaRanks)
   const range = useStore((s) => s.compositeColorRange)
 

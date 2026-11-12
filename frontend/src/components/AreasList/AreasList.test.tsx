@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen, fireEvent, act, within } from '@testing-library/react'
 import { AreasList } from './AreasList'
-import { useStore } from '../../store'
+import { useStore, DEFAULT_COMPOSITE_WEIGHTS } from '../../store'
 import { useSearchStore } from '../../store/searchStore'
 import type { AreaRank } from '../../services/areas/areaRank'
 import type { AreaFeature } from '../../services/areas'
@@ -31,7 +31,7 @@ describe('AreasList', () => {
   beforeEach(() => {
     join = new Map(ranks.map((r) => [r.index, polygon(r.name)]))
     useSearchStore.setState({ selection: null })
-    useStore.setState({ areaRanks: ranks })
+    useStore.setState({ areaRanks: ranks, compositeWeights: DEFAULT_COMPOSITE_WEIGHTS })
   })
 
   it('two sections, Barcelona and Metro area, each ranked on its own and numbered from 1', () => {
@@ -106,6 +106,14 @@ describe('AreasList', () => {
     act(() => useStore.setState({ areaRanks: [] }))
     rerender(<AreasList />)
     expect(screen.getByText(/No areas to rank yet/)).toBeTruthy()
+  })
+
+  it('asks for a condition instead of ranking when none is on (061)', () => {
+    useStore.setState({ compositeWeights: { ...DEFAULT_COMPOSITE_WEIGHTS, poiAccess: 0, noise: 0, cityCore: 0, openPrice: 0 } })
+    render(<AreasList />)
+    expect(screen.getByText('Add a condition to rank the areas.')).toBeTruthy()
+    expect(screen.queryByRole('region', { name: 'Barcelona' })).toBeNull()
+    useStore.setState({ compositeWeights: DEFAULT_COMPOSITE_WEIGHTS })
   })
 
   it('works before the polygons have loaded (rows are shown, not clickable)', () => {

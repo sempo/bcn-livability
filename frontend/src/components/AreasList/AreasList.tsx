@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useStore } from '../../store'
+import { hasConditions } from '../../services/composite/compositeScore'
 import { useAreaJoin } from '../../hooks/useAreaJoin'
 import { selectAreaFeature } from '../../services/areas/areaSelect'
 import type { AreaRank } from '../../services/areas/areaRank'
@@ -46,7 +47,9 @@ function Section({ id, title, ranks, join, onPick }: {
 export function AreasList() {
   const ranks = useStore((s) => s.areaRanks)
   const join = useAreaJoin()
+  const anyCondition = useStore((s) => hasConditions(s.compositeWeights))
 
+  if (!anyCondition) return <p className="areas-list__note">Add a condition to rank the areas.</p>
   if (!ranks) return <p className="areas-list__note">Scoring the homes…</p>
   const ranked = ranks.filter((r) => r.ranked)
   const small = ranks.filter((r) => !r.ranked)
