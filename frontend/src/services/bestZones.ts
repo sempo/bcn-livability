@@ -10,6 +10,16 @@ import { buildIdealistaUrl } from './idealista'
 export type Bounds = [west: number, south: number, east: number, north: number]
 
 export const DEFAULT_TOP_PCT = Number(import.meta.env.VITE_BEST_ZONES_TOP_PCT ?? 15)
+
+// Strictness steps as "top X% of the visible grid cells": first = loose, last = strict. Above ~25% the good
+// areas merge into one city-wide blob, so the loose end stops there.
+export const TOP_PCT_STEPS = [25, 20, 15, 10, 7, 5]
+
+/** Index of the step at or just below `topPct` (the strictest step when it is below all of them). */
+export function stepIndex(topPct: number): number {
+  const i = TOP_PCT_STEPS.findIndex((p) => p <= topPct)
+  return i === -1 ? TOP_PCT_STEPS.length - 1 : i
+}
 const MAX_ZONES = Number(import.meta.env.VITE_BEST_ZONES_MAX ?? 3)
 // Near-ties of the last zone are shown too (mass ≥ TIE_RATIO × its mass), up to MAX_WITH_TIES —
 // so an equally good area isn't hidden behind an arbitrary cut-off.

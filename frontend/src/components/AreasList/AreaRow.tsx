@@ -4,9 +4,11 @@ import { SHORT_LABEL } from '../../services/conditionOptions'
 const KIND: Record<AreaRank['kind'], string> = { barri: 'barri', muni: 'municipality' }
 
 /** One area of the list: rank, name, how many homes fit, and what the area is best at. */
-export function AreaRow({ rank, position, onPick }: {
+export function AreaRow({ rank, position, showKind = true, onPick }: {
   rank: AreaRank
   position: number
+  /** Hidden inside the "Barcelona" / "Metro area" sections, where the kind is the heading. */
+  showKind?: boolean
   /** Undefined when the area has no polygon to fly to. */
   onPick?: (rank: AreaRank) => void
 }) {
@@ -23,7 +25,7 @@ export function AreaRow({ rank, position, onPick }: {
       <span className="area-row__body">
         <span className="area-row__head">
           <b>{rank.name}</b>
-          <span className="area-row__kind">{KIND[rank.kind]}</span>
+          {showKind && <span className="area-row__kind">{KIND[rank.kind]}</span>}
         </span>
         <span className="area-row__text">{pct}% of homes are a good match</span>
         <span className="area-row__bar" aria-hidden="true"><i style={{ width: `${pct}%` }} /></span>

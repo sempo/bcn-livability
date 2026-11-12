@@ -1,6 +1,8 @@
-# TODO-052 — Conditions editor as sentences; one expert layer at a time
+# 052 — Conditions editor as sentences; one expert layer at a time
 
-**Status:** Planned, not started. Depends on 031 and 050 (bands). Part of the mass-market UX track.
+**Status:** Implemented 2026-11-12, checked in the browser at 375 px and 1440 px; on in production with the
+onboarding flag (`VITE_FEATURE_ONBOARDING`). Depends on 031 and 050 (bands). Part of the mass-market UX track.
+See "As built" at the end for where the build differs from the spec below.
 
 **Note (2026-11-12):** the sentence rows and word pickers (`SentenceRow`, `WordPicker`, option sets,
 `riskPreset`) are now built in **031**, where the onboarding uses the same component. 052 moves them into the
@@ -87,3 +89,36 @@ limit without seeing a number in dB unless they open "Custom…".
 
 - Keep the checkboxes at all, or make "Don't care" an option of every picker (= off)? Proposed: checkbox
   stays; it is the fastest way to switch a condition off.
+
+## As built (2026-11-12)
+
+Decisions taken with the product owner before the build: the panel is **372 px** wide; **Best areas** is a block in
+the panel (the floating bar is gone when the flag is on); the Livability switch stays as **"Show match colours"**
+beside the legend; the areas list has **two sections** (Barcelona, Metro area).
+
+- **Behind the onboarding flag.** With `VITE_FEATURE_ONBOARDING` on, `FilterPanel` shows the new panel; with it off
+  the old controls (`CompositeControls`, noise switch, `ClimateLayerControls`) stay, so a release never breaks
+  production before the flag is switched. Remove the old code when the flag goes (see `docs/FEATURE_FLAGS.md`).
+- **Order in the panel:** "Your conditions … Start from a profile" → (flagged: commute, Idealista prices,
+  exclusions) → sentence rows with "+ add" chips and the match bar (031's `ConditionsEditor`) → "Show match colours"
+  with (i) → **Map layers** → **Best areas** → **Advanced** → attribution.
+- **Map layers** (`MapLayersControl`): None · Noise · River floods · Street flooding · Wildfire; one at a time, with
+  the legend of the chosen one. The store keeps the four flags; `setMapLayer(layer)` sets exactly one;
+  `mapLayerOf(state)` reads it (noise > river > street > wildfire when several are on). With the new panel on, of
+  several saved layers only the first stays on at load.
+- **Best areas** (`BestAreasControls`, in the panel): "Show my best areas" → "N best areas in view", "Top 15 % of
+  homes, numbered on the map", **Fewer areas / More areas** (steps `TOP_PCT_STEPS`, now in `services/bestZones.ts`),
+  Hide, a "Search filters" popover (the Idealista URL) and the commute-zone checkbox while a commute or exclusion
+  feature is on. `BestZones` on the map keeps drawing the zones and reports their count in the store
+  (`bestZonesCount`); its floating bar is rendered only with `withBar` (off when the flag is on). The panel reaches
+  the map through `store/mapStore.ts` (set by `Map.tsx`) for `visibleBounds`.
+- **Advanced** (`AdvancedSettings`, closed at first): how much each climate risk counts (the three strength rows,
+  moved to `StrengthRow.tsx`) and "Boost contrast for this view". The risk word in the sentence reads "Custom" when
+  the three strengths differ. The services / places / eras lists are the checklists of the sentence pickers, so they
+  are not repeated here; the Idealista URL is in the Best areas popover.
+- **Phone:** sentences are 14 px with tighter pills; every sentence fits two lines at 375 px.
+- **Your areas** (`AreasList`): Barcelona (top 10, "Show all") and Metro area (top 5, "Show all"), each ranked and
+  numbered from 1; the kind chip is hidden inside the sections.
+- Still open: the noise words of the picker (50 / 58 / 65 dB: a courtyard / a calm street / normal city noise) and
+  `noiseAnchor` (47 / 57 / 67) do not match; the card says "like a busy street" at 65 dB.
+

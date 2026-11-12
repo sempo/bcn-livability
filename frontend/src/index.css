@@ -1181,7 +1181,7 @@ body {
 .area-row__chip { font-size: 11px; padding: 1px 8px; border-radius: 999px; background: #f3f4f6; color: #374151; }
 
 /* Body of the filter panel: scrolls under the fixed tabs. */
-.filter-panel__body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.filter-panel__body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; padding-right: 2px; }
 
 /* Building card: fixed header, scrolling body (the address and the close button never scroll away). */
 .building-card { display: flex; flex-direction: column; max-height: calc(100vh - 96px); overflow: hidden; }
@@ -1197,3 +1197,35 @@ body {
 .brand-search:hover { background: rgba(0,0,0,0.06); }
 .brand-search[aria-pressed="true"] { background: #fdeceb; color: #B8322F; }
 .brand-search:focus-visible { outline: 2px solid #B8322F; outline-offset: 1px; }
+
+/* Advanced settings (TODO-052) */
+.advanced-settings { border-top: 1px solid rgba(0,0,0,0.08); padding-top: 10px; }
+.advanced-settings__head {
+  display: flex; justify-content: space-between; align-items: center; width: 100%; min-height: 32px; padding: 0;
+  border: 0; background: none; font: inherit; font-weight: 600; font-size: 14px; color: var(--ink); cursor: pointer;
+}
+.advanced-settings__head::after {
+  content: ""; width: 8px; height: 8px; margin-right: 4px; border-right: 2px solid #6b7280; border-bottom: 2px solid #6b7280;
+  transform: rotate(45deg); transition: transform .15s;
+}
+.advanced-settings__head[aria-expanded="true"]::after { transform: rotate(-135deg); }
+.map-layers-control .mantine-SegmentedControl-label { padding-inline: 4px; font-size: 12px; }
+
+/* Your areas: two sections (TODO-052) */
+.areas-list__section { display: flex; flex-direction: column; }
+.areas-list__section + .areas-list__section { margin-top: 14px; }
+.areas-list__section-head {
+  display: flex; justify-content: space-between; align-items: baseline; padding: 4px 4px 6px;
+  border-bottom: 1px solid rgba(0,0,0,0.14);
+}
+.areas-list__section-head h3 { margin: 0; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: #4b5563; }
+.areas-list__section-head span { font-size: 12px; color: #6b7280; font-variant-numeric: tabular-nums; }
+
+/* Phone: tighter sentences so each fits two lines at 375 px (TODO-052). */
+@media (max-width: 768px) {
+  .condition-row { grid-template-columns: 20px 1fr 36px; gap: 6px; }
+  .condition-row__num { width: 20px; height: 20px; font-size: 11px; margin-top: 7px; }
+  .condition-row__remove { width: 36px; height: 36px; font-size: 26px; margin-top: 0; }
+  .sentence { font-size: 14px; line-height: 2.1; }
+  .word-pill { padding: 2px 7px; min-height: 30px; }
+}

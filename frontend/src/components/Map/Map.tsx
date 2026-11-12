@@ -1,3 +1,4 @@
+import { useMapStore } from '../../store/mapStore'
 import { useEffect, useRef, useState } from 'react'
 import * as maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
@@ -104,6 +105,7 @@ export function Map() {
     map.once('style.load', () => {
       mapRef.current = map
       setMapInstance(map)
+      useMapStore.getState().setMap(map)
       const texts = Object.values(map.getStyle().sources)
         .map((s) => (s as Record<string, unknown>).attribution as string | undefined)
         .filter((t): t is string => !!t)
@@ -111,6 +113,7 @@ export function Map() {
     })
     return () => {
       setMapInstance(null)
+      useMapStore.getState().setMap(null)
       mapRef.current = null
       map.remove()
     }
@@ -176,7 +179,7 @@ export function Map() {
       <StreetFloodingLayer />
       {features.exclusions && <ExclusionLayer />}
       {features.exclusions && <ExclusionDraw />}
-      {features.bestZones && <BestZones />}
+      {features.bestZones && <BestZones withBar={!features.onboarding} />}
       <SearchLayer />
       {features.idealistaPrices && <IdealistaPricesLayer />}
       {features.isochrone && <IsochroneLayer />}

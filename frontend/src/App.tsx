@@ -60,7 +60,7 @@ export function App() {
         <Map />
       )}
       {!isMobile && (
-        <div className={onboardingOpen ? 'top-panel top-panel--wide' : 'top-panel'}>
+        <div className={features.onboarding ? 'top-panel top-panel--wide' : 'top-panel'}>
           <BrandBar />
           <SearchBox />
           {onboardingOpen ? <OnboardingPanel /> : <FilterPanel />}

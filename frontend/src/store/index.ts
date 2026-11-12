@@ -36,6 +36,18 @@ export const DEFAULT_COMPOSITE_WEIGHTS: CompositeWeights = {
   age: 0,
 }
 
+/** The one map layer a person looks at (TODO-052); the store keeps the four visibility flags. */
+export type MapLayerId = 'none' | 'noise' | 'river' | 'street' | 'wildfire'
+
+/** The layer shown, by priority noise > river > street > wildfire when more than one flag is on. */
+export function mapLayerOf(s: Pick<AppState, 'noiseLayerVisible' | 'floodLayerVisible' | 'streetFloodingLayerVisible' | 'wildfireLayerVisible'>): MapLayerId {
+  if (s.noiseLayerVisible) return 'noise'
+  if (s.floodLayerVisible) return 'river'
+  if (s.streetFloodingLayerVisible) return 'street'
+  if (s.wildfireLayerVisible) return 'wildfire'
+  return 'none'
+}
+
 export interface AppState {
   workplace: [number, number] | null
   minutes: number
@@ -49,6 +61,8 @@ export interface AppState {
   bestZonesTopPct: number
   /** Best zones only inside the isochrone and outside exclusion zones. */
   bestZonesRestrict: boolean
+  /** How many best areas the current view has (set by BestZones); null = off or not computed yet. */
+  bestZonesCount: number | null
   // Landmark selection for city core component inside composite — feature 021/022
   enabledLandmarkIds: readonly string[]
   // Idealista price dots layer — feature 019
@@ -96,10 +110,13 @@ export interface AppState {
   setMapCenter: (center: [number, number]) => void
   setResultPolygon: (polygon: Polygon | MultiPolygon | null) => void
   setNoiseLayerVisible: (visible: boolean) => void
+  /** Exactly one of the layers (or none), saved with one update. */
+  setMapLayer: (layer: MapLayerId) => void
   setMapAttribution: (attribution: string) => void
   setBestZonesBounds: (bounds: Bounds | null) => void
   setBestZonesTopPct: (topPct: number) => void
   setBestZonesRestrict: (restrict: boolean) => void
+  setBestZonesCount: (count: number | null) => void
   setEnabledLandmarkIds: (ids: readonly string[]) => void
   setIdealistaPricesVisible: (visible: boolean) => void
   setIdealistaPriceRange: (range: [number, number]) => void
@@ -303,13 +320,22 @@ export const useStore = create<AppState>((set, get) => {
   const weights = loadCompositeWeights()
   const riskStrengths = loadRiskStrengths()
   const onboarded = loadBoolKey(ONBOARDED_KEY)
+  // The new panel shows one layer at a time: of several saved ones only the first stays on.
+  const saved = {
+    noiseLayerVisible: loadBoolKey(NOISE_LAYER_KEY),
+    floodLayerVisible: loadBoolKey(FLOOD_LAYER_KEY),
+    streetFloodingLayerVisible: loadBoolKey(STREET_FLOODING_LAYER_KEY),
+    wildfireLayerVisible: loadBoolKey(WILDFIRE_LAYER_KEY),
+  }
+  const only = features.onboarding ? mapLayerOf(saved) : null
+  const layerFlag = (id: MapLayerId, key: keyof typeof saved) => (only === null ? saved[key] : only === id)
   return {
     workplace,
     minutes,
     zoom,
     mapCenter,
     resultPolygon: workplace ? readIsochroneCache(workplace, minutes) : null,
-    noiseLayerVisible: loadBoolKey(NOISE_LAYER_KEY),
+    noiseLayerVisible: layerFlag('noise', 'noiseLayerVisible'),
     enabledLandmarkIds: (() => {
       try {
         const raw = localStorage.getItem(CITY_CORE_LANDMARKS_KEY)
@@ -334,6 +360,19 @@ export const useStore = create<AppState>((set, get) => {
       try { localStorage.setItem(NOISE_LAYER_KEY, String(visible)) } catch { /* ignore */ }
       set({ noiseLayerVisible: visible })
     },
+    setMapLayer: (layer) => {
+      const next = {
+        noiseLayerVisible: layer === 'noise', floodLayerVisible: layer === 'river',
+        streetFloodingLayerVisible: layer === 'street', wildfireLayerVisible: layer === 'wildfire',
+      }
+      try {
+        localStorage.setItem(NOISE_LAYER_KEY, String(next.noiseLayerVisible))
+        localStorage.setItem(FLOOD_LAYER_KEY, String(next.floodLayerVisible))
+        localStorage.setItem(STREET_FLOODING_LAYER_KEY, String(next.streetFloodingLayerVisible))
+        localStorage.setItem(WILDFIRE_LAYER_KEY, String(next.wildfireLayerVisible))
+      } catch { /* ignore */ }
+      set(next)
+    },
     mapAttribution: '',
     setMapAttribution: (mapAttribution) => set({ mapAttribution }),
     bestZonesBounds: null,
@@ -352,6 +391,8 @@ export const useStore = create<AppState>((set, get) => {
     bestZonesRestrict: (() => {
       try { return localStorage.getItem(BEST_ZONES_RESTRICT_KEY) !== 'false' } catch { return true }
     })(),
+    bestZonesCount: null,
+    setBestZonesCount: (bestZonesCount) => set({ bestZonesCount }),
     setBestZonesRestrict: (restrict) => {
       try { localStorage.setItem(BEST_ZONES_RESTRICT_KEY, String(restrict)) } catch { /* ignore */ }
       set({ bestZonesRestrict: restrict })
@@ -389,17 +430,17 @@ export const useStore = create<AppState>((set, get) => {
       try { localStorage.setItem(COMPOSITE_RISK_STRENGTHS_KEY, JSON.stringify(strengths)) } catch { /* ignore */ }
       set({ compositeRiskStrengths: strengths })
     },
-    floodLayerVisible: loadBoolKey(FLOOD_LAYER_KEY),
+    floodLayerVisible: layerFlag('river', 'floodLayerVisible'),
     setFloodLayerVisible: (visible) => {
       try { localStorage.setItem(FLOOD_LAYER_KEY, String(visible)) } catch { /* ignore */ }
       set({ floodLayerVisible: visible })
     },
-    wildfireLayerVisible: loadBoolKey(WILDFIRE_LAYER_KEY),
+    wildfireLayerVisible: layerFlag('wildfire', 'wildfireLayerVisible'),
     setWildfireLayerVisible: (visible) => {
       try { localStorage.setItem(WILDFIRE_LAYER_KEY, String(visible)) } catch { /* ignore */ }
       set({ wildfireLayerVisible: visible })
     },
-    streetFloodingLayerVisible: loadBoolKey(STREET_FLOODING_LAYER_KEY),
+    streetFloodingLayerVisible: layerFlag('street', 'streetFloodingLayerVisible'),
     setStreetFloodingLayerVisible: (visible) => {
       try { localStorage.setItem(STREET_FLOODING_LAYER_KEY, String(visible)) } catch { /* ignore */ }
       set({ streetFloodingLayerVisible: visible })

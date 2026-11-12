@@ -19,10 +19,10 @@ dependencies. Status lives in the feature files.
 | Order | Feature | Depends on |
 |---|---|---|
 | B1 | 050 match bands, card header (done 2026-11-11) | — |
-| B2 | TODO-044 address / area search | — |
-| B3 | TODO-031 onboarding: profiles + one sentence (builds the shared sentence component) | B1 |
-| B4 | TODO-051 ranked areas, area view at low zoom | B1 (bands), B5-independent |
-| B5 | TODO-052 sentence editor, one expert layer, simpler best zones | B3 |
+| B2 | 044 address / area search (done) | — |
+| B3 | 031 onboarding: profiles + one sentence (done 2026-11-12) | B1 |
+| B4 | 051 ranked areas, area view at low zoom (done 2026-11-12) | B1 (bands), B5-independent |
+| B5 | 052 sentence editor, one expert layer, simpler best zones (done 2026-11-12) | B3 |
 | B6 | TODO-053 settings in the URL, Share | B3 (presets as URL tokens) |
 
 Tracks A and B are independent of each other; A1 + A2 + B1 are the minimum before a launch post.
