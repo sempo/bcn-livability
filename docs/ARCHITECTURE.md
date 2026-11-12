@@ -81,7 +81,7 @@ src/
 │   │   ├── googleMapsUrl.ts       Google Maps URL for a coordinate
 │   │   ├── layerOrder.ts          canonical bottom-to-top z-order; addLayerOrdered()
 │   │   └── visibleBounds.ts       viewport minus the left panel, the right building card and the bottom onboarding sheet
-│   ├── BrandBar/                  time2map mark (link to time2map.com) + the page <h1>
+│   ├── BrandBar/                  time2map mark (link to time2map.com) + the page <h1> + Share (copy / share sheet) + search button
 │   ├── Conditions/                the sentence editor (TODO-031; 052 moves it into the panel for good)
 │   │   ├── ConditionsEditor.tsx   numbered sentence rows in priority order, "+ add" chips, match bar; adds / removes a
 │   │   │                          condition with one `applySettings`
@@ -143,7 +143,7 @@ src/
 │                                  (resizable), CompareGrid (sortable table, editable fields, rating, "In excluded
 │                                  area" badge), AddPinButton, ScreenshotDropZone, PhotoLightbox, compareHighlight
 ├── hooks/
-│   ├── useUrlState.ts        store → URL: minutes, zoom, cx, cy (replaceState). Read once at startup by the store
+│   ├── useUrlState.ts        store → URL: minutes, zoom, cx, cy at once, `c` (all settings) 300 ms after a change (replaceState). Read once at startup by the store
 │   ├── useIsochrone.ts       (flag) workplace + minutes → OTP isochrone, 300 ms debounce, localStorage cache
 │   ├── useEffectiveArea.ts   isochrone minus exclusion zones (for the mask)
 │   ├── usePinAnalytics.ts    per pin: OTP walk / bike / car / transit times, noise Lden, nearby services
@@ -158,6 +158,7 @@ src/
 │   ├── exclusionsStore.ts    no-go zones, drawing mode, visibility; localStorage
 │   └── idealistaBaseUrlStore.ts  saved Idealista search URL; localStorage
 ├── services/
+│   ├── urlConfig.ts           `c` in the address (053): decodeConfig / encodeConfig / withConfig / shareUrl, pure, defaults injected
 │   ├── conditionOptions.ts    sentence-editor words (TODO-031): verbal steps from VITE_QUIZ_*, risk levels, which conditions are
 │   │                          on and in what order, profileToPatch(), budget shares ("≈ N % of homes")
 │   ├── areas/                 areaRank.ts (per-area aggregation of the building scores), areaJoin.ts (area → polygon by position),
@@ -331,8 +332,10 @@ order with one store update, so the map rescores once. The panel opens only on a
 flag and no saved settings (`hasSavedSettings()`); "Change" in the panel reopens it. On a phone it is a bottom sheet
 (`.onboarding-sheet`) and the map above it stays live.
 
-- **URL:** `minutes`, `zoom`, `cx`, `cy`. Read at startup, written on change. Index settings are **not** in the
-  URL.
+- **URL:** `minutes`, `zoom`, `cx`, `cy` and `c`, the whole configuration of the map (conditions, limits, services,
+  places, eras, risk strengths, order, flat size, contrast; 053). Read at startup (`c` wins over localStorage and is
+  saved), written on change; `c` only when it differs from the defaults. Format and rules: `services/urlConfig.ts`,
+  `docs/features/053-shareable-state-url.md`.
 - **localStorage** (`bcn_*` keys): workplace, isochrone cache, layer visibility, index on/off, conditions, weights,
   walk categories, landmarks, eras, risk strengths, condition order (`bcn_condition_order`), onboarding done
   (`bcn_onboarded`), flat size of the budget word (`bcn_flat_area_m2`), best-zones strictness and restriction, pins, exclusion zones,
@@ -457,8 +460,7 @@ More constants are documented in each script's docstring.
 
 ## Planned changes that touch this file
 
-Mass-market UX track: 050, 031, 051 and 052 are done (051 / 052 / 031 are on in production). Next: 053 (settings in
-the URL, Share).
+Mass-market UX track: 050, 031, 051, 052 and 053 are done and on in production.
 Scale track: TODO-054 (hosting), 055 (basemap, metro, Catastro offline), 056 (observability), 057 (CI,
 data out of git), 058 (worker scoring, bundle budget), 059 (API for the personal mode, design only).
 See `docs/ROADMAP.md`.
