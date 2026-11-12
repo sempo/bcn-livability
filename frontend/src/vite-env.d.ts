@@ -15,6 +15,7 @@ interface ImportMetaEnv {
   readonly VITE_FEATURE_LOCALS_OPINION?: string
   readonly VITE_FEATURE_FACADE_PHOTO?: string
   readonly VITE_FEATURE_ONBOARDING?: string
+  readonly VITE_FEATURE_AREAS?: string
 }
 
 interface ImportMeta {

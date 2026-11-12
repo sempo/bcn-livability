@@ -14,6 +14,7 @@ import { NoiseLayer } from '../NoiseLayer/NoiseLayer'
 import { FloodZonesLayer } from '../FloodZonesLayer/FloodZonesLayer'
 import { WildfireLayer } from '../WildfireLayer/WildfireLayer'
 import { StreetFloodingLayer } from '../StreetFloodingLayer/StreetFloodingLayer'
+import { AreasLayer } from '../AreasLayer/AreasLayer'
 import { BuildingsLayer } from '../BuildingsLayer/BuildingsLayer'
 import { FacadeNoiseLayer } from '../BuildingsLayer/FacadeNoiseLayer'
 import { WalkabilityLayer } from '../WalkabilityLayer/WalkabilityLayer'
@@ -166,6 +167,7 @@ export function Map() {
       <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
       {/* Layer z-order: first rendered = bottom of stack */}
       <BuildingsLayer />
+      {features.areas && <AreasLayer />}
       <FacadeNoiseLayer />
       <LandmarksLayer />
       <NoiseLayer />
