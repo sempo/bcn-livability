@@ -73,6 +73,16 @@ export function valueOf(data: BuildingData, name: string, i: number): number | n
 /** Populated after loadBuildings() resolves — for synchronous card lookups. */
 export let buildingData: BuildingData | null = null
 
+/** The decompressed score blob, kept until the scoring worker takes it (TODO-058); it is transferred, not copied. */
+let rawScores: ArrayBuffer | null = null
+
+/** The raw blob of the loaded data, once: the caller owns it (and may transfer it). Null when already taken. */
+export function takeRawScores(): ArrayBuffer | null {
+  const raw = rawScores
+  rawScores = null
+  return raw
+}
+
 let cache: Promise<BuildingData> | null = null
 
 export function loadBuildings(): Promise<BuildingData> {
@@ -90,6 +100,7 @@ export function loadBuildings(): Promise<BuildingData> {
   ])
     .then(([meta, buf]) => {
       buildingData = { meta, count: meta.count, cols: parseColumns(meta, buf) }
+      rawScores = buf
       return buildingData
     })
     .catch((err) => {
@@ -102,4 +113,5 @@ export function loadBuildings(): Promise<BuildingData> {
 export function resetBuildingsCache(): void {
   cache = null
   buildingData = null
+  rawScores = null
 }

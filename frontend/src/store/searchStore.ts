@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import type { FeatureCollection } from 'geojson'
-import type { Bounds } from '../services/bestZones'
+import type { Bounds } from '../services/bestZonesConfig'
 
 /** What the search box picked (TODO-044). The map-side component reacts to it. */
 export type SearchSelection =

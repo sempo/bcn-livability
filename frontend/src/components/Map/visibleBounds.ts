@@ -1,5 +1,5 @@
 import type * as maplibregl from 'maplibre-gl'
-import type { Bounds } from '../../services/bestZones'
+import type { Bounds } from '../../services/bestZonesConfig'
 
 /**
  * Visible part of the map: the viewport minus the left filter panel, the right building card

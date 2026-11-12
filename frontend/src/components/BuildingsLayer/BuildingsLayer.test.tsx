@@ -45,6 +45,7 @@ vi.mock('maplibre-gl', () => ({
   },
 }))
 
+import { scoreClient } from '../../services/buildings/scoreClient'
 import { BuildingsLayer, SOURCE_ID, DOT_LAYER_ID, FILL_LAYER_ID, GAP_LAYER_ID, HOVER_LAYER_ID } from './BuildingsLayer'
 
 function makeFakeMap() {
@@ -134,18 +135,58 @@ describe('BuildingsLayer (TODO-046)', () => {
       const before = map.states.get(0)!.score
       act(() => useStore.setState({ compositeWeights: { ...DEFAULT_COMPOSITE_WEIGHTS, noise: 0, cityCore: 0, openPrice: 0 } }))
       expect(map.states.get(0)!.score).toBe(before) // not yet: waits for the slider to stop
-      act(() => { vi.advanceTimersByTime(200) })
+      await act(async () => { vi.advanceTimersByTime(200) })
       expect([map.states.get(0)!.score, map.states.get(1)!.score]).toEqual([100, 50]) // services within 10 min
       act(() => useStore.getState().setConditions({ ...DEFAULT_CONDITIONS, walkMaxMin: 5 }))
-      act(() => { vi.advanceTimersByTime(200) })
+      await act(async () => { vi.advanceTimersByTime(200) })
       expect([map.states.get(0)!.score, map.states.get(1)!.score]).toEqual([70, 0]) // park 8 min > 5
       const calls = map.setFeatureState.mock.calls.length
       act(() => useStore.getState().setEnabledWalkCategories(['supermarket']))
-      act(() => { vi.advanceTimersByTime(200) })
+      await act(async () => { vi.advanceTimersByTime(200) })
       expect(map.states.get(0)!.score).toBe(100)
       expect(map.setFeatureState.mock.calls.length - calls).toBe(1) // only building 0 changed
     } finally {
       vi.useRealTimers()
+    }
+  })
+
+  it('scoring runs through the score client, and a result that arrives after a newer change is not applied (058)', async () => {
+    const map = makeFakeMap()
+    await renderLayer(map)
+    const resolvers: ((r: { score: Uint8Array; gap: Uint8Array } | null) => void)[] = []
+    const spy = vi.spyOn(scoreClient, 'score').mockImplementation(() => new Promise((resolve) => { resolvers.push(resolve) }))
+    vi.useFakeTimers()
+    try {
+      act(() => useStore.getState().setConditions({ ...DEFAULT_CONDITIONS, walkMaxMin: 5 }))
+      await act(async () => { vi.advanceTimersByTime(200) })
+      act(() => useStore.getState().setConditions({ ...DEFAULT_CONDITIONS, walkMaxMin: 15 }))
+      await act(async () => { vi.advanceTimersByTime(200) })
+      expect(resolvers).toHaveLength(2)
+      expect(spy.mock.calls[1][1].conditions.walkMaxMin).toBe(15)
+      await act(async () => { resolvers[0]({ score: Uint8Array.from([7, 7]), gap: Uint8Array.from([0, 0]) }) })
+      expect(map.states.get(0)!.score).not.toBe(7) // the older answer is dropped
+      await act(async () => { resolvers[1]({ score: Uint8Array.from([55, 44]), gap: Uint8Array.from([0, 0]) }) })
+      expect([map.states.get(0)!.score, map.states.get(1)!.score]).toEqual([55, 44])
+      expect(useStore.getState().buildingScores).toEqual(Uint8Array.from([55, 44]))
+    } finally {
+      vi.useRealTimers()
+      spy.mockRestore()
+    }
+  })
+
+  it('a request that the client dropped (null) changes nothing', async () => {
+    const map = makeFakeMap()
+    await renderLayer(map)
+    const before = map.states.get(0)!.score
+    const spy = vi.spyOn(scoreClient, 'score').mockResolvedValue(null)
+    vi.useFakeTimers()
+    try {
+      act(() => useStore.getState().setConditions({ ...DEFAULT_CONDITIONS, walkMaxMin: 5 }))
+      await act(async () => { vi.advanceTimersByTime(200) })
+      expect(map.states.get(0)!.score).toBe(before)
+    } finally {
+      vi.useRealTimers()
+      spy.mockRestore()
     }
   })
 
@@ -157,7 +198,7 @@ describe('BuildingsLayer (TODO-046)', () => {
     vi.useFakeTimers()
     try {
       act(() => useStore.getState().setAgeEras(['1900-1939']))
-      act(() => { vi.advanceTimersByTime(200) })
+      await act(async () => { vi.advanceTimersByTime(200) })
       expect([map.states.get(0)!.score, map.states.get(1)!.score]).toEqual([100, 0])
     } finally {
       vi.useRealTimers()

@@ -32,6 +32,25 @@ export default defineConfig(({ mode }) => {
     plugins: [react(), ...(stub ? [stubAnthropicSdk()] : [])],
     // '/' for the custom domain; a fork on github.io/<repo>/ sets VITE_BASE=/<repo>/ (see deploy.yml).
     base: env.VITE_BASE || '/',
+    // The scoring worker is an ES module (TODO-058).
+    worker: { format: 'es' as const },
+    build: {
+      rolldownOptions: {
+        output: {
+          codeSplitting: {
+            groups: [
+              { name: 'maplibre', test: /node_modules[\\/]maplibre-gl/ },
+              { name: 'mantine', test: /node_modules[\\/]@mantine/ },
+              { name: 'react', test: /node_modules[\\/](react|react-dom|scheduler)[\\/]/ },
+              { name: 'icons', test: /node_modules[\\/]@tabler/ },
+              { name: 'h3', test: /node_modules[\\/]h3-js/ },
+              { name: 'tiles', test: /node_modules[\\/](pmtiles|pbf|@mapbox)/ },
+              { name: 'draw', test: /node_modules[\\/]terra-draw/ },
+            ],
+          },
+        },
+      },
+    },
     test: {
       environment: 'jsdom',
       globals: true,

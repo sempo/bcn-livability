@@ -163,6 +163,8 @@ src/
 │   │                          on and in what order, profileToPatch(), budget shares ("≈ N % of homes")
 │   ├── areas/                 areaRank.ts (per-area aggregation of the building scores), areaJoin.ts (area → polygon by position),
 │   │                          areaJoinLoader.ts, areaSelect.ts (fly to + outline through the search store)
+│   ├── buildings/scoreClient.ts  scoring in the worker (hand-over of the raw blob, newest request wins, main-thread fallback);
+│   │                          scoreProtocol.ts: the messages. The worker itself: src/workers/score.worker.ts
 │   ├── presets.ts             the four profiles (Family, Remote worker, City life, Investor) + JSON overrides from ENV
 │   ├── buildings/
 │   │   ├── buildingData.ts    loads buildings-meta.json + buildings-scores.bin.gz → decoded Float32 columns
@@ -341,6 +343,17 @@ flag and no saved settings (`hasSavedSettings()`); "Change" in the panel reopens
   (`bcn_onboarded`), flat size of the budget word (`bcn_flat_area_m2`), best-zones strictness and restriction, pins, exclusion zones,
   Idealista base URL. Not persisted: the Idealista price window, the street-flooding return period, the selected
   building.
+
+## Performance (TODO-058)
+
+- **Scoring runs in a Web Worker** (`workers/score.worker.ts`, client `services/buildings/scoreClient.ts`); the main
+  thread keeps its own decoded columns for the card, the tooltip and best zones. The worker gets the raw score blob
+  once (transferred) and the settings per change; without a worker the same `scoreAll` runs on the main thread.
+- **Initial JavaScript is budgeted** (`bundleBudget.initialJsGzipKB` in `frontend/package.json`, 500 KB gzip, now
+  ~482): `npm run check:bundle` runs in the deploy workflow after the build. Code that most visitors never run is
+  loaded on demand: Best zones (h3-js, turf), the isochrone / exclusion / pin / Idealista layers, terra-draw.
+  Keep h3-js and turf's union / difference / buffer out of modules that load at start (`bestZonesConfig.ts`,
+  `exclusionsGeometry.ts`, `bestZoneGrid.ts` exist for that).
 
 ## Offline data pipeline (`scripts/`)
 

@@ -3,7 +3,8 @@ import * as maplibregl from 'maplibre-gl'
 import { MapContext } from '../Map/MapContext'
 import { useStore } from '../../store'
 import { loadBuildings, type BuildingData } from '../../services/buildings/buildingData'
-import { scoreAll, scoreBuilding } from '../../services/buildings/buildingScore'
+import { scoreBuilding } from '../../services/buildings/buildingScore'
+import { scoreClient } from '../../services/buildings/scoreClient'
 import { matchSummary, matchTooltip, type ConditionId } from '../../services/match/matchSummary'
 import { AREA_VIEW_MAX_ZOOM, rankAreas } from '../../services/areas/areaRank'
 import { loadBarriVibe, type BarriVibeData } from '../../services/localsOpinion/localsOpinion'
@@ -124,44 +125,49 @@ export function BuildingsLayer() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [map, data])
 
-  // Scores of every building → feature state, whenever the user's settings change. The first pass runs at once;
-  // later ones wait for a pause (dragging a slider would otherwise rescore 170k buildings per step), and only
-  // buildings whose score changed get a new state.
+  // Scores of every building → feature state, whenever the user's settings change. Scoring runs in a worker
+  // (TODO-058), so the page stays responsive; the result arrives a moment later, and one that a newer change made
+  // pointless is dropped. The first pass runs at once; later ones wait for a pause (dragging a slider would
+  // otherwise rescore 170k buildings per step), and only buildings whose score changed get a new state.
   const gapRef = useRef<Uint8Array | null>(null)
   useEffect(() => {
     if (!map || !data || !map.getSource(SOURCE_ID)) return
+    let cancelled = false
     const run = () => {
       const t0 = performance.now()
-      const { score, gap, components } = scoreAll(data.buildings, {
+      scoreClient.score(data.buildings, {
         weights, conditions, enabledLandmarkIds, enabledCategories, riskStrengths, ageEras, vibe: data.vibe,
-      }, features.areas)
-      const [prevScore, prevGap] = [scoresRef.current, gapRef.current]
-      let changed = 0
-      for (let i = 0; i < score.length; i++) {
-        if (prevScore && prevGap && prevScore[i] === score[i] && prevGap[i] === gap[i]) continue
-        map.setFeatureState({ source: SOURCE_ID, sourceLayer: SOURCE_LAYER, id: i }, { score: score[i], gap: gap[i] === 1 })
-        changed++
-      }
-      scoresRef.current = score
-      gapRef.current = gap
-      useStore.getState().setBuildingScores(score)
-      if (components) {
-        const on = (Object.keys(components) as ConditionId[]).filter((k) => (weights[k] ?? 0) > 0)
-        useStore.getState().setAreaRanks(
-          rankAreas(score, data.buildings.cols.area, data.buildings.meta.areas, components, on),
-        )
-      }
-      recolor()
-      if (import.meta.env.DEV) {
-        console.debug(`buildings: ${score.length} scored, ${changed} changed, ${Math.round(performance.now() - t0)} ms`)
-      }
+      }, features.areas).then((result) => {
+        if (cancelled || !result || !map.getSource(SOURCE_ID)) return
+        const { score, gap, components } = result
+        const [prevScore, prevGap] = [scoresRef.current, gapRef.current]
+        let changed = 0
+        for (let i = 0; i < score.length; i++) {
+          if (prevScore && prevGap && prevScore[i] === score[i] && prevGap[i] === gap[i]) continue
+          map.setFeatureState({ source: SOURCE_ID, sourceLayer: SOURCE_LAYER, id: i }, { score: score[i], gap: gap[i] === 1 })
+          changed++
+        }
+        scoresRef.current = score
+        gapRef.current = gap
+        useStore.getState().setBuildingScores(score)
+        if (components) {
+          const on = (Object.keys(components) as ConditionId[]).filter((k) => (weights[k] ?? 0) > 0)
+          useStore.getState().setAreaRanks(
+            rankAreas(score, data.buildings.cols.area, data.buildings.meta.areas, components, on),
+          )
+        }
+        recolor()
+        if (import.meta.env.DEV) {
+          console.debug(`buildings: ${score.length} scored, ${changed} changed, ${Math.round(performance.now() - t0)} ms`)
+        }
+      })
     }
     if (!scoresRef.current) {
       run()
-      return
+      return () => { cancelled = true }
     }
     const timer = setTimeout(run, RESCORE_DELAY_MS)
-    return () => clearTimeout(timer)
+    return () => { cancelled = true; clearTimeout(timer) }
   }, [map, data, weights, conditions, enabledLandmarkIds, enabledCategories, riskStrengths, ageEras, recolor])
 
   // Refit the colour scale (Boost contrast only) once the map stops moving.
