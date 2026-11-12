@@ -38,6 +38,9 @@ jobs:
         env:
           VITE_TMB_APP_ID: ${{ secrets.VITE_TMB_APP_ID }}
           VITE_TMB_APP_KEY: ${{ secrets.VITE_TMB_APP_KEY }}
+          # Address search in the search box; if unset, only areas are searchable. The key ends up in the
+          # public bundle, so restrict it by HTTP referrer in the Geoapify dashboard.
+          VITE_GEOAPIFY_API_KEY: ${{ secrets.VITE_GEOAPIFY_API_KEY }}
           # Only the upstream repo owns livability.time2map.com (base '/'). A fork is served from
           # https://<owner>.github.io/<repo>/, so its assets live under that subpath.
           VITE_BASE: ${{ github.repository == 'time2map/bcn-property-finder' && '/' || format('/{0}/', github.event.repository.name) }}

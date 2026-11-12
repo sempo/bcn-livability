@@ -22,7 +22,7 @@ The product has two modes in one codebase, separated by feature flags (`docs/FEA
 
 ### User flow
 
-1. The user opens the map. The Livability Index is on, with default conditions.
+1. The user opens the map. The Livability Index is on, with default conditions. A search box jumps to a district, barri, municipality or an address (address suggestions need the Geoapify key).
 2. In the panel the user turns conditions on or off and sets each limit in real units. The panel shows what each
    setting means in words, for example "Up to 65 dB is OK for me — like a busy street" or "I'm ready to pay up
    to €4,000/m²".
