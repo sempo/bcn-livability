@@ -1,7 +1,7 @@
-# TODO-031 — Onboarding: profiles and one sentence ("Where would you like to live?")
+# 031 — Onboarding: profiles and one sentence ("Where would you like to live?")
 
-**Status:** Implemented 2026-11-12 behind `VITE_FEATURE_ONBOARDING` (off in production); the manual browser check at
-375 px and 1440 px is still to do, so the file keeps its `TODO-` prefix. Redesigned 2026-11-12: the multi-screen quiz (tiles → one follow-up screen per
+**Status:** Implemented 2026-11-12, checked in the browser at 375 px and 1440 px; on in production together with 052
+(flag `VITE_FEATURE_ONBOARDING`). Redesigned 2026-11-12: the multi-screen quiz (tiles → one follow-up screen per
 tile → risks → done) is replaced by **profiles + one editable sentence**. Mock-up reviewed and approved
 2026-11-12 (`local-docs/design/`, artifact "Mad-libs Onboarding"). Earlier versions: 2026-11-11 (conditions
 model, 049) and the original weights 0–10 questionnaire (gone).
