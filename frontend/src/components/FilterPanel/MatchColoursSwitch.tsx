@@ -24,7 +24,7 @@ export function MatchColoursSwitch() {
           <IconInfoCircle size={16} stroke={1.8} />
         </ActionIcon>
       </Group>
-      <Text size="xs" c="dimmed">Black outline = missing data</Text>
+      <Text size="xs" c="dimmed">Hatched = incomplete data (score is a range, colour shows the best case)</Text>
     </Stack>
   )
 }

@@ -115,6 +115,16 @@ describe('scoreAll', () => {
     expect([...gap]).toEqual([0, 1]) // building 1 has no noise data and no Locals' opinion (outside Barcelona)
   })
 
+  it('scoreAll holds the max score; scoreBuilding gives the range for a building with a gap (060)', () => {
+    const { score, gap } = scoreAll(DATA, SETTINGS)
+    const r = scoreBuilding(DATA, 1, SETTINGS)
+    expect(gap[1]).toBe(1)
+    expect(score[1]).toBe(r.score)
+    expect(r.scoreMin).toBeLessThan(r.score)
+    const full = scoreBuilding(DATA, 0, SETTINGS)
+    expect(full.scoreMin).toBe(full.score)
+  })
+
   it('returns no component arrays unless asked', () => {
     expect(scoreAll(DATA, SETTINGS).components).toBeUndefined()
   })

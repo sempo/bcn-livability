@@ -13,10 +13,37 @@ describe('computeComposite (049: mean over the conditions that are on)', () => {
     expect(r.hasGap).toBe(false)
   })
 
-  it('a condition that is on without data counts 0 and marks the gap', () => {
+  it('a condition that is on without data gives a range: score = max (dropped), scoreMin = worst (counts 0) (060)', () => {
     const r = computeComposite({ components: components({ poiAccess: 100, noise: null }) }, WALK_NOISE)
-    expect(r.score).toBe(50)
+    expect(r.score).toBe(100)
+    expect(r.scoreMin).toBe(50)
     expect(r.hasGap).toBe(true)
+  })
+
+  it('without gaps min equals max (060)', () => {
+    const r = computeComposite({ components: components({ poiAccess: 100, noise: 50 }) }, WALK_NOISE)
+    expect(r.scoreMin).toBe(r.score)
+  })
+
+  it('max renormalises the remaining weights; min keeps the missing one in the denominator (060)', () => {
+    const w = { ...WALK_NOISE, cityCore: 1 }
+    const r = computeComposite({ components: components({ poiAccess: 90, noise: 60, cityCore: null }) }, w)
+    expect(r.score).toBe(75)
+    expect(r.scoreMin).toBe(50)
+    expect(r.scoreMin).toBeLessThanOrEqual(r.score)
+  })
+
+  it('every condition on is missing → 0 / 0 (060)', () => {
+    const r = computeComposite({ components: NONE }, WALK_NOISE)
+    expect(r.score).toBe(0)
+    expect(r.scoreMin).toBe(0)
+    expect(r.hasGap).toBe(true)
+  })
+
+  it('a missing condition with weight 0 is not a gap (060)', () => {
+    const r = computeComposite({ components: components({ poiAccess: 70, noise: null }) }, { ...WALK_NOISE, noise: 0 })
+    expect(r.hasGap).toBe(false)
+    expect(r.scoreMin).toBe(70)
   })
 
   it('no condition on → 0', () => {
@@ -24,10 +51,11 @@ describe('computeComposite (049: mean over the conditions that are on)', () => {
     expect(r.score).toBe(0)
   })
 
-  it("locals' opinion from a small sample counts but is marked like missing data (042)", () => {
+  it("locals' opinion from a small sample is a gap like missing data (042, 060)", () => {
     const weights = { ...WALK_NOISE, noise: 0, localsOpinion: 1 }
     const r = computeComposite({ components: components({ poiAccess: 80, localsOpinion: 100 }), localsLowN: true }, weights)
-    expect(r.score).toBe(90)
+    expect(r.score).toBe(80)
+    expect(r.scoreMin).toBe(40)
     expect(r.hasGap).toBe(true)
     const off = computeComposite({ components: components({ poiAccess: 80 }), localsLowN: true }, { ...weights, localsOpinion: 0 })
     expect(off.hasGap).toBe(false)
@@ -67,5 +95,15 @@ describe('computeComposite — climate risk penalties (036)', () => {
       .penalties.fire).toBe(40)
     expect(computeComposite({ components: walk80, risks: { ...NO_RISK, street: 1 } }, WALK_ONLY, { flood: 5, fire: 5, street: 5 })
       .penalties).toEqual({ flood: 0, fire: 0, street: 40 })
+  })
+
+  it('applies the penalties to both ends of the range (060)', () => {
+    const r = computeComposite(
+      { components: components({ poiAccess: 80, noise: null }), risks: { ...NO_RISK, flood: 1 } },
+      { ...WALK_ONLY, noise: 1 },
+      { flood: 5, fire: 5, street: 0 },
+    )
+    expect(r.score).toBe(40)
+    expect(r.scoreMin).toBe(20)
   })
 })

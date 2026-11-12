@@ -14,7 +14,7 @@ export function pointInFeature(lng: number, lat: number, f: AreaFeature): boolea
   return booleanPointInPolygon([lng, lat], f)
 }
 
-/** Area index → the polygon its buildings stand in (areas with no match are left out). */
+/** Area index → the polygon its buildings stand in (areas with no match, or that lose a shared polygon, are left out). */
 export function joinAreas(
   areas: readonly BuildingArea[],
   areaCol: Float32Array,
@@ -57,5 +57,13 @@ export function joinAreas(
     for (const [f, v] of votes) if (v > bestVotes) { best = f; bestVotes = v }
     if (best) result.set(a, best)
   }
+  // A polygon belongs to one area. Stray buildings of another area (e.g. a handful assigned to Barcelona that stand
+  // in l'Hospitalet) would otherwise draw a second, overlapping copy of it; the area with more buildings keeps it.
+  const owner = new Map<AreaFeature, number>()
+  for (const [a, f] of result) {
+    const current = owner.get(f)
+    if (current === undefined || counts[a] > counts[current]) owner.set(f, a)
+  }
+  for (const [a, f] of [...result]) if (owner.get(f) !== a) result.delete(a)
   return result
 }

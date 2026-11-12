@@ -9,7 +9,7 @@ export const LAYER_Z_ORDER: readonly string[] = [
   // Livability Index on buildings (bottom) — TODO-046 (dots at low zoom, footprints from z14)
   'buildings-dots',
   'buildings-fill',
-  'buildings-gap-outline',
+  'buildings-hatch',
   'buildings-hover-outline',
   'noise-overlay',
   // Climate-risk view layers — features 036, 037
@@ -25,6 +25,7 @@ export const LAYER_Z_ORDER: readonly string[] = [
   'exclusion-line',
   // Area view below z13 — TODO-051
   'areas-fill',
+  'areas-hatch',
   'areas-line',
   'areas-label',
   // Best zones — feature 038

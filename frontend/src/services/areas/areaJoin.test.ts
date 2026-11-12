@@ -55,6 +55,17 @@ describe('joinAreas', () => {
     expect(joinAreas(AREAS, areaCol, lng, lat, FEATURES).has(2)).toBe(false)
   })
 
+  it('gives a polygon to one area only: the one with more buildings when stray buildings of another area stand in it', () => {
+    const areas: BuildingArea[] = [...AREAS, { code: '08019', name: 'Barcelona', kind: 'muni', price: 1 }]
+    // area 2 (M) has three buildings in muni-M; area 3 (stray) has one there, at the border
+    const areaCol = Float32Array.from([2, 2, 2, 3])
+    const lng = Float32Array.from([4.2, 4.5, 4.8, 4.9])
+    const lat = Float32Array.from([0.5, 0.5, 0.5, 0.5])
+    const join = joinAreas(areas, areaCol, lng, lat, FEATURES)
+    expect(join.get(2)?.properties.id).toBe('muni-M')
+    expect(join.has(3)).toBe(false)
+  })
+
   it('ignores buildings without an area and works with no polygons', () => {
     expect(joinAreas(AREAS, Float32Array.from([NaN]), Float32Array.from([0.5]), Float32Array.from([0.5]), FEATURES).size).toBe(0)
     expect(joinAreas(AREAS, Float32Array.from([0]), Float32Array.from([0.5]), Float32Array.from([0.5]), []).size).toBe(0)
