@@ -266,7 +266,7 @@ describe('BuildingsLayer (TODO-046)', () => {
     const map = makeFakeMap()
     await renderLayer(map)
     act(() => useStore.getState().setSelectedBuilding(0))
-    act(() => useStore.setState({ compositeWeights: { ...DEFAULT_COMPOSITE_WEIGHTS, poiAccess: 0, noise: 0, cityCore: 0, openPrice: 0 } }))
+    act(() => useStore.setState({ compositeRiskStrengths: { flood: 0, fire: 0, street: 0 }, compositeWeights: { ...DEFAULT_COMPOSITE_WEIGHTS, poiAccess: 0, noise: 0, cityCore: 0, openPrice: 0 } }))
     for (const id of [DOT_LAYER_ID, FILL_LAYER_ID, HATCH_LAYER_ID, HOVER_LAYER_ID]) {
       expect(map.setLayoutProperty).toHaveBeenCalledWith(id, 'visibility', 'none')
     }

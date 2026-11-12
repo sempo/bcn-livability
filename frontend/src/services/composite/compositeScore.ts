@@ -15,9 +15,13 @@ export interface CompositeWeights {
   age?: number
 }
 
-/** True when at least one condition is on. With none, there is nothing to score and the map stays neutral (061). */
-export function hasConditions(weights: CompositeWeights): boolean {
-  return (['poiAccess', 'noise', 'cityCore', 'openPrice', 'localsOpinion', 'age'] as const).some((k) => (weights[k] ?? 0) > 0)
+/**
+ * True when at least one condition is on. With none, there is nothing to score and the map stays neutral (061).
+ * "Avoid flood and wildfire risk" is a condition too: on its own it colours the map by risk (everything starts at 100).
+ */
+export function hasConditions(weights: CompositeWeights, riskStrengths?: RiskStrengths): boolean {
+  const weighted = (['poiAccess', 'noise', 'cityCore', 'openPrice', 'localsOpinion', 'age'] as const).some((k) => (weights[k] ?? 0) > 0)
+  return weighted || (riskStrengths !== undefined && Object.values(riskStrengths).some((v) => v > 0))
 }
 
 /** Score 0–100 of each component of one building against the user's conditions; null = no data. */
@@ -90,8 +94,10 @@ export function computeComposite(
 
   const risks = inputs.risks ?? NO_RISKS
   const penalised = (base: number) => applyRiskPenalties(base, risks, riskStrengths)
-  const baseMin = total === 0 ? 0 : Math.round(sum / total)
-  const baseScore = totalKnown === 0 ? 0 : Math.round(sum / totalKnown)
+  // Only risks are on (no weighted condition): nothing to average, every home starts at 100 and loses points to risk.
+  const onlyRisks = total === 0 && hasConditions(weights, riskStrengths)
+  const baseMin = onlyRisks ? 100 : total === 0 ? 0 : Math.round(sum / total)
+  const baseScore = onlyRisks ? 100 : totalKnown === 0 ? 0 : Math.round(sum / totalKnown)
   const { score, floodPenalty, firePenalty, streetPenalty } = penalised(baseScore)
   return {
     score, scoreMin: hasGap ? penalised(baseMin).score : score, baseScore, hasGap, components, risks,
