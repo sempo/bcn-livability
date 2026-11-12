@@ -1,6 +1,8 @@
 # TODO-051 — Ranked list of areas ("Your areas") and area view at low zoom
 
-**Status:** Planned, not started. Depends on 050 (match bands). Part of the mass-market UX track.
+**Status:** Implemented 2026-11-12 behind `VITE_FEATURE_AREAS` (off in production); the manual browser check (list for
+the Family profile, click → zoom, area fill below z13) is still to do, so the file keeps its `TODO-` prefix.
+Depends on 050 (match bands). Part of the mass-market UX track.
 
 ## Problem
 
@@ -37,27 +39,34 @@ conditions where the area's mean component is highest (needs per-component means
 mean score with the 050 bands; label = name. Hover shows "62 % good match · 1,240 homes". Click = same as the
 list click. The building dots are hidden below z13; the fill is hidden from z13.
 
-**Where the list lives**: desktop — a tab in the top-left panel ("Map settings" / "Your areas"); mobile — a
-second bottom-sheet snap under the map ("Your areas (10)"). The list updates with the settings (same debounce
-as rescoring).
+**Where the list lives**: a tab in the filter panel ("Settings" / "Your areas"), on desktop and inside the bottom
+drawer on a phone (a separate bottom-sheet snap is a later refinement). The list updates with the settings (same
+debounce as rescoring).
 
 ## Implementation
 
-- **Join key.** `buildings-meta.json` areas use the city barri code (`'01'`–`'73'`) and the INE municipality
-  code (`'08015'`); `areas.geojson` ids are `barri-<district><nn>` and `muni-<slug>`. Extend
-  `scripts/prepare-areas-data.sh` to carry `code` (city barri number from bcn-geodata) and `ine` (from the
-  opendatasoft export) in the properties, and join on those; never on names.
+- **Join key (as built).** `buildings-meta.json` areas use the city barri code and the INE municipality code;
+  `areas.geojson` has neither (ids are `barri-<district><nn>` and `muni-<slug>`), and the raw sources of
+  `scripts/prepare-areas-data.sh` are not in git. Names are not used. `services/areas/areaJoin.ts` joins by
+  position instead: a sample of 15 building centroids of each area votes for the polygon (of the same kind) they
+  stand in, with a bbox prefilter; cached by `areaJoinLoader.ts`. Areas with no polygon (the metro list has more
+  municipalities than the polygon file) are ranked in the list but not coloured on the map and not clickable.
+  If the script later carries `code` / `ine`, `joinAreas` can be replaced by a plain lookup.
 
-- `services/areas/areaRank.ts`: `rankAreas(scores, components, areaCol, areas, bands) → AreaRank[]`.
-  Components per building are not stored today (only the final score): extend `scoreAll` to also return a
-  `Uint8Array` per component when `withComponents` is on (6 × 174k bytes, fine).
+- `services/areas/areaRank.ts`: `rankAreas(scores, areaCol, areas, components, active, bands, min) → AreaRank[]`.
+  `scoreAll(..., withComponents)` returns a `Uint8Array` per condition (255 = no data); `BuildingsLayer` passes it
+  when the flag is on.
 - Store: `areaRanks: AreaRank[] | null`, set by `BuildingsLayer` after each rescoring.
-- `components/AreasList/AreasList.tsx`, `AreaRow.tsx`; `components/AreasLayer/AreasLayer.tsx` (fill +
-  labels, z < 13, uses `areas.geojson` + `areaRanks`; `layerOrder.ts` gets `areas-fill`, `areas-label`, and
-  the stale `barrio-boundaries-*` ids are removed).
-- `FilterPanel.tsx`: Mantine `Tabs` (Settings / Your areas). Mobile: `App.tsx` adds a sheet.
-- Fly-to: `map.fitBounds(bbox(area))` + temporary outline (`areas-selected-line`).
-- ENV: `VITE_AREA_MIN_BUILDINGS=50`, `VITE_AREA_VIEW_MAX_ZOOM=13`.
+- `components/AreasList/AreasList.tsx`, `AreaRow.tsx`; `components/AreasLayer/AreasLayer.tsx` (geojson source
+  with the area index as feature id; the mean score as feature state `score`, so it uses the same ramp and
+  follows Boost contrast; fill, outline and label with `maxzoom` = `VITE_AREA_VIEW_MAX_ZOOM`; hover popup;
+  click). `layerOrder.ts` has `areas-fill`, `areas-line`, `areas-label`; the stale `barrio-boundaries-*` ids are
+  gone. The dot layer of the buildings gets `minzoom` = the same value.
+- `FilterPanel.tsx`: Mantine `Tabs` (Settings / Your areas) when the flag is on.
+- Fly-to and outline: a click selects the area through the search store (`areaSelect.ts`), so `SearchLayer`
+  draws the same blue outline as for a searched area; no extra layer.
+- Flag `VITE_FEATURE_AREAS` (on in `.env.test`, off in production). ENV: `VITE_AREA_MIN_BUILDINGS=50`,
+  `VITE_AREA_VIEW_MAX_ZOOM=13`.
 
 ## Tests
 
@@ -76,4 +85,5 @@ zooming out past z13 shows the area fill.
 ## Open questions
 
 - Municipalities and barris in one list, or two sections? Proposed: one list, kind as a chip.
-- Should the list respect the best-zones restriction (commute zone) when those flags are on? Proposed: yes.
+- Should the list respect the best-zones restriction (commute zone) when those flags are on? Proposed: yes. Not
+  done in the first pass: the list ranks all areas.

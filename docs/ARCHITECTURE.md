@@ -89,6 +89,8 @@ src/
 │   │   ├── WordPicker.tsx / OptionList.tsx / CheckList.tsx   a tappable word → popover with verbal steps and
 │   │   │                          "Custom…" (slider, ranges from `CONDITION_RANGES`), or a checklist (services, places, eras)
 │   │   ├── AddConditionChips.tsx, MatchBar.tsx   conditions not on yet; share of homes per match band
+│   ├── AreasLayer/                area view below z13 (TODO-051): barris and municipalities coloured by mean score, hover, click
+│   ├── AreasList/                 "Your areas": ranked list (top 10, show all), click flies to the area
 │   ├── Onboarding/                OnboardingPanel (profiles → sentence → "Show me the map"), PresetCards
 │   ├── FilterPanel/
 │   │   ├── YourConditionsRow.tsx  "Your conditions: Quiet · On foot · Budget — Change" at the top of the panel (flag)
@@ -153,6 +155,8 @@ src/
 ├── services/
 │   ├── conditionOptions.ts    sentence-editor words (TODO-031): verbal steps from VITE_QUIZ_*, risk levels, which conditions are
 │   │                          on and in what order, profileToPatch(), budget shares ("≈ N % of homes")
+│   ├── areas/                 areaRank.ts (per-area aggregation of the building scores), areaJoin.ts (area → polygon by position),
+│   │                          areaJoinLoader.ts, areaSelect.ts (fly to + outline through the search store)
 │   ├── presets.ts             the four profiles (Family, Remote worker, City life, Investor) + JSON overrides from ENV
 │   ├── buildings/
 │   │   ├── buildingData.ts    loads buildings-meta.json + buildings-scores.bin.gz → decoded Float32 columns
@@ -313,6 +317,9 @@ the index settings, layer visibility, best-zones state, `selectedBuilding` and `
 The index settings are `compositeVisible`, `compositeWeights` (on/off), `conditions`, `enabledWalkCategories`,
 `enabledLandmarkIds`, `ageEras`, `compositeRiskStrengths` and `compositeColorRange`.
 
+`areaRanks` (TODO-051, flag `VITE_FEATURE_AREAS`) holds the per-area aggregation of `buildingScores`, set by
+`BuildingsLayer` after each rescoring.
+
 Onboarding (TODO-031, flag `VITE_FEATURE_ONBOARDING`): `conditionOrder` (the order conditions were added =
 their priority), `onboarded`, `onboardingOpen`, and `applySettings(patch)`, which sets all index settings and the
 order with one store update, so the map rescores once. The panel opens only on a first visit: no `bcn_onboarded`
@@ -390,6 +397,8 @@ build, committed) and `frontend/.env.test` (all flags on). Every default below i
 | `VITE_QUIZ_PRICE_OPTIONS` | 2500,3500,4500,6000 | steps of the budget word, €/m² (each shows "≈ N % of homes") |
 | `VITE_QUIZ_LOCALS_OPTIONS` | 7.0,7.5,8.0 | steps of the residents' satisfaction word |
 | `VITE_RISK_PRESET_AVOID` / `_STRONG` | 5 / 8 | strength of each risk for "Avoid" / "Strongly avoid" |
+| `VITE_AREA_MIN_BUILDINGS` | 50 | areas with fewer homes are listed after the ranked ones (051) |
+| `VITE_AREA_VIEW_MAX_ZOOM` | 13 | below this zoom the map shows areas, from it the buildings (051) |
 | `VITE_PRESET_FAMILY` / `_REMOTE` / `_CITY` / `_INVESTOR` | (in code) | optional JSON overriding a profile's fields |
 | `VITE_SCORE_SCALE_TRIM_PCT` | 2 | Boost contrast: scale ignores this % at each end |
 | `VITE_SCORE_SCALE_MIN_SPAN` | 20 | Boost contrast: scale minimum span, points |

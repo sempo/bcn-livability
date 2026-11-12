@@ -94,16 +94,29 @@ export function scoreBuilding(data: BuildingData, i: number, s: BuildingSettings
   return computeComposite(buildingBundle(data, i, s), s.weights, s.riskStrengths)
 }
 
-/** Final score and missing-data flag of every building, by row. */
-export function scoreAll(data: BuildingData, s: BuildingSettings): { score: Uint8Array; gap: Uint8Array } {
+const COMPONENT_KEYS = ['poiAccess', 'noise', 'cityCore', 'openPrice', 'localsOpinion', 'age'] as const
+
+/**
+ * Final score and missing-data flag of every building, by row. With `withComponents` also the score of each
+ * condition (255 = no data) for the area ranking (TODO-051); 6 × 174k bytes.
+ */
+export function scoreAll(
+  data: BuildingData,
+  s: BuildingSettings,
+  withComponents = false,
+): { score: Uint8Array; gap: Uint8Array; components?: Record<(typeof COMPONENT_KEYS)[number], Uint8Array> } {
   const score = new Uint8Array(data.count)
   const gap = new Uint8Array(data.count)
+  const components = withComponents
+    ? (Object.fromEntries(COMPONENT_KEYS.map((k) => [k, new Uint8Array(data.count)])) as Record<(typeof COMPONENT_KEYS)[number], Uint8Array>)
+    : undefined
   for (let i = 0; i < data.count; i++) {
     const r = scoreBuilding(data, i, s)
     score[i] = r.score
     gap[i] = r.hasGap ? 1 : 0
+    if (components) for (const k of COMPONENT_KEYS) components[k][i] = r.components[k] ?? 255
   }
-  return { score, gap }
+  return { score, gap, components }
 }
 
 /** H3 cell of every building centroid — Best zones (038) work on the res-9 grid. */

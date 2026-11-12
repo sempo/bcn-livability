@@ -10,4 +10,6 @@ export const features = {
   facadePhoto: import.meta.env.VITE_FEATURE_FACADE_PHOTO === 'true',
   /** TODO-031: profiles + one editable sentence on the first visit, and the "Your conditions" row. */
   onboarding: import.meta.env.VITE_FEATURE_ONBOARDING === 'true',
+  /** TODO-051: ranked list of areas ("Your areas") and the area view below z13. */
+  areas: import.meta.env.VITE_FEATURE_AREAS === 'true',
 } as const

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Divider, Modal, Paper, Slider, Stack, Switch, Table, Text } from '@mantine/core'
+import { Divider, Modal, Paper, Slider, Stack, Switch, Table, Tabs, Text } from '@mantine/core'
 import { IconInfoCircle } from '@tabler/icons-react'
 import { useStore } from '../../store'
 import { NoiseLegend } from '../NoiseLayer/NoiseLegend'
@@ -8,6 +8,7 @@ import { CompositeControls } from './CompositeControls'
 import { IdealistaPricesControls } from '../IdealistaPricesLayer/IdealistaPricesControls'
 import { ExclusionControls } from './ExclusionControls'
 import { YourConditionsRow } from './YourConditionsRow'
+import { AreasList } from '../AreasList/AreasList'
 import { features } from '../../features'
 
 const TIME_MARKS = [
@@ -84,6 +85,7 @@ export function FilterPanel() {
     mapAttribution,
   } = useStore()
   const [isoModalOpen, setIsoModalOpen] = useState(false)
+  const [tab, setTab] = useState<'settings' | 'areas'>('settings')
 
   return (
     <Paper
@@ -93,6 +95,15 @@ export function FilterPanel() {
       style={{ minHeight: 0, overflowY: 'auto' }}
     >
       {features.isochrone && <IsochroneInfoModal opened={isoModalOpen} onClose={() => setIsoModalOpen(false)} />}
+      {features.areas && (
+        <Tabs value={tab} onChange={(v) => setTab(v === 'areas' ? 'areas' : 'settings')} mb="sm">
+          <Tabs.List grow>
+            <Tabs.Tab value="settings">Settings</Tabs.Tab>
+            <Tabs.Tab value="areas">Your areas</Tabs.Tab>
+          </Tabs.List>
+        </Tabs>
+      )}
+      {features.areas && tab === 'areas' ? <AreasList /> : (
       <Stack gap="md">
           <YourConditionsRow />
           {features.isochrone && (
@@ -164,6 +175,7 @@ export function FilterPanel() {
             </>
           )}
       </Stack>
+      )}
     </Paper>
   )
 }

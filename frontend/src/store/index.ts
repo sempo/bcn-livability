@@ -7,6 +7,7 @@ import { DEFAULT_TOP_PCT, type Bounds } from '../services/bestZones'
 import { ALL_AGE_ERA_IDS } from '../services/buildings/buildingAge'
 import { DEFAULT_CONDITIONS, type Conditions } from '../services/buildings/conditions'
 import { features } from '../features'
+import type { AreaRank } from '../services/areas/areaRank'
 import { CONDITION_KEYS, activeConditions, type ConditionKey, type SettingsPatch } from '../services/conditionOptions'
 
 /** Which Livability conditions are on: 1 = on, 0 = off (049). */
@@ -82,6 +83,8 @@ export interface AppState {
   selectedBuilding: number | null
   /** Latest score of every building (by row), set by BuildingsLayer; Best zones average it per cell. */
   buildingScores: Uint8Array | null
+  /** Areas ranked by how many of their homes fit (TODO-051), set by BuildingsLayer after each rescoring. */
+  areaRanks: AreaRank[] | null
   setWorkplace: (wp: [number, number] | null) => void
   setMinutes: (minutes: number) => void
   setZoom: (zoom: number) => void
@@ -114,6 +117,7 @@ export interface AppState {
   openOnboarding: () => void
   setSelectedBuilding: (row: number | null) => void
   setBuildingScores: (scores: Uint8Array | null) => void
+  setAreaRanks: (ranks: AreaRank[] | null) => void
 }
 
 function isValidMinutes(n: number): boolean {
@@ -424,5 +428,7 @@ export const useStore = create<AppState>((set) => {
     setSelectedBuilding: (selectedBuilding) => set({ selectedBuilding }),
     buildingScores: null,
     setBuildingScores: (buildingScores) => set({ buildingScores }),
+    areaRanks: null,
+    setAreaRanks: (areaRanks) => set({ areaRanks }),
   }
 })

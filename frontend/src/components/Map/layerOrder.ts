@@ -23,11 +23,10 @@ export const LAYER_Z_ORDER: readonly string[] = [
   // Exclusion zones
   'exclusion-fill',
   'exclusion-line',
-  // Area boundaries
-  'barrio-boundaries-fill',
-  'barrio-boundaries-line',
-  'barrio-boundaries-label-district',
-  'barrio-boundaries-label-barri',
+  // Area view below z13 — TODO-051
+  'areas-fill',
+  'areas-line',
+  'areas-label',
   // Best zones — feature 038
   'best-zones-fill',
   'best-zones-line',

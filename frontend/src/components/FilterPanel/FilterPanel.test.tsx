@@ -25,6 +25,10 @@ vi.mock('./ClimateLayerControls', () => ({
   ClimateLayerControls: () => <div data-testid="climate-layer-controls" />,
 }))
 
+vi.mock('../AreasList/AreasList', () => ({
+  AreasList: () => <div data-testid="areas-list" />,
+}))
+
 vi.mock('./YourConditionsRow', () => ({
   YourConditionsRow: () => <div data-testid="your-conditions" />,
 }))
@@ -78,5 +82,16 @@ describe('FilterPanel', () => {
   it('renders the climate-risk layer toggles', () => {
     render(<MantineProvider><FilterPanel /></MantineProvider>)
     expect(screen.getByTestId('climate-layer-controls')).toBeTruthy()
+  })
+
+  it('has a "Your areas" tab that swaps the settings for the ranked list and back (TODO-051)', () => {
+    render(<MantineProvider><FilterPanel /></MantineProvider>)
+    expect(screen.queryByTestId('areas-list')).toBeNull()
+    fireEvent.click(screen.getByRole('tab', { name: 'Your areas' }))
+    expect(screen.getByTestId('areas-list')).toBeTruthy()
+    expect(screen.queryByLabelText('Noise areas')).toBeNull()
+    fireEvent.click(screen.getByRole('tab', { name: 'Settings' }))
+    expect(screen.getByLabelText('Noise areas')).toBeTruthy()
+    expect(screen.queryByTestId('areas-list')).toBeNull()
   })
 })
