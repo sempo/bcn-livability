@@ -16,7 +16,7 @@ They are build-time values: changing one needs a rebuild or a dev-server restart
 | `VITE_FEATURE_PINS` | `ComparePane`, `AddPinButton`, `PinLayer`, `PinAccuracyLayer`, `WalkabilityLayer`, add-pin click mode, mobile Map/Compare toggle | off | later |
 | `VITE_FEATURE_SCREENSHOT` | `ScreenshotDropZone` around the map; the Claude Vision call (the SDK is left out of the bundle when off) | off | later: the API key must not reach the browser |
 | `VITE_FEATURE_IDEALISTA_PRICES` | `IdealistaPricesLayer` + controls (data file is gitignored, local only) | off | private scrape, not for public |
-| `VITE_FEATURE_BEST_ZONES` | `BestZones` bar + zones + Idealista zone links (038) | **on** | public |
+| `VITE_FEATURE_BEST_ZONES` | `BestZones` bar + zones + Idealista zone links (038); also the "Best areas" block in the filter panel | **off** (hidden 2026-11-12 by the owner) | public once re-enabled |
 | `VITE_FEATURE_LOCALS_OPINION` | "Locals' opinion" condition, its info text, "What locals say" card block, loading `barri-vibe.json` (042) | **on** | public |
 | `VITE_FEATURE_ONBOARDING` | first-visit panel (profiles + one sentence per condition), and the new filter panel (sentences, map layers, best areas, advanced) instead of the old controls (031, 052) | **on** | public; remove the flag and the old `CompositeControls` / `ClimateLayerControls` code next |
 | `VITE_FEATURE_AREAS` | "Your areas" tab (ranked list), `AreasLayer` (area view below z13), per-condition scores and the area ranking after each rescoring, dots only from z13 (051) | **on** | public |
