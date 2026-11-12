@@ -7,6 +7,7 @@ import { ClimateLayerControls } from './ClimateLayerControls'
 import { CompositeControls } from './CompositeControls'
 import { IdealistaPricesControls } from '../IdealistaPricesLayer/IdealistaPricesControls'
 import { ExclusionControls } from './ExclusionControls'
+import { YourConditionsRow } from './YourConditionsRow'
 import { features } from '../../features'
 
 const TIME_MARKS = [
@@ -93,6 +94,7 @@ export function FilterPanel() {
     >
       {features.isochrone && <IsochroneInfoModal opened={isoModalOpen} onClose={() => setIsoModalOpen(false)} />}
       <Stack gap="md">
+          <YourConditionsRow />
           {features.isochrone && (
             <>
               <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>

@@ -18,6 +18,7 @@ They are build-time values: changing one needs a rebuild or a dev-server restart
 | `VITE_FEATURE_IDEALISTA_PRICES` | `IdealistaPricesLayer` + controls (data file is gitignored, local only) | off | private scrape, not for public |
 | `VITE_FEATURE_BEST_ZONES` | `BestZones` bar + zones + Idealista zone links (038) | **on** | public |
 | `VITE_FEATURE_LOCALS_OPINION` | "Locals' opinion" condition, its info text, "What locals say" card block, loading `barri-vibe.json` (042) | **on** | public |
+| `VITE_FEATURE_ONBOARDING` | first-visit panel (profiles + one sentence per condition) and the "Your conditions" row in the filter panel (031) | off | on when 052 replaces the old condition controls |
 | `VITE_FEATURE_FACADE_PHOTO` | Catastro facade photo in the building card (hotlinked; the service states no terms of use) | off | TBD |
 
 The "Inside commute zone, outside exclusion zones" option of best zones is shown only when `ISOCHRONE` or

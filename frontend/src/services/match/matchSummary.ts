@@ -35,6 +35,13 @@ export function matchBand(score: number, bands: Bands = MATCH_BANDS): MatchBandI
   return 'poor'
 }
 
+/** Share of homes (percent) in each band, in `BAND_ORDER`, from the score of every building. */
+export function bandShares(scores: Uint8Array, bands: Bands = MATCH_BANDS): number[] {
+  const counts = BAND_ORDER.map(() => 0)
+  for (let i = 0; i < scores.length; i++) counts[BAND_ORDER.indexOf(matchBand(scores[i], bands))]++
+  return counts.map((n) => (scores.length > 0 ? (100 * n) / scores.length : 0))
+}
+
 export type ConditionId = keyof ComponentScores
 export type ConditionStatus = 'met' | 'partly' | 'missed' | 'nodata'
 
