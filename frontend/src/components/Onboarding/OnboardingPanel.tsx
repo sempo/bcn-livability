@@ -49,7 +49,7 @@ export function OnboardingPanel() {
       <button type="button" className="onboarding-panel__back" onClick={() => setScreen('start')}>‹ Back</button>
       <h2>
         I&apos;d like to live somewhere…
-        {from && <span className="onboarding-panel__tag">from {from}</span>}
+        {from && <span className="onboarding-panel__tag">{from} profile</span>}
       </h2>
       <p className="onboarding-panel__sub">Tap a highlighted word to change it.</p>
       <ConditionsEditor />

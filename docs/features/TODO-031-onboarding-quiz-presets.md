@@ -40,7 +40,7 @@ live, without learning what Lden or €/m² of a barri means.*
    own map), "Build your own", link "Just show me the map" (keeps the app defaults).
 2. **Sentence** — heading *I'd like to live somewhere…*, one row per condition (number = priority, sentence,
    × to remove), "Add" chips for the missing conditions, a bar "Homes by match" (Great / Good / Partial / Poor
-   shares), primary button **Show me the map**, Back. A profile pre-fills the rows (tag "from Family"); "Build
+   shares), primary button **Show me the map**, Back. A profile pre-fills the rows (tag "Family profile"); "Build
    your own" starts with quiet, on foot and budget at their defaults.
 3. **In the panel** — only the chip row "Your conditions: Quiet · On foot · Budget — Change" (Change → screen 1)
    at the top of the existing filter panel. Replacing the old condition controls with the same rows, Map layers,
