@@ -229,7 +229,10 @@ export function BuildingCard() {
             </Stack>
           )}
 
-          <MatchHeader score={score} summary={summary} riskText={riskText} color={color} />
+          <MatchHeader
+            score={score} scoreMin={composite.scoreMin} incomplete={composite.hasGap}
+            summary={summary} riskText={riskText} color={color}
+          />
 
           {d && (
             <>

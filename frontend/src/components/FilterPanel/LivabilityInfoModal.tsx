@@ -64,7 +64,8 @@ export function LivabilityInfoModal({ opened, onClose }: { opened: boolean; onCl
               How satisfied residents are with living in their barri (0–10), from Barcelona's municipal
               services survey (ESM, 2022–2026, about 30,000 interviews). Barris with few interviews are pulled
               towards their wider area (gran barri). At or above your minimum → 100; {SATISF_FALLOFF} point below it →
-              0. Barcelona city only — buildings outside count as missing data.
+              0. Barcelona city only — buildings outside count as missing data. Barris with few interviews also
+              count as missing data.
             </Text>
           </Stack>
         )}

@@ -46,7 +46,7 @@ vi.mock('maplibre-gl', () => ({
 }))
 
 import { scoreClient } from '../../services/buildings/scoreClient'
-import { BuildingsLayer, SOURCE_ID, DOT_LAYER_ID, FILL_LAYER_ID, GAP_LAYER_ID, HOVER_LAYER_ID } from './BuildingsLayer'
+import { BuildingsLayer, SOURCE_ID, DOT_LAYER_ID, FILL_LAYER_ID, HATCH_LAYER_ID, HOVER_LAYER_ID } from './BuildingsLayer'
 
 function makeFakeMap() {
   const sources = new Map<string, unknown>()
@@ -59,6 +59,8 @@ function makeFakeMap() {
     unproject: ([x, y]: [number, number]) => ({ lng: x / 100, lat: 1 - y / 100 }),
     getSource: (id: string) => sources.get(id),
     addSource: vi.fn((id: string, src: unknown) => { sources.set(id, src) }),
+    hasImage: () => false,
+    addImage: vi.fn(),
     getLayer: (id: string) => layers.get(id),
     addLayer: (l: { id: string }) => { layers.set(l.id, l) },
     setLayoutProperty: vi.fn(),
@@ -102,7 +104,12 @@ describe('BuildingsLayer (TODO-046)', () => {
     const map = makeFakeMap()
     await renderLayer(map)
     expect(map.addSource).toHaveBeenCalledWith(SOURCE_ID, expect.objectContaining({ type: 'vector' }))
-    expect([...map.layers.keys()]).toEqual([DOT_LAYER_ID, FILL_LAYER_ID, GAP_LAYER_ID, HOVER_LAYER_ID])
+    expect([...map.layers.keys()]).toEqual([DOT_LAYER_ID, FILL_LAYER_ID, HATCH_LAYER_ID, HOVER_LAYER_ID])
+    // incomplete data (060): a hatch layer gated by the `gap` feature state, no black outline
+    expect(map.addImage).toHaveBeenCalledWith('hatch-thin', expect.objectContaining({ width: expect.any(Number) }))
+    expect(map.layers.get(HATCH_LAYER_ID)).toMatchObject({
+      type: 'fill', paint: { 'fill-pattern': 'hatch-thin', 'fill-opacity': ['case', ['boolean', ['feature-state', 'gap'], false], 1, 0] },
+    })
     expect(map.layers.get(FILL_LAYER_ID)).toMatchObject({ 'source-layer': 'b', filter: ['==', ['geometry-type'], 'Polygon'] })
   })
 

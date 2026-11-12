@@ -101,4 +101,52 @@ describe('rankAreas', () => {
     // The target is ~30 ms; the budget leaves room for a slow CI machine.
     expect(performance.now() - t0).toBeLessThan(150)
   })
+
+  describe('incomplete data (060)', () => {
+    const rows = [
+      { area: 0, score: 80 }, { area: 0, score: 80 }, { area: 0, score: 80 }, { area: 0, score: 80 },
+      { area: 1, score: 80 }, { area: 1, score: 80 }, { area: 1, score: 80 }, { area: 1, score: 80 },
+    ]
+    const { scores, areaCol, components } = build(rows)
+
+    it('shares the buildings with a range and hatches the area above the threshold only', () => {
+      // area 0: 1 of 4 = 25 %, area 1: 2 of 4 = 50 %
+      const gap = Uint8Array.from([1, 0, 0, 0, 1, 1, 0, 0])
+      const ranks = rankAreas(scores, areaCol, AREAS, components, ['noise'], BANDS, 1, gap, 0.3)
+      const byIndex = (i: number) => ranks.find((r) => r.index === i)!
+      expect(byIndex(0).gapShare).toBeCloseTo(0.25)
+      expect(byIndex(0).incomplete).toBe(false)
+      expect(byIndex(1).gapShare).toBeCloseTo(0.5)
+      expect(byIndex(1).incomplete).toBe(true)
+    })
+
+    it('a share exactly at the threshold is not hatched ("more than")', () => {
+      const gap = Uint8Array.from([1, 0, 0, 0, 0, 0, 0, 0])
+      const [r] = rankAreas(scores, areaCol, AREAS, components, ['noise'], BANDS, 1, gap, 0.25)
+        .filter((x) => x.index === 0)
+      expect(r.incomplete).toBe(false)
+    })
+
+    it('an area with too few buildings to be ranked is never hatched, however many have gaps (060)', () => {
+      // a handful of stray buildings assigned to a municipality must not hatch the polygon they happen to sit in
+      const [r] = rankAreas(Uint8Array.from([80, 80]), Float32Array.from([0, 0]), AREAS, components, [], BANDS, 50,
+        Uint8Array.from([1, 1]), 0.3)
+      expect(r.gapShare).toBe(1)
+      expect(r.ranked).toBe(false)
+      expect(r.incomplete).toBe(false)
+    })
+
+    it('without a gap array nothing is incomplete', () => {
+      for (const r of rankAreas(scores, areaCol, AREAS, components, ['noise'], BANDS, 1)) {
+        expect(r.gapShare).toBe(0)
+        expect(r.incomplete).toBe(false)
+      }
+    })
+
+    it('the mean is over the given scores, which are the max values', () => {
+      const [r] = rankAreas(Uint8Array.from([100, 60]), Float32Array.from([0, 0]), AREAS, components, [], BANDS, 1,
+        Uint8Array.from([1, 0]), 0.3)
+      expect(r.mean).toBe(80)
+    })
+  })
 })

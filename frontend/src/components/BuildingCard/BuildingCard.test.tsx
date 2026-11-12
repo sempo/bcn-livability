@@ -95,6 +95,22 @@ describe('BuildingCard (TODO-046)', () => {
     })
   })
 
+  it('shows the score range and "Incomplete data" when a condition has no data (060)', async () => {
+    // Locals' opinion on, but building 1 is outside Barcelona's barris → no data for it
+    useStore.setState({ compositeWeights: { ...DEFAULT_COMPOSITE_WEIGHTS, localsOpinion: 1 } })
+    await renderCard(1)
+    const band = screen.getByTestId('match-band').textContent!
+    expect(band).toMatch(/^(Great|Good|Partial|Poor) match · \d+–\d+$/)
+    const [lo, hi] = band.split('· ')[1].split('–').map(Number)
+    expect(lo).toBeLessThan(hi)
+    expect(screen.getByTestId('incomplete-note').textContent).toMatch(/^Incomplete data/)
+  })
+
+  it('a building without gaps shows one number and no note (060)', async () => {
+    await renderCard(0)
+    expect(screen.queryByTestId('incomplete-note')).not.toBeInTheDocument()
+  })
+
   it('renders nothing without a selected building', async () => {
     await renderCard(null)
     expect(screen.queryByText('Livability')).not.toBeInTheDocument()

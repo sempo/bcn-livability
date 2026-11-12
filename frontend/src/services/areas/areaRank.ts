@@ -10,6 +10,9 @@ export const NO_DATA = 255
 /** Areas with fewer buildings are listed after the ranked ones. */
 export const AREA_MIN_BUILDINGS = Number(import.meta.env.VITE_AREA_MIN_BUILDINGS ?? 50)
 
+/** An area is hatched when more than this share of its buildings has an incomplete-data range (060). */
+export const INCOMPLETE_AREA_MIN_SHARE = Number(import.meta.env.VITE_INCOMPLETE_AREA_MIN_SHARE ?? 0.3)
+
 /** Below this zoom the map shows areas, from it the buildings. */
 export const AREA_VIEW_MAX_ZOOM = Number(import.meta.env.VITE_AREA_VIEW_MAX_ZOOM ?? 13)
 
@@ -27,6 +30,10 @@ export interface AreaRank {
   shareGood: number
   /** Percent of the buildings in the Great band. */
   shareGreat: number
+  /** Share 0–1 of the buildings with an incomplete-data range (060). */
+  gapShare: number
+  /** A ranked area (enough buildings) where more than `INCOMPLETE_AREA_MIN_SHARE` of the buildings have a range: drawn hatched. */
+  incomplete: boolean
   /** The (up to three) conditions the area meets best, strongest first. */
   strongest: ConditionId[]
   /** False when the area has fewer than `minBuildings` homes. */
@@ -36,7 +43,7 @@ export interface AreaRank {
 export type ComponentArrays = Partial<Record<ConditionId, Uint8Array>>
 
 /**
- * One pass over the buildings: per area the count, mean score, shares of good / great homes and the mean of each
+ * One pass over the buildings (`scores` are the max scores, 060; `gap` flags buildings with a range): per area the count, mean score, shares of good / great homes and the mean of each
  * condition that is on. Ranked by the share of good homes, ties by mean score; small areas last.
  */
 export function rankAreas(
@@ -47,12 +54,15 @@ export function rankAreas(
   active: readonly ConditionId[],
   bands: Bands = MATCH_BANDS,
   minBuildings = AREA_MIN_BUILDINGS,
+  gap: Uint8Array | null = null,
+  minGapShare = INCOMPLETE_AREA_MIN_SHARE,
 ): AreaRank[] {
   const m = areas.length
   const n = new Uint32Array(m)
   const sum = new Float64Array(m)
   const good = new Uint32Array(m)
   const great = new Uint32Array(m)
+  const gaps = new Uint32Array(m)
   const arrays = active.flatMap((k) => (components[k] ? [{ key: k, values: components[k]!, sum: new Float64Array(m), count: new Uint32Array(m) }] : []))
 
   for (let i = 0; i < scores.length; i++) {
@@ -63,6 +73,7 @@ export function rankAreas(
     sum[a] += s
     if (s >= bands[1]) good[a]++
     if (s >= bands[0]) great[a]++
+    if (gap && gap[i] === 1) gaps[a]++
     for (const c of arrays) {
       const v = c.values[i]
       if (v !== NO_DATA) { c.sum[a] += v; c.count[a]++ }
@@ -81,6 +92,7 @@ export function rankAreas(
     ranks.push({
       index: a, code: areas[a].code, name: areas[a].name, kind: areas[a].kind,
       n: n[a], mean: sum[a] / n[a], shareGood: (100 * good[a]) / n[a], shareGreat: (100 * great[a]) / n[a],
+      gapShare: gaps[a] / n[a], incomplete: n[a] >= minBuildings && gaps[a] / n[a] > minGapShare,
       strongest, ranked: n[a] >= minBuildings,
     })
   }

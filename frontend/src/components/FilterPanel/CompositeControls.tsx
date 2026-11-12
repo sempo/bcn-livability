@@ -288,7 +288,7 @@ export function CompositeControls() {
               checked={contrastBoost}
               onChange={(e) => setContrastBoost(e.currentTarget.checked)}
             />
-            <Text size="xs" c="dimmed">Black outline = missing data</Text>
+            <Text size="xs" c="dimmed">Hatched = incomplete data (score is a range, colour shows the best case)</Text>
           </Stack>
         )}
       </Stack>

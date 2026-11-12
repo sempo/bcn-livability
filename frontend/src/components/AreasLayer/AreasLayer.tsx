@@ -3,6 +3,7 @@ import type { FeatureCollection } from 'geojson'
 import * as maplibregl from 'maplibre-gl'
 import { useMap } from '../Map/MapContext'
 import { addLayerOrdered } from '../Map/layerOrder'
+import { ensureHatchImages, HATCH_WIDE } from '../Map/hatchPattern'
 import { useStore } from '../../store'
 import { useAreaJoin } from '../../hooks/useAreaJoin'
 import { buildStateColorForRange } from '../BuildingsLayer/scoreRamp'
@@ -13,9 +14,11 @@ import { selectAreaFeature } from '../../services/areas/areaSelect'
 // their homes, instead of 174k dots. From z13 the buildings take over.
 export const AREAS_SOURCE_ID = 'areas'
 export const AREAS_FILL_ID = 'areas-fill'
+/** Wide diagonal hatch over the areas with many incomplete-data homes (060). */
+export const AREAS_HATCH_ID = 'areas-hatch'
 export const AREAS_LINE_ID = 'areas-line'
 export const AREAS_LABEL_ID = 'areas-label'
-const LAYER_IDS = [AREAS_FILL_ID, AREAS_LINE_ID, AREAS_LABEL_ID]
+const LAYER_IDS = [AREAS_FILL_ID, AREAS_HATCH_ID, AREAS_LINE_ID, AREAS_LABEL_ID]
 
 /** "1,240" — fixed grouping, the same text in every locale. */
 const group = (n: number) => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ',')
@@ -41,6 +44,14 @@ export function AreasLayer() {
       ...base, id: AREAS_FILL_ID, type: 'fill', layout,
       paint: { 'fill-color': buildStateColorForRange(...useStore.getState().compositeColorRange), 'fill-opacity': 0.75 },
     }, AREAS_FILL_ID)
+    ensureHatchImages(map)
+    addLayerOrdered(map, {
+      ...base, id: AREAS_HATCH_ID, type: 'fill', layout,
+      paint: {
+        'fill-pattern': HATCH_WIDE.id,
+        'fill-opacity': ['case', ['boolean', ['feature-state', 'incomplete'], false], 1, 0],
+      },
+    }, AREAS_HATCH_ID)
     addLayerOrdered(map, {
       ...base, id: AREAS_LINE_ID, type: 'line', layout,
       paint: { 'line-color': '#4b5563', 'line-width': 0.8, 'line-opacity': 0.55 },
@@ -53,11 +64,11 @@ export function AreasLayer() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [map, join])
 
-  // Mean score of every area → feature state (the same ramp as the buildings).
+  // Mean (max) score and the incomplete-data mark of every area → feature state (the same ramp as the buildings).
   useEffect(() => {
     if (!map || !join || !ranks || !map.getSource(AREAS_SOURCE_ID)) return
     for (const r of ranks) {
-      if (join.has(r.index)) map.setFeatureState({ source: AREAS_SOURCE_ID, id: r.index }, { score: r.mean })
+      if (join.has(r.index)) map.setFeatureState({ source: AREAS_SOURCE_ID, id: r.index }, { score: r.mean, incomplete: r.incomplete })
     }
   }, [map, join, ranks])
 

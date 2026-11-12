@@ -12,6 +12,7 @@ green = fits me. The card then shows five 0–100 bars with no single answer to 
 
 ## Decision
 
+- Incomplete data (060): the band, the colour and the tooltip use the max score; the tooltip reads `Good match · ~70`, the card shows the range `52–70` and "Incomplete data".
 - The score keeps its definition (mean over the conditions that are on, then risk penalties). What changes is
   how it is **shown**.
 - **Absolute colour scale by default**: 0–100 fixed, with four verbal bands. The fitted scale (032) stays as
