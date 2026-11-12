@@ -2,12 +2,14 @@ import { useState } from 'react'
 import { ActionIcon, Group, Stack, Switch, Text } from '@mantine/core'
 import { IconInfoCircle } from '@tabler/icons-react'
 import { useStore } from '../../store'
+import { hasConditions } from '../../services/composite/compositeScore'
 import { LivabilityInfoModal } from './LivabilityInfoModal'
 
 /** "Show match colours": the index on or off on the map, with the explanation behind (i) (TODO-052). */
 export function MatchColoursSwitch() {
   const visible = useStore((s) => s.compositeVisible)
   const setVisible = useStore((s) => s.setCompositeVisible)
+  const anyCondition = useStore((s) => hasConditions(s.compositeWeights))
   const [info, setInfo] = useState(false)
   return (
     <Stack gap={4}>
@@ -24,7 +26,7 @@ export function MatchColoursSwitch() {
           <IconInfoCircle size={16} stroke={1.8} />
         </ActionIcon>
       </Group>
-      <Text size="xs" c="dimmed">Hatched = incomplete data (score is a range, colour shows the best case)</Text>
+      {anyCondition && <Text size="xs" c="dimmed">Hatched = incomplete data (score is a range, colour shows the best case)</Text>}
     </Stack>
   )
 }

@@ -262,6 +262,19 @@ describe('BuildingsLayer (TODO-046)', () => {
     expect(map.setLayoutProperty).toHaveBeenCalledWith(FILL_LAYER_ID, 'visibility', 'none')
   })
 
+  it('with no condition on the map is neutral: layers hidden, card closed; a condition brings them back (061)', async () => {
+    const map = makeFakeMap()
+    await renderLayer(map)
+    act(() => useStore.getState().setSelectedBuilding(0))
+    act(() => useStore.setState({ compositeWeights: { ...DEFAULT_COMPOSITE_WEIGHTS, poiAccess: 0, noise: 0, cityCore: 0, openPrice: 0 } }))
+    for (const id of [DOT_LAYER_ID, FILL_LAYER_ID, HATCH_LAYER_ID, HOVER_LAYER_ID]) {
+      expect(map.setLayoutProperty).toHaveBeenCalledWith(id, 'visibility', 'none')
+    }
+    expect(useStore.getState().selectedBuilding).toBeNull()
+    act(() => useStore.setState({ compositeWeights: { ...DEFAULT_COMPOSITE_WEIGHTS, poiAccess: 1, noise: 0, cityCore: 0, openPrice: 0 } }))
+    expect(map.setLayoutProperty).toHaveBeenLastCalledWith(HOVER_LAYER_ID, 'visibility', 'visible')
+  })
+
   describe('hover tooltip (TODO-050)', () => {
     const move = (map: FakeMap, id: number) =>
       act(() => handler(map, 'mousemove', FILL_LAYER_ID)({ features: [{ id }], lngLat: { lng: 0.2, lat: 0.5 } }))
