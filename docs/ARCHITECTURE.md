@@ -93,7 +93,10 @@ src/
 │   ├── AreasList/                 "Your areas": ranked list (top 10, show all), click flies to the area
 │   ├── Onboarding/                OnboardingPanel (profiles → sentence → "Show me the map"), PresetCards
 │   ├── FilterPanel/
-│   │   ├── YourConditionsRow.tsx  "Your conditions: Quiet · On foot · Budget — Change" at the top of the panel (flag)
+│   │   ├── YourConditionsRow.tsx  "Your conditions … Start from a profile" at the top of the panel (flag)
+│   │   ├── MapLayersControl.tsx   None · Noise · River floods · Street flooding · Wildfire, one at a time, with its legend (052)
+│   │   ├── MatchColoursSwitch.tsx "Show match colours" + (i) → LivabilityInfoModal; AdvancedSettings.tsx: risk strengths, Boost contrast
+│   │   ├── StrengthRow.tsx, LivabilityInfoModal.tsx   moved out of CompositeControls (shared by both panels)
 │   │   ├── FilterPanel.tsx        commute slider (flag), Idealista price controls (flag), exclusion controls (flag),
 │   │   │                          noise switch + legend, climate layers, Livability controls, map attribution
 │   │   ├── CompositeControls.tsx  Livability Index switch + info modal; one row per condition (checkbox, slider in
@@ -116,9 +119,10 @@ src/
 │   │   │                          (debounced); writes the pick to searchStore. Top-left panel, under the brand bar
 │   │   └── SearchLayer.tsx        map side: area → fitBounds + blue outline; address → flyTo + temporary marker; Esc clears
 │   ├── BestZones/
-│   │   ├── BestZones.tsx          floating bar: Draw best zones / Clear zones (Esc), strictness slider (top 25…5 %),
-│   │   │                          ⚙ Idealista filters, "Inside commute zone, outside exclusion zones" (only when
-│   │   │                          the isochrone or exclusions flag is on); zones follow the map once drawn
+│   │   ├── BestZones.tsx          map side: draws the zones, follows the map, Esc clears, reports their count to the store;
+│   │   │                          the floating bar (Draw / Clear, strictness slider, ⚙ Idealista filters, commute-zone
+│   │   │                          checkbox) only with `withBar`, i.e. while the onboarding flag is off
+│   │   ├── BestAreasControls.tsx  the same controls inside the filter panel (052): Show my best areas, Fewer / More areas
 │   │   ├── BestZonesLayer.tsx     dashed outline + number; click → "Open zone N in Idealista" popup
 │   │   ├── BaseUrlInput.tsx       saved Idealista search URL (its filters are reused by zone links)
 │   │   └── inBestZone.ts          a click inside a zone belongs to the zone, not to the building under it
@@ -147,6 +151,7 @@ src/
 │   ├── useSplitPane.ts       compare-pane width + collapse
 │   └── useBestZones.ts       building scores → mean per res-9 H3 cell → findZoneCells → outlines + Idealista URLs
 ├── store/
+│   ├── mapStore.ts            the map instance, for UI outside the map context (Best areas needs visibleBounds)
 │   ├── searchStore.ts         the search pick (area outline + bounds, or address point); read by SearchLayer
 │   ├── index.ts              main Zustand store (see "State and persistence")
 │   ├── pinsStore.ts          pins, add-pin mode; localStorage
@@ -452,9 +457,8 @@ More constants are documented in each script's docstring.
 
 ## Planned changes that touch this file
 
-Mass-market UX track: TODO-050 (absolute match bands, card header), 031 (profiles + sentence editor, built behind
-`VITE_FEATURE_ONBOARDING`), 051 (ranked areas,
-area view at z < 13), 052 (sentence editor, one expert layer at a time), 053 (settings in the URL).
+Mass-market UX track: 050, 031, 051 and 052 are done (051 / 052 / 031 are on in production). Next: 053 (settings in
+the URL, Share).
 Scale track: TODO-054 (hosting), 055 (basemap, metro, Catastro offline), 056 (observability), 057 (CI,
 data out of git), 058 (worker scoring, bundle budget), 059 (API for the personal mode, design only).
 See `docs/ROADMAP.md`.

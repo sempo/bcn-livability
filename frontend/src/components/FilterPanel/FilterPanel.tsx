@@ -9,6 +9,11 @@ import { IdealistaPricesControls } from '../IdealistaPricesLayer/IdealistaPrices
 import { ExclusionControls } from './ExclusionControls'
 import { YourConditionsRow } from './YourConditionsRow'
 import { AreasList } from '../AreasList/AreasList'
+import { ConditionsEditor } from '../Conditions/ConditionsEditor'
+import { MapLayersControl } from './MapLayersControl'
+import { MatchColoursSwitch } from './MatchColoursSwitch'
+import { AdvancedSettings } from './AdvancedSettings'
+import { BestAreasControls } from '../BestZones/BestAreasControls'
 import { features } from '../../features'
 
 const TIME_MARKS = [
@@ -154,17 +159,35 @@ export function FilterPanel() {
             </>
           )}
 
-          <Switch
-            label="Noise areas"
-            size="sm"
-            checked={noiseLayerVisible}
-            onChange={(e) => setNoiseLayerVisible(e.currentTarget.checked)}
-          />
-          <NoiseLegend />
-          <ClimateLayerControls />
+          {features.onboarding ? (
+            <>
+              <ConditionsEditor />
+              <MatchColoursSwitch />
+              <Divider />
+              <MapLayersControl />
+              {features.bestZones && (
+                <>
+                  <Divider />
+                  <BestAreasControls />
+                </>
+              )}
+              <AdvancedSettings />
+            </>
+          ) : (
+            <>
+              <Switch
+                label="Noise areas"
+                size="sm"
+                checked={noiseLayerVisible}
+                onChange={(e) => setNoiseLayerVisible(e.currentTarget.checked)}
+              />
+              <NoiseLegend />
+              <ClimateLayerControls />
 
-          <Divider />
-          <CompositeControls />
+              <Divider />
+              <CompositeControls />
+            </>
+          )}
 
           {mapAttribution && (
             <>

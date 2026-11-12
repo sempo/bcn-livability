@@ -1,7 +1,7 @@
-# TODO-051 — Ranked list of areas ("Your areas") and area view at low zoom
+# 051 — Ranked list of areas ("Your areas") and area view at low zoom
 
-**Status:** Implemented 2026-11-12 behind `VITE_FEATURE_AREAS` (off in production); the manual browser check (list for
-the Family profile, click → zoom, area fill below z13) is still to do, so the file keeps its `TODO-` prefix.
+**Status:** Implemented 2026-11-12, checked in the browser (list for the Family profile, click → zoom, area fill below
+z13); on in production (flag `VITE_FEATURE_AREAS`). Since 052 the list has two sections, Barcelona and Metro area.
 Depends on 050 (match bands). Part of the mass-market UX track.
 
 ## Problem

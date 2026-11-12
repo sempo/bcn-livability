@@ -127,13 +127,16 @@ describe('App (integration) - first visit (TODO-031)', () => {
     expect(screen.queryByRole('heading', { name: /Where in Barcelona/ })).not.toBeInTheDocument()
     expect(screen.getByText('Commute from work')).toBeInTheDocument()
     expect(screen.getByText('Your conditions')).toBeInTheDocument()
-    expect(screen.getByText('Quiet · On foot · Budget · Risks')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Start from a profile' })).toBeInTheDocument()
+    // the new panel: the same sentences, now as the controls
+    expect(screen.getByText(/outside my window/)).toBeInTheDocument()
+    expect(screen.getByRole('radio', { name: 'Noise' })).toBeInTheDocument()
   })
 
   it('"Change" brings the onboarding back', () => {
     useStore.setState({ onboardingOpen: false, onboarded: true })
     renderApp()
-    fireEvent.click(screen.getByRole('button', { name: 'Change' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Start from a profile' }))
     expect(screen.getByRole('heading', { name: /Where in Barcelona/ })).toBeInTheDocument()
   })
 
@@ -179,7 +182,7 @@ describe('App (integration) - mobile', () => {
   it('closes drawer via close button', () => {
     renderApp()
     fireEvent.click(screen.getByRole('button', { name: /open filters/i }))
-    const closeBtn = screen.getByRole('button', { name: /close/i })
+    const closeBtn = screen.getByRole('button', { name: /^close$/i })
     fireEvent.click(closeBtn)
     expect(screen.queryByRole('dialog', { name: 'Filters' })).not.toBeInTheDocument()
   })
