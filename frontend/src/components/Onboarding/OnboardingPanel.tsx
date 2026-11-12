@@ -53,7 +53,9 @@ export function OnboardingPanel() {
       </h2>
       <p className="onboarding-panel__sub">Tap a highlighted word to change it.</p>
       <ConditionsEditor />
-      <Button fullWidth size="md" color="brand" c="#1f2937" onClick={completeOnboarding}>Show me the map</Button>
+      <div className="onboarding-panel__cta">
+        <Button fullWidth size="md" color="brand" c="#1f2937" onClick={completeOnboarding}>Show me the map</Button>
+      </div>
     </section>
   )
 }
