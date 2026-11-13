@@ -4,7 +4,7 @@
 start of the page (own copy of the base map style, heavy work after the first paint, lazy columns, no validation
 in production, layers set up when first shown); then the score data in two files and the area view of a first visit
 precomputed ("As built, part 3"). Still open: cache headers (need 054), Lighthouse ≥ 80 (not reached, see
-"As built, part 2"), a real low-end phone, `manualChunks` tuning below 450 KB, no terrain shading (decision).
+"As built, part 2"), a real low-end phone, `manualChunks` tuning below 450 KB.
 Scale track.
 
 ## Problem
@@ -151,6 +151,7 @@ Proposed next, each needs a decision (1 and 2 done in part 3):
    coloured without the blob.
 3. **No terrain shading in the base map** (two hillshade layers in our copy of the style): 0.6 MB and the decoding
    of the elevation tiles. Changes how the hills look.
+   **Decided 2026-11-13: keep the terrain shading**, the relief should stay visible. Don't propose it again.
 4. **Cache headers** (054). GitHub Pages serves everything with 10 minutes; the data files need a host that can
    say `immutable`.
 
