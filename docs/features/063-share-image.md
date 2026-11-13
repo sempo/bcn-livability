@@ -100,6 +100,8 @@ One drawing code for both worlds, `services/shareImage/`:
   redirect to the map with `c=preset:<profile>`, `zoom=14` on the barri) and `dist/share/<profile>/<barri>.jpg`.
   284 pages, ~21 MB, ~5 s. The map in these pictures is the areas coloured by mean score (no tiles), boundaries from
   the Ajuntament, credited on the picture. Municipalities of the metro area have no page yet.
+- `index.html` takes its absolute addresses (`og:url`, `og:image`, `twitter:image`) from `VITE_SITE_URL` too (`%VITE_SITE_URL%`),
+  so a fork's home page shows its own picture, not the upstream domain's.
 - ENV: `VITE_SITE_URL` (default `https://livability.time2map.com`) is printed on the pictures and used in the tags;
   the deploy workflow sets the `github.io` address on a fork.
 
@@ -107,7 +109,7 @@ One drawing code for both worlds, `services/shareImage/`:
 
 - No "Save image" on an area: the app has no area card on the desktop (only the outline and the list). The area
   pictures exist as the static pages above; a "Share this area" action in the list can link to them.
-- The link preview of a shared `c=` link stays the generic site picture (a preview by arbitrary settings needs scoring
+- The link preview of a shared `c=` link (any custom place or settings) stays the generic site picture, as agreed (a preview by arbitrary settings needs scoring
   on a server).
 - Nothing links to the barri pages yet except people who know the address; they are the material for the press
   stories (L5) and a sitemap.
