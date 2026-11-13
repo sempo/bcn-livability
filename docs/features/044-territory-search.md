@@ -28,6 +28,14 @@ straight to one instead of hunting for it on the map.*
   the public bundle, so restrict it by HTTP referrer in the Geoapify dashboard.
 - Not done: `search_used` analytics (the app has no product analytics yet).
 
+## Phone (TODO-062)
+
+After the onboarding the search is a pill at the top of the screen, always there: brand mark on the left (opens
+"About"), placeholder "Search Barcelona livability map", Share on the right until something is typed. Results take
+the screen under the pill, above the keyboard (`--vvh` from the visual viewport); the field is 16 px so iOS does
+not zoom. A pick closes the keyboard and drops the bottom sheet to peek. Before the onboarding is closed the
+old brand bar with the search button is shown.
+
 ## Later (not in this pass)
 
 Territory URLs and the facts-only panel, metro stations and named places, SEO pages. Original notes:

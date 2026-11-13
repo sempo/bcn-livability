@@ -16,6 +16,9 @@ import { visibleBounds } from '../Map/visibleBounds'
 import { features } from '../../features'
 import { hasConditions } from '../../services/composite/compositeScore'
 import { ensureHatchImages, HATCH_THIN } from '../Map/hatchPattern'
+import { pickNearest } from '../../services/locate'
+import { DOUBLE_TAP_GRACE_MS, TAP_TOLERANCE_PX } from '../../services/phoneConfig'
+import { commitAfterGrace } from './doubleTapGrace'
 
 // Building-level Livability Index (TODO-046). Tiles carry only geometry and a numeric feature id (= row of the
 // score columns): dots up to z13, footprints from z14. Scores are computed in JS and set as feature state.
@@ -282,13 +285,42 @@ export function BuildingsLayer() {
       hovered = null
       hideTip()
     }
+    // A tap on a touch screen waits a moment: a second touch is the start of a double-tap zoom (TODO-062).
+    let cancelPending: (() => void) | null = null
+    const pick = (id: number) => {
+      const apply = () => {
+        const st = useStore.getState()
+        st.setSelectedBuilding(st.selectedBuilding === id ? null : id)
+      }
+      cancelPending?.()
+      cancelPending = null
+      const touch = typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches
+      if (touch) cancelPending = commitAfterGrace(map, DOUBLE_TAP_GRACE_MS, apply)
+      else apply()
+    }
     const onClick = (e: maplibregl.MapLayerMouseEvent) => {
       const id = e.features?.[0]?.id
       if (typeof id !== 'number' || inBestZone(map, e)) return
       hideTip()
-      const st = useStore.getState()
-      st.setSelectedBuilding(st.selectedBuilding === id ? null : id)
+      pick(id)
     }
+    // A finger is wider than a footprint (TODO-062): when nothing is exactly under it, take the home nearest to
+    // the tap within TAP_TOLERANCE_PX. Touch screens only; a mouse keeps pointing exactly.
+    const onNearTap = (e: maplibregl.MapMouseEvent) => {
+      if (typeof window.matchMedia !== 'function' || !window.matchMedia('(pointer: coarse)').matches) return
+      const layers = [FILL_LAYER_ID, DOT_LAYER_ID].filter((id) => map.getLayer(id))
+      if (layers.length === 0 || map.queryRenderedFeatures(e.point, { layers }).length > 0) return // exact hits: onClick
+      if (inBestZone(map, e)) return
+      const t = TAP_TOLERANCE_PX
+      const near = map.queryRenderedFeatures([[e.point.x - t, e.point.y - t], [e.point.x + t, e.point.y + t]], { layers })
+      const ids = near.map((f) => f.id).filter((id): id is number => typeof id === 'number')
+      const cols = buildingsRef.current?.buildings.cols
+      const id = pickNearest(ids, e.lngLat.lng, e.lngLat.lat, cols?.lng && cols.lat ? { lng: cols.lng, lat: cols.lat } : null)
+      if (id === null) return
+      hideTip()
+      pick(id)
+    }
+    map.on('click', onNearTap)
     for (const layer of [FILL_LAYER_ID, DOT_LAYER_ID]) {
       map.on('mousemove', layer, onMove)
       map.on('mouseleave', layer, onLeave)
@@ -296,6 +328,8 @@ export function BuildingsLayer() {
     }
     return () => {
       hideTip()
+      cancelPending?.()
+      map.off('click', onNearTap)
       for (const layer of [FILL_LAYER_ID, DOT_LAYER_ID]) {
         map.off('mousemove', layer, onMove)
         map.off('mouseleave', layer, onLeave)

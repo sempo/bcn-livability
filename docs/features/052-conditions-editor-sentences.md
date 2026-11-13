@@ -56,7 +56,7 @@ services" → "My 3 services" once edited).
 **Map layers**: `SegmentedControl`, full width, under the conditions; legend of the chosen layer only; the
 info buttons stay. Store keeps the four booleans; the control sets exactly one true.
 
-**Order in the panel** (desktop and mobile drawer): Your conditions (chip row from 031 + "Change") →
+**Order in the panel** (desktop and the phone's bottom sheet, 062): Your conditions (chip row from 031 + "Change") →
 sentence rows → risk line → legend (050) → Map layers → attribution.
 
 ## Implementation

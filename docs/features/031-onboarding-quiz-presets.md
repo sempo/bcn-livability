@@ -92,7 +92,9 @@ A profile is just the sentence pre-filled; the user can edit every word.
   to the right.
 - **Mobile (≤ 768 px):** bottom sheet up to 70 % of the height, map live above it (the "visible part of the
   map" logic of the colour scale accounts for the sheet). The sheet scrolls; the primary button is pinned.
-- Tap targets ≥ 32 px high (pills 32, rows with line height 2.2), picker options ≥ 40 px.
+- Tap targets ≥ 32 px high (pills 32, rows with line height 2.2), picker options ≥ 40 px. On a phone the word picker
+  is a bottom sheet with 52 px rows (062). The first-visit sheet keeps its own component; the full name bar stays on
+  top until the onboarding is closed, then the search pill takes over.
 - Shown on first visit only (see "When it appears"); skippable.
 - Copy in English (`docs/DESIGN.md`). Pills: brand-tint background, dark brand text (`#B8322F`; the coral
   `#F06965` itself is too light for text), dotted underline.
