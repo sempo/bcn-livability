@@ -1,9 +1,10 @@
-import { takeRawScores, type BuildingData } from './buildingData'
+import { copyRawScores, type BuildingData } from './buildingData'
 import { scoreAll, type BuildingSettings } from './buildingScore'
 import type { FromWorker, ScoreResult, ToWorker } from './scoreProtocol'
 
-// Scores every building off the main thread (TODO-058). The first call hands the worker the raw score blob
-// (transferred, so there is no copy) and later calls send only the settings. Where there is no worker (tests,
+// Scores every building off the main thread (TODO-058). The first call hands the worker a copy of the raw score
+// blob (8 MB; the page keeps its own and decodes from it only the columns it reads) and later calls send only the
+// settings. Where there is no worker (tests,
 // old browsers, a worker that fails) the same scoreAll runs on the main thread, so the result is the same.
 
 /** The part of a Worker the client uses (a fake in tests). */
@@ -61,11 +62,11 @@ export function createScoreClient(makeWorker: () => WorkerLike | null): ScoreCli
     if (disabled) return false
     if (worker && workerData === data) return true
     stopWorker()
-    const raw = takeRawScores()
-    if (!raw) return false
     let w: WorkerLike | null
     try { w = makeWorker() } catch { w = null }
     if (!w) { disabled = true; return false }
+    const raw = copyRawScores()
+    if (!raw) { w.terminate(); return false }
     w.onmessage = (e) => receive(e.data)
     w.onerror = () => failWorker()
     w.postMessage({ type: 'init', meta: data.meta, buf: raw }, [raw])

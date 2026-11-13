@@ -22,6 +22,35 @@ function stubAnthropicSdk(): Plugin {
   }
 }
 
+// Preloads that exist only in the production build (TODO-058). The map is loaded with a dynamic import, so that it
+// runs after the first paint; its chunks are still needed by every visitor: index.html preloads them, and
+// `npm run check:bundle` counts them. area-start.json is written after `vite build` (scripts/build-area-start.mjs;
+// the dev server has none).
+function preloadMapChunks(base: string): Plugin {
+  return {
+    name: 'preload-map-chunks',
+    apply: 'build',
+    transformIndexHtml: {
+      order: 'post',
+      handler(_html, ctx) {
+        const chunks = Object.values(ctx.bundle ?? {})
+          .filter((c) => c.type === 'chunk' && ['Map', 'maplibre'].includes(c.name))
+          .map((c) => ({
+            tag: 'link',
+            attrs: { rel: 'modulepreload', crossorigin: true, href: base + c.fileName },
+            injectTo: 'head' as const,
+          }))
+        const areaStart = {
+          tag: 'link',
+          attrs: { rel: 'preload', as: 'fetch', crossorigin: true, href: `${base}data/area-start.json` },
+          injectTo: 'head' as const,
+        }
+        return [...chunks, areaStart]
+      },
+    },
+  }
+}
+
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '')
   // Never stub under test — vitest runs in Node (Node builtins resolve) and needs the real
@@ -29,7 +58,7 @@ export default defineConfig(({ mode }) => {
   const stub = mode !== 'test' && env.VITE_FEATURE_SCREENSHOT !== 'true'
 
   return {
-    plugins: [react(), ...(stub ? [stubAnthropicSdk()] : [])],
+    plugins: [react(), ...(stub ? [stubAnthropicSdk()] : []), preloadMapChunks(env.VITE_BASE || '/')],
     // '/' for the custom domain; a fork on github.io/<repo>/ sets VITE_BASE=/<repo>/ (see deploy.yml).
     base: env.VITE_BASE || '/',
     // The scoring worker is an ES module (TODO-058).

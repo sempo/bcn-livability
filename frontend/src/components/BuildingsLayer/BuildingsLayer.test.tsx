@@ -26,6 +26,7 @@ const DATA: BuildingData = {
 
 vi.mock('../../services/buildings/buildingData', async (orig) => ({
   ...(await orig<typeof import('../../services/buildings/buildingData')>()),
+  loadScores: vi.fn(() => Promise.resolve(DATA)),
   loadBuildings: vi.fn(() => Promise.resolve(DATA)),
 }))
 vi.mock('../../services/localsOpinion/localsOpinion', async (orig) => ({
@@ -157,6 +158,47 @@ describe('BuildingsLayer (TODO-046)', () => {
     }
   })
 
+  it('sets up the source and the layers before the scores arrive, so the tiles load meanwhile (058)', async () => {
+    const { loadScores } = await import('../../services/buildings/buildingData')
+    let arrive!: (d: BuildingData) => void
+    vi.mocked(loadScores).mockReturnValueOnce(new Promise((resolve) => { arrive = resolve }))
+    const map = makeFakeMap()
+    await renderLayer(map)
+    expect(map.addSource).toHaveBeenCalledWith(SOURCE_ID, expect.objectContaining({ type: 'vector' }))
+    expect([...map.layers.keys()]).toEqual([DOT_LAYER_ID, FILL_LAYER_ID, HATCH_LAYER_ID, HOVER_LAYER_ID])
+    expect(map.setFeatureState).not.toHaveBeenCalled()
+    await act(async () => { arrive(DATA) })
+    expect(map.addSource).toHaveBeenCalledTimes(1)
+    expect(map.states.get(0)!.score).toBeGreaterThan(map.states.get(1)!.score as number)
+  })
+
+  it('scores without waiting for the map, and colours the buildings when the map is ready (058)', async () => {
+    useStore.setState({ buildingScores: null })
+    const spy = vi.spyOn(scoreClient, 'score')
+    try {
+      const { rerender } = render(<MapContext.Provider value={null}><BuildingsLayer /></MapContext.Provider>)
+      await act(async () => {})
+      expect(spy).toHaveBeenCalledTimes(1)
+      expect(useStore.getState().buildingScores).toBeNull()
+      const map = makeFakeMap()
+      rerender(<MapContext.Provider value={map as never}><BuildingsLayer /></MapContext.Provider>)
+      await act(async () => {})
+      expect(spy).toHaveBeenCalledTimes(1)
+      expect(map.states.size).toBe(2)
+      expect(useStore.getState().buildingScores).toHaveLength(2)
+    } finally {
+      spy.mockRestore()
+    }
+  })
+
+  it('asks for no building tiles while the area view is shown: every layer starts at its zoom (058)', async () => {
+    const map = makeFakeMap()
+    await renderLayer(map)
+    for (const id of [DOT_LAYER_ID, FILL_LAYER_ID, HATCH_LAYER_ID, HOVER_LAYER_ID]) {
+      expect(map.layers.get(id)).toMatchObject({ minzoom: 13 })
+    }
+  })
+
   it('scoring runs through the score client, and a result that arrives after a newer change is not applied (058)', async () => {
     const map = makeFakeMap()
     await renderLayer(map)
@@ -233,7 +275,8 @@ describe('BuildingsLayer (TODO-046)', () => {
   it('Boost contrast fits the scale to the buildings in view; switching it off restores the fixed one (TODO-032, 050)', async () => {
     const map = makeFakeMap()
     await renderLayer(map)
-    act(() => useStore.getState().setContrastBoost(true))
+    // The positions load when Boost contrast is switched on (058); the scale is fitted once they are in.
+    await act(async () => { useStore.getState().setContrastBoost(true) })
     const [lo, hi] = useStore.getState().compositeColorRange
     const scores = [map.states.get(0)!.score as number, map.states.get(1)!.score as number]
     expect(lo).toBeLessThanOrEqual(Math.min(...scores))

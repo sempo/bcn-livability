@@ -9,8 +9,9 @@ Outputs (frontend/public/data/):
   buildings.pmtiles         layer `b`, feature id = row i. z10–13: centroid points; z14–16: footprints with
                             ref (cadastral ref), floors and h (height in m, for 3D extrusion). No other attributes:
                             the app colours features through feature-state.
-  buildings-scores.bin.gz   score inputs per building, one little-endian typed array per column (see meta)
-  buildings-meta.json       columns (name, type, scale, offset, sentinel), areas (barri / municipality: code,
+  buildings-scores.bin.gz   score inputs per building, one little-endian typed array per column (see meta);
+  buildings-positions.bin.gz  lng / lat of each building. Format: scripts/building_blob.py
+  buildings-meta.json       columns (name, type, scale, offset, sentinel, file, layout), areas (barri / municipality: code,
                             name, price), price bounds, categories, landmarks
   buildings-detail.pmtiles  z14 only — layer `d`: one point per building with the card fields;
                             layer `f`: the facade noise points of stage 2
@@ -19,7 +20,6 @@ Review: data/buildings/nonresidential.gpkg — buildings left out as clearly not
 Run: arch -x86_64 .venv-livability/bin/python scripts/build_building_tiles.py
 """
 
-import gzip
 import json
 import os
 import subprocess
@@ -36,6 +36,7 @@ import shapely
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from building_access import OUT_GPKG as ACCESS_GPKG  # noqa: E402
+from building_blob import FILES, write_files  # noqa: E402
 from building_exposure import OUT_GPKG as EXPOSURE_GPKG  # noqa: E402
 from prepare_buildings import CRS, OSM_PBF  # noqa: E402
 from prepare_buildings import OUT_GPKG as BUILDINGS_GPKG  # noqa: E402
@@ -119,19 +120,6 @@ def encode(values, kind, scale=1):
     return out.astype("<u1" if kind == "u8" else "<u2")
 
 
-def pack(columns):
-    """[(name, kind, scale, values)] → (bytes, meta columns); each column starts on a 4-byte boundary."""
-    blobs, meta, offset = [], [], 0
-    for name, kind, scale, values in columns:
-        arr = encode(values, kind, scale).tobytes()
-        meta.append({"name": name, "type": kind, "scale": scale, "offset": offset,
-                     "sentinel": None if kind == "f32" else (U8 if kind == "u8" else U16)})
-        pad = (-len(arr)) % 4
-        blobs.append(arr + b"\0" * pad)
-        offset += len(arr) + pad
-    return b"".join(blobs), meta
-
-
 # ── Inputs ───────────────────────────────────────────────────────────────────
 def latest_sale_total(row, year_cols):
     """The most recent positive yearly price of a municipality (INCASOL), or None."""
@@ -210,14 +198,12 @@ def main():
     # of 049 ("everyday services within N min").
     columns += [(f"min_{c}", "u8", 1, x[f"min_{c}"]) for c in cats]
     columns += [(f"cc_{lm}", "u8", 1, x[f"cc_{lm}"]) for lm in landmarks]
-    blob, meta_cols = pack(columns)
     PUBLIC.mkdir(parents=True, exist_ok=True)
-    with gzip.open(PUBLIC / "buildings-scores.bin.gz", "wb", compresslevel=9) as f:
-        f.write(blob)
-    meta = {"version": 1, "generated": date.today().isoformat(), "count": len(x), "columns": meta_cols,
-            "areas": [{k: clean(v) for k, v in r.items()} for r in areas.to_dict("records")],
-            "price_bounds": bounds, "categories": cats, "landmarks": landmarks,
-            "river_zone": "10 / 100 / 500 = ACA return period; sentinel = outside every zone"}
+    meta = write_files(PUBLIC, [(name, kind, scale, encode(values, kind, scale)) for name, kind, scale, values in columns], {
+        "generated": date.today().isoformat(), "count": len(x),
+        "areas": [{k: clean(v) for k, v in r.items()} for r in areas.to_dict("records")],
+        "price_bounds": bounds, "categories": cats, "landmarks": landmarks,
+        "river_zone": "10 / 100 / 500 = ACA return period; sentinel = outside every zone"})
     (PUBLIC / "buildings-meta.json").write_text(json.dumps(meta, ensure_ascii=False, separators=(",", ":")))
 
     print("Tiles…")
@@ -256,7 +242,7 @@ def main():
         run_tippecanoe(PUBLIC / "buildings-detail.pmtiles", [("d", d), ("f", f)], 14, 14,
                        ["--no-feature-limit", "--no-tile-size-limit"])
 
-    for name in ("buildings.pmtiles", "buildings-scores.bin.gz", "buildings-meta.json", "buildings-detail.pmtiles"):
+    for name in ("buildings.pmtiles", *FILES.values(), "buildings-meta.json", "buildings-detail.pmtiles"):
         print(f"→ frontend/public/data/{name}: {(PUBLIC / name).stat().st_size / 1e6:.1f} MB")
     print(f"   {len(x):,} buildings, {len(areas)} areas, price p5/p95 {bounds}")
 

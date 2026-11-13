@@ -6,20 +6,20 @@ const data = {
   meta: { areas: [{ price: 2000 }, { price: 4000 }] },
   cols: { area: Float32Array.from([0, 0, 1, 1]) },
 }
-const loadBuildings = vi.fn()
+const loadScores = vi.fn()
 
 vi.mock('../services/buildings/buildingData', async (importActual) => ({
   ...(await importActual<typeof import('../services/buildings/buildingData')>()),
-  loadBuildings: () => loadBuildings(),
+  loadScores: () => loadScores(),
 }))
 
 import { useBudgetShares } from './useBudgetShares'
 
 describe('useBudgetShares', () => {
-  beforeEach(() => { loadBuildings.mockReset() })
+  beforeEach(() => { loadScores.mockReset() })
 
   it('is undefined until the data has loaded, then gives the share of homes under a budget', async () => {
-    loadBuildings.mockResolvedValue(data)
+    loadScores.mockResolvedValue(data)
     const { result } = renderHook(() => useBudgetShares())
     expect(result.current).toBeUndefined()
     await waitFor(() => expect(result.current).toBeTypeOf('function'))
@@ -28,14 +28,14 @@ describe('useBudgetShares', () => {
   })
 
   it('stays undefined when the data cannot load', async () => {
-    loadBuildings.mockRejectedValue(new Error('offline'))
+    loadScores.mockRejectedValue(new Error('offline'))
     const { result } = renderHook(() => useBudgetShares())
     await new Promise((r) => setTimeout(r, 0))
     expect(result.current).toBeUndefined()
   })
 
   it('stays undefined when loading throws at once (no fetch in the environment)', () => {
-    loadBuildings.mockImplementation(() => { throw new TypeError('fetch is not defined') })
+    loadScores.mockImplementation(() => { throw new TypeError('fetch is not defined') })
     const { result } = renderHook(() => useBudgetShares())
     expect(result.current).toBeUndefined()
   })
