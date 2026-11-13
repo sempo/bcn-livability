@@ -74,8 +74,8 @@ src/
 ├── features.ts              feature flags from VITE_FEATURE_* (see docs/FEATURE_FLAGS.md)
 ├── components/
 │   ├── Map/
-│   │   ├── Map.tsx                basemap (ICGC style, OpenFreeMap fallback), click handling, workplace marker,
-│   │   │                          mounts every layer component
+│   │   ├── Map.tsx                basemap (services/mapStyle.ts), click handling, workplace marker,
+│   │   │                          mounts every layer component (those that are off at start: when first shown)
 │   │   ├── MapContext.ts          React context with the MapLibre map instance (useMap)
 │   │   ├── MapContextMenu.tsx     right-click → "Open in Google Maps" popup
 │   │   ├── googleMapsUrl.ts       Google Maps URL for a coordinate
@@ -162,12 +162,14 @@ src/
 │   ├── conditionOptions.ts    sentence-editor words (TODO-031): verbal steps from VITE_QUIZ_*, risk levels, which conditions are
 │   │                          on and in what order, profileToPatch(), budget shares ("≈ N % of homes")
 │   ├── areas/                 areaRank.ts (per-area aggregation of the building scores), areaJoin.ts (area → polygon by position),
-│   │                          areaJoinLoader.ts, areaSelect.ts (fly to + outline through the search store)
+│   │                          areaJoinLoader.ts, areaStart.ts (precomputed join and first-visit ranks, area-start.json),
+│   │                          areaSelect.ts (fly to + outline through the search store)
 │   ├── buildings/scoreClient.ts  scoring in the worker (hand-over of the raw blob, newest request wins, main-thread fallback);
 │   │                          scoreProtocol.ts: the messages. The worker itself: src/workers/score.worker.ts
 │   ├── presets.ts             the four profiles (Family, Remote worker, City life, Investor) + JSON overrides from ENV
 │   ├── buildings/
-│   │   ├── buildingData.ts    loads buildings-meta.json + buildings-scores.bin.gz → decoded Float32 columns
+│   │   ├── buildingData.ts    loads buildings-meta.json, the scores file, then the positions file → decoded Float32 columns
+│   │   ├── firstVisit.ts      the settings of a first visit (store defaults, area-start.json) and settingsKey()
 │   │   ├── buildingScore.ts   columns → condition scores + risks for one building; scoreAll(); H3 cell means
 │   │   ├── conditions.ts      conditions in real units (049): defaults, slider ranges, atMost / atLeast, minutesShare
 │   │   ├── buildingAge.ts     eras from VITE_AGE_ERA_BOUNDS, ageScore() (047)
@@ -213,8 +215,9 @@ circles → exclusions → best zones → Idealista prices → isochrone → tra
 | File (`frontend/public/data/`) | Size | Content | Built by |
 |---|---|---|---|
 | `buildings.pmtiles` | 26 MB | layer `b`, feature id = row: centroid points z10–13, footprints z14–16 (`ref`, `floors`, `h`) | `build_building_tiles.py` |
-| `buildings-scores.bin.gz` | 1.8 MB | one typed array per column, 173,634 rows | `build_building_tiles.py` |
-| `buildings-meta.json` | 11 KB | columns (type, scale, offset, sentinel), 113 areas (barri / municipality, name, INCASOL €/m²), categories, landmarks | `build_building_tiles.py` |
+| `buildings-scores.bin.gz` | 1.0 MB | one typed array per score column, 173,634 rows; multi-byte columns as byte planes (`scripts/building_blob.py`) | `build_building_tiles.py` |
+| `buildings-positions.bin.gz` | 0.5 MB | `lng`, `lat` (f32, byte planes) | `build_building_tiles.py` |
+| `buildings-meta.json` | 12 KB | format 2: columns (type, scale, offset, sentinel, file, layout), 113 areas (barri / municipality, name, INCASOL €/m²), categories, landmarks | `build_building_tiles.py` (`building_blob.py --repack` converts format 1 without the pipeline) |
 | `buildings-detail.pmtiles` | 18 MB | z14 only: layer `d` card fields per building, layer `f` facade noise points | `build_building_tiles.py` |
 | `barri-vibe.json` | 21 KB | ESM residents' survey per barri (042) | `build_neighbourhood_vibe.py` |
 
@@ -346,14 +349,53 @@ flag and no saved settings (`hasSavedSettings()`); "Change" in the panel reopens
 
 ## Performance (TODO-058)
 
-- **Scoring runs in a Web Worker** (`workers/score.worker.ts`, client `services/buildings/scoreClient.ts`); the main
-  thread keeps its own decoded columns for the card, the tooltip and best zones. The worker gets the raw score blob
-  once (transferred) and the settings per change; without a worker the same `scoreAll` runs on the main thread.
+- **Scoring runs in a Web Worker** (`workers/score.worker.ts`, client `services/buildings/scoreClient.ts`). The
+  worker gets a copy of the raw score blob once and the settings per change; without a worker the same `scoreAll`
+  runs on the main thread. Scoring does not wait for the map: at start it runs while the base map is loading, and
+  `BuildingsLayer` sets the feature states when both are ready.
+- **The building data comes in two files** (format 2, `scripts/building_blob.py`): `buildings-scores.bin.gz` (1.0 MB,
+  what the scoring reads) and `buildings-positions.bin.gz` (0.5 MB, `lng` / `lat`). `loadScores()` brings the first;
+  `loadBuildings()` adds the second to the same object, and only the card, Boost contrast, best zones and the
+  fallback area join ask for it (`useBuildingData` for components). Multi-byte columns are stored as byte planes
+  (-15 % gzipped). `main.tsx` starts `loadScores()` right after the first paint, not when the map code is in.
+- **The page decodes only the columns it reads** (`lazyColumns` in `buildingData.ts`: area, the values of one
+  building for its card). All score columns are decoded in the worker only.
+- **The area view of a first visit is precomputed** (`services/areas/areaStart.ts`). `npm run build` ends with
+  `scripts/build-area-start.mjs`, which runs the app's own scoring on the data files and writes
+  `dist/data/area-start.json` (6 KB gzipped): area → polygon id, and the area ranks for the first-visit settings
+  (`services/buildings/firstVisit.ts`, which the store starts from as well). The join always comes from it (no
+  positions needed); the ranks are used while nothing is scored and the settings key matches
+  (`useStartAreaRanks`). The file checks `generated` and `count` against `buildings-meta.json`; the dev server has
+  none and falls back to computing both.
 - **Initial JavaScript is budgeted** (`bundleBudget.initialJsGzipKB` in `frontend/package.json`, 500 KB gzip, now
-  ~482): `npm run check:bundle` runs in the deploy workflow after the build. Code that most visitors never run is
+  ~484): `npm run check:bundle` runs in the deploy workflow after the build. Code that most visitors never run is
   loaded on demand: Best zones (h3-js, turf), the isochrone / exclusion / pin / Idealista layers, terra-draw.
   Keep h3-js and turf's union / difference / buffer out of modules that load at start (`bestZonesConfig.ts`,
   `exclusionsGeometry.ts`, `bestZoneGrid.ts` exist for that).
+- **The map code is in its own chunks.** `App.tsx` imports `Map.tsx` (and with it MapLibre) dynamically;
+  `index.html` still preloads those chunks (the `preloadMapChunks` plugin in `vite.config.ts`), so they download
+  from the start and count in the budget. Nothing outside the `Map` tree may import `maplibre-gl` at run time
+  (types only), or MapLibre is back in the entry chunk.
+- **The base map style is our own copy** of ICGC's (`public/basemap/icgc-standard.json`, `services/mapStyle.ts`).
+  ICGC serves the 760 KB style uncompressed and the app used to download it twice; the copy is ~55 KB gzipped.
+  Tiles, fonts and icons still come from ICGC. A HEAD request checks that ICGC answers (3 s), otherwise the map
+  uses OpenFreeMap. Refresh the copy with `npm run update:basemap` when ICGC changes its style.
+- **`index.html` preloads** the base map style, `buildings-meta.json` and (production build) `area-start.json`, and
+  preconnects to ICGC. The addresses and `crossorigin` must match the `fetch()` calls. The scores (1 MB) are not
+  preloaded on purpose: they would share the connection with the JavaScript and hold back the first paint
+  (measured with the old 1.8 MB file: +220 ms with the CPU slowed 4×).
+- **Heavy start-up work waits for the first paint** (`afterFirstPaint` in `services/firstPaint.ts`): starting the
+  map, parsing the base map style, loading and unpacking the scores. Use it for anything heavy that runs at start.
+- **MapLibre's validation is off in the production build** for our copy of the style (`validateStyle`) and for our
+  own layers (`addLayerOrdered` in `Map/layerOrder.ts`): to validate one layer MapLibre serialises the whole
+  style, 900 layers. Development and the tests validate everything. Add layers through `addLayerOrdered`.
+- **Layers that are off at start are set up when first shown** (`useEver` in `Map.tsx`): noise, river floods,
+  street flooding, wildfire, and POI below zoom 13. Each would otherwise fetch the header of its tile archive at
+  start. With the area view on, the building layers start at its zoom limit, so no building tiles are fetched below.
+- **Labels of our layers use one font**, `MAP_TEXT_FONT` (`Map/mapFont.ts`). A list of fonts is answered with 404
+  by both glyph servers, and MapLibre then draws every letter itself.
+- **Marks for measuring:** `performance.mark('map-style-loaded')`, `'areas-colored'` and `'buildings-colored'`. Numbers and how to
+  measure: `local-docs/architecture/07-perf-baseline.md`.
 
 ## Offline data pipeline (`scripts/`)
 
@@ -372,7 +414,7 @@ Outputs in `frontend/public/` are committed.
 | 3 | `building_access.py`: walking network from the OSM PBF (pandana), from the first entrance; parks and beaches at their edge | `data/buildings/access.gpkg` (`walk_*`, `min_*`, `cc_*`) |
 | 4 | prices: `fetch_incasol_sale_prices.py`, `fetch_incasol_sale_catalonia.py` (+ rental / INE fetchers, not used by the app) → `build_price_geopackage.py` | `data/open-prices/bcn_prices.gpkg` |
 | 5 | `build_neighbourhood_vibe.py`: ESM survey (+ Inside Airbnb, research only) | `public/data/barri-vibe.json`, `data/neighbourhood-vibe/` |
-| 6 | `build_building_tiles.py`: non-residential filter, barri / municipality, tiles and columns | `buildings*.pmtiles`, `buildings-scores.bin.gz`, `buildings-meta.json` |
+| 6 | `build_building_tiles.py`: non-residential filter, barri / municipality, tiles and columns | `buildings*.pmtiles`, `buildings-scores.bin.gz`, `buildings-positions.bin.gz`, `buildings-meta.json` |
 
 **Other outputs:**
 
@@ -458,7 +500,7 @@ More constants are documented in each script's docstring.
 
 | Service | Used by | Mode | Notes |
 |---|---|---|---|
-| ICGC context map style | basemap | public | primary style; 3 s timeout, then fallback |
+| ICGC context map | basemap | public | tiles, fonts, icons; the style is our copy (`public/basemap/`, `npm run update:basemap`); HEAD check with a 3 s timeout, then fallback |
 | OpenFreeMap (liberty) | basemap | public | fallback style, no key |
 | TMB API (`api.tmb.cat`) | MetroLayer | public | keys required |
 | Catastro OVC: DNPRC | BuildingCard, floors below ground | public | open, CORS, one call per card |

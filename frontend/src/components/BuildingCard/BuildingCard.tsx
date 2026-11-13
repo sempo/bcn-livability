@@ -2,7 +2,8 @@ import { IconX } from '@tabler/icons-react'
 import { useEffect, useState } from 'react'
 import { ActionIcon, Anchor, Divider, Group, Paper, Stack, Text } from '@mantine/core'
 import { useStore } from '../../store'
-import { buildingData, valueOf } from '../../services/buildings/buildingData'
+import { valueOf } from '../../services/buildings/buildingData'
+import { useBuildingData } from '../../hooks/useBuildingData'
 import { buildingArea, scoreBuilding } from '../../services/buildings/buildingScore'
 import { loadBuildingDetail, type BuildingDetail, type BuildingDetailResult } from '../../services/buildings/buildingDetail'
 import { catastroUrl, facadePhotoUrl, prettyAddress } from '../../services/buildings/address'
@@ -153,17 +154,17 @@ export function BuildingCard() {
     return () => window.removeEventListener('keydown', handler)
   }, [setSelected])
 
+  // The positions may arrive a moment after the buildings are coloured (TODO-058): the card shows once they are in.
+  const data = useBuildingData(selected !== null)
   useEffect(() => {
-    const data = buildingData
     if (selected === null || !data) return
     let cancelled = false
     loadBuildingDetail(selected, data.cols.lng[selected], data.cols.lat[selected])
       .then((result) => { if (!cancelled) setLoaded({ i: selected, result }) })
       .catch((err) => console.error('Building card failed to load', err))
     return () => { cancelled = true }
-  }, [selected])
+  }, [selected, data])
 
-  const data = buildingData
   if (selected === null || !data) return null
 
   const vibe = features.localsOpinion ? barriVibeData : null

@@ -109,7 +109,7 @@ export interface AddressSuggestion {
   coords: [number, number]
 }
 
-/** Address autocomplete for the search box (TODO-044). No API key → no suggestions, no request. */
+/** Address autocomplete for the search box (044). No API key → no suggestions, no request. */
 export async function searchAddresses(
   text: string,
   signal?: AbortSignal,

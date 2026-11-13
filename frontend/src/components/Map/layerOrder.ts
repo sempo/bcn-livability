@@ -32,7 +32,7 @@ export const LAYER_Z_ORDER: readonly string[] = [
   'best-zones-fill',
   'best-zones-line',
   'best-zones-label',
-  // Search result outline — TODO-044
+  // Search result outline — 044
   'search-area-fill',
   'search-area-line',
   // Idealista price overlay
@@ -77,5 +77,27 @@ export function addLayerOrdered(
       break
     }
   }
-  map.addLayer(layer, beforeId)
+  addLayerUnchecked(map, layer, beforeId)
+}
+
+/** MapLibre's own entry points, used below to skip the validation. Typed loosely: they are not part of its API. */
+interface MapInternals {
+  style?: { addLayer?: (layer: maplibregl.LayerSpecification, before: string | undefined, options: { validate: boolean }) => void }
+  _update?: (updateStyle: boolean) => void
+}
+
+/**
+ * map.addLayer without the validation in the production build (TODO-058). To validate one new layer MapLibre
+ * serialises the whole style, and the ICGC base map has 900 layers: our ~20 layers cost a long task at start.
+ * Development and the tests keep the validation, so a wrong layer is still reported there. Should a MapLibre
+ * upgrade move these internals, the public map.addLayer is used.
+ */
+function addLayerUnchecked(map: maplibregl.Map, layer: maplibregl.LayerSpecification, beforeId: string | undefined): void {
+  const internals = map as unknown as MapInternals
+  if (import.meta.env.DEV || typeof internals.style?.addLayer !== 'function' || typeof internals._update !== 'function') {
+    map.addLayer(layer, beforeId)
+    return
+  }
+  internals.style.addLayer(layer, beforeId, { validate: false })
+  internals._update(true)
 }

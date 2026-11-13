@@ -34,23 +34,24 @@ const ExclusionDraw = lazyNamed(() => import('../ExclusionDraw/ExclusionDraw'), 
 const BestZones = lazyNamed(() => import('../BestZones/BestZones'), 'BestZones')
 const IdealistaPricesLayer = lazyNamed(() => import('../IdealistaPricesLayer/IdealistaPricesLayer'), 'IdealistaPricesLayer')
 import { features } from '../../features'
+import { loadMapStyle, styleAttribution, type MapStyle } from '../../services/mapStyle'
+import { registerPmtilesProtocol } from '../../services/noise/pmtilesProtocol'
 
 // MapLibre v6 is ESM-only: bundlers must hand it the worker URL explicitly.
 maplibregl.setWorkerUrl(workerUrl)
 
-const PRIMARY_STYLE = 'https://geoserveis.icgc.cat/contextmaps/icgc_mapa_estandard_general.json'
-const FALLBACK_STYLE = 'https://tiles.openfreemap.org/styles/liberty'
+registerPmtilesProtocol()
 
-async function resolveStyleUrl(): Promise<string> {
-  try {
-    const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 3000)
-    const res = await fetch(PRIMARY_STYLE, { signal: controller.signal })
-    clearTimeout(timeout)
-    return res.ok ? PRIMARY_STYLE : FALLBACK_STYLE
-  } catch {
-    return FALLBACK_STYLE
-  }
+/** The POI layer is set up when the map first gets this close (its icons start at zoom 14). */
+const POI_SETUP_ZOOM = 13
+/** Pause between the map being ready and the metro / FGC layers being set up. */
+const TRANSIT_SETUP_DELAY_MS = 300
+
+/** True from the first time `on` is true. */
+function useEver(on: boolean): boolean {
+  const [ever, setEver] = useState(on)
+  if (on && !ever) setEver(true)
+  return ever || on
 }
 
 export function Map() {
@@ -58,15 +59,31 @@ export function Map() {
   const markerRef = useRef<maplibregl.Marker | null>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
   const [mapInstance, setMapInstance] = useState<maplibregl.Map | null>(null)
-  const [styleUrl, setStyleUrl] = useState<string | null>(null)
+  const [mapStyle, setMapStyle] = useState<MapStyle | null>(null)
 
   useEffect(() => {
-    resolveStyleUrl().then(setStyleUrl)
+    let live = true
+    loadMapStyle().then((s) => { if (live) setMapStyle(s) })
+    return () => { live = false }
   }, [])
 
   const { workplace, zoom, mapCenter, setWorkplace, setZoom, setMapCenter, setMapAttribution } = useStore()
   // With the new panel, Best zones is loaded when the zones are asked for (it brings h3-js and turf).
   const zonesOn = useStore((s) => s.bestZonesBounds !== null)
+  // Layers that are off at start are set up when they are first shown, not with the page (TODO-058): each one asks
+  // for its tile archive as soon as it exists. POI icons start at zoom 14.
+  const noiseEver = useEver(useStore((s) => s.noiseLayerVisible))
+  const floodEver = useEver(useStore((s) => s.floodLayerVisible))
+  const wildfireEver = useEver(useStore((s) => s.wildfireLayerVisible))
+  const streetFloodingEver = useEver(useStore((s) => s.streetFloodingLayerVisible))
+  const poiEver = useEver(zoom >= POI_SETUP_ZOOM)
+  // Metro and FGC lines are set up a moment after the map is ready, so the buildings and the base map go first.
+  const [transitReady, setTransitReady] = useState(false)
+  useEffect(() => {
+    if (!mapInstance) return
+    const timer = setTimeout(() => setTransitReady(true), TRANSIT_SETUP_DELAY_MS)
+    return () => clearTimeout(timer)
+  }, [mapInstance])
   const { isAddingPin, setIsAddingPin, addPin } = usePinsStore()
   const drawingMode = useExclusionsStore((s) => s.drawingMode)
 
@@ -86,10 +103,13 @@ export function Map() {
 
   // Init map
   useEffect(() => {
-    if (!containerRef.current || !styleUrl) return
+    if (!containerRef.current || !mapStyle) return
     const map = new maplibregl.Map({
       container: containerRef.current,
-      style: styleUrl,
+      style: mapStyle.style,
+      // Our copy of the ICGC style is checked when it is saved; validating its 900 layers again costs a long
+      // task at start (TODO-058). In development everything is validated.
+      validateStyle: import.meta.env.DEV || !mapStyle.trusted,
       center: mapCenterRef.current,
       zoom: zoomRef.current,
       attributionControl: false,
@@ -110,13 +130,13 @@ export function Map() {
     })
     map.on('zoomend', () => setZoom(map.getZoom()))
     map.once('style.load', () => {
+      performance.mark('map-style-loaded')
       mapRef.current = map
       setMapInstance(map)
       useMapStore.getState().setMap(map)
-      const texts = Object.values(map.getStyle().sources)
-        .map((s) => (s as Record<string, unknown>).attribution as string | undefined)
-        .filter((t): t is string => !!t)
-      if (texts.length) setMapAttribution(texts.join(' | '))
+      // The fallback style is known only to the map; reading it back copies the whole style, so ours is read directly.
+      const attribution = styleAttribution(typeof mapStyle.style === 'string' ? map.getStyle() : mapStyle.style)
+      if (attribution) setMapAttribution(attribution)
     })
     return () => {
       setMapInstance(null)
@@ -124,7 +144,7 @@ export function Map() {
       mapRef.current = null
       map.remove()
     }
-  }, [styleUrl]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [mapStyle]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Keep the canvas in sync when the map pane resizes (split divider drag,
   // panel collapse, mobile Map/Compare toggle, window resize).
@@ -180,10 +200,10 @@ export function Map() {
       {features.areas && <AreasLayer />}
       <FacadeNoiseLayer />
       <LandmarksLayer />
-      <NoiseLayer />
-      <FloodZonesLayer />
-      <WildfireLayer />
-      <StreetFloodingLayer />
+      {noiseEver && <NoiseLayer />}
+      {floodEver && <FloodZonesLayer />}
+      {wildfireEver && <WildfireLayer />}
+      {streetFloodingEver && <StreetFloodingLayer />}
       <Suspense fallback={null}>
         {features.exclusions && <ExclusionLayer />}
         {features.exclusions && <ExclusionDraw />}
@@ -194,9 +214,9 @@ export function Map() {
         {features.idealistaPrices && <IdealistaPricesLayer />}
         {features.isochrone && <IsochroneLayer />}
       </Suspense>
-      <MetroLayer />
-      <FgcLayer />
-      <PoiLayer />
+      {transitReady && <MetroLayer />}
+      {transitReady && <FgcLayer />}
+      {poiEver && <PoiLayer />}
       <Suspense fallback={null}>
         {features.pins && <PinAccuracyLayer />}
         {features.pins && <PinLayer />}

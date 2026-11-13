@@ -1,8 +1,7 @@
-import { useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { useMediaQuery } from '@mantine/hooks'
 import { Drawer, ActionIcon, Notification, SegmentedControl } from '@mantine/core'
 import { IconAdjustmentsHorizontal } from '@tabler/icons-react'
-import { Map } from './components/Map/Map'
 import { BrandBar } from './components/BrandBar/BrandBar'
 import { FilterPanel } from './components/FilterPanel/FilterPanel'
 import { OnboardingPanel } from './components/Onboarding/OnboardingPanel'
@@ -17,7 +16,28 @@ import { useUrlState } from './hooks/useUrlState'
 import { useIsochrone } from './hooks/useIsochrone'
 import { usePinAnalytics } from './hooks/usePinAnalytics'
 import { features } from './features'
+import { afterFirstPaint } from './services/firstPaint'
 import './index.css'
+
+// MapLibre is more than half of the JavaScript of the page. It is downloaded from the start (index.html preloads it)
+// but runs after the first paint, so the panel shows up without waiting for it (TODO-058).
+const LazyMap = lazy(() => import('./components/Map/Map').then((m) => ({ default: m.Map })))
+const mapPlaceholder = <div style={{ width: '100%', height: '100%' }} />
+
+/**
+ * The map, started after the first paint. Its code and style are ready at once (both are preloaded), and setting
+ * up the base map is a long task: started any earlier it would hold back the first paint.
+ */
+function Map() {
+  const [painted, setPainted] = useState(false)
+  useEffect(() => {
+    let live = true
+    void afterFirstPaint().then(() => { if (live) setPainted(true) })
+    return () => { live = false }
+  }, [])
+  if (!painted) return mapPlaceholder
+  return <Suspense fallback={mapPlaceholder}><LazyMap /></Suspense>
+}
 
 export function App() {
   useUrlState()

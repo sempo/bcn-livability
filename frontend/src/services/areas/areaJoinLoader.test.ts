@@ -14,6 +14,11 @@ const loadBuildings = vi.fn()
 const loadAreas = vi.fn()
 vi.mock('../buildings/buildingData', () => ({ loadBuildings: () => loadBuildings() }))
 vi.mock('../areas', () => ({ loadAreas: () => loadAreas() }))
+const loadAreaStart = vi.fn()
+vi.mock('./areaStart', async (orig) => ({
+  ...(await orig<typeof import('./areaStart')>()),
+  loadAreaStart: () => loadAreaStart(),
+}))
 
 import { loadAreaJoin, resetAreaJoinCache } from './areaJoinLoader'
 
@@ -22,6 +27,21 @@ describe('loadAreaJoin', () => {
     resetAreaJoinCache()
     loadBuildings.mockReset().mockResolvedValue(data)
     loadAreas.mockReset().mockResolvedValue([feature])
+    loadAreaStart.mockReset().mockResolvedValue(null)
+  })
+
+  it('takes the join from area-start.json when there is one, without the building data (058)', async () => {
+    loadAreaStart.mockResolvedValue({ join: { 0: 'barri-A' } })
+    const join = await loadAreaJoin()
+    expect(join.get(0)?.properties.id).toBe('barri-A')
+    expect(loadBuildings).not.toHaveBeenCalled()
+  })
+
+  it('matches the polygons itself when area-start.json names a polygon areas.geojson no longer has', async () => {
+    loadAreaStart.mockResolvedValue({ join: { 0: 'barri-gone' } })
+    const join = await loadAreaJoin()
+    expect(join.get(0)?.properties.id).toBe('barri-A')
+    expect(loadBuildings).toHaveBeenCalledTimes(1)
   })
 
   it('joins the areas of the score data to the polygons', async () => {

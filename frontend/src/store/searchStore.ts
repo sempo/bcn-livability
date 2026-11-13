@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import type { FeatureCollection } from 'geojson'
 import type { Bounds } from '../services/bestZonesConfig'
 
-/** What the search box picked (TODO-044). The map-side component reacts to it. */
+/** What the search box picked (044). The map-side component reacts to it. */
 export type SearchSelection =
   | { kind: 'area'; requestId: number; label: string; bounds: Bounds; outline: FeatureCollection }
   | { kind: 'address'; requestId: number; label: string; coords: [number, number] }

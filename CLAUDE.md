@@ -7,6 +7,7 @@
 - `docs/DESIGN.md` — design rules
 - `docs/FEATURE_FLAGS.md` — feature flags (what's gated, what's public)
 - `docs/ROADMAP.md` — order and dependencies of the planned tracks
+- `docs/DATA_LICENSES.md` — every data source, its licence, conditions and open risks (check before adding a source)
 ## Stack
 
 - **Frontend:** React + Vite + TypeScript, MapLibre GL JS

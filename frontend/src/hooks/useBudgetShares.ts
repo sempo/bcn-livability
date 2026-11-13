@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { buildingData, loadBuildings, type BuildingData } from '../services/buildings/buildingData'
+import { buildingData, loadScores, type BuildingData } from '../services/buildings/buildingData'
 import { shareUnder, sortedPrices } from '../services/conditionOptions'
 
 /** "≈ N % of homes" for a budget: undefined until the building data has loaded (or when it cannot load). */
@@ -9,7 +9,7 @@ export function useBudgetShares(): ((limit: number) => number) | undefined {
     if (data) return
     let live = true
     try {
-      loadBuildings().then((d) => { if (live) setData(d) }).catch(() => { /* the map reports it */ })
+      loadScores().then((d) => { if (live) setData(d) }).catch(() => { /* the map reports it */ })
     } catch { /* no fetch (tests) */ }
     return () => { live = false }
   }, [data])

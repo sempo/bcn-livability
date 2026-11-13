@@ -7,9 +7,11 @@ import { ensureHatchImages, HATCH_WIDE } from '../Map/hatchPattern'
 import { useStore } from '../../store'
 import { hasConditions } from '../../services/composite/compositeScore'
 import { useAreaJoin } from '../../hooks/useAreaJoin'
+import { useStartAreaRanks } from '../../hooks/useStartAreaRanks'
 import { buildStateColorForRange } from '../BuildingsLayer/scoreRamp'
 import { AREA_VIEW_MAX_ZOOM } from '../../services/areas/areaRank'
 import { selectAreaFeature } from '../../services/areas/areaSelect'
+import { MAP_TEXT_FONT } from '../Map/mapFont'
 
 // Area view (TODO-051): below z13 the map shows the barris and municipalities coloured by the mean score of
 // their homes, instead of 174k dots. From z13 the buildings take over.
@@ -27,6 +29,7 @@ const group = (n: number) => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))
 export function AreasLayer() {
   const map = useMap()
   const join = useAreaJoin()
+  useStartAreaRanks()
   const visible = useStore((s) => s.compositeVisible && hasConditions(s.compositeWeights, s.compositeRiskStrengths))
   const ranks = useStore((s) => s.areaRanks)
   const range = useStore((s) => s.compositeColorRange)
@@ -59,7 +62,7 @@ export function AreasLayer() {
     }, AREAS_LINE_ID)
     addLayerOrdered(map, {
       ...base, id: AREAS_LABEL_ID, type: 'symbol',
-      layout: { ...layout, 'text-field': ['get', 'name'], 'text-size': 12, 'text-font': ['Noto Sans Regular', 'Arial Unicode MS Regular'] },
+      layout: { ...layout, 'text-field': ['get', 'name'], 'text-size': 12, 'text-font': MAP_TEXT_FONT },
       paint: { 'text-color': '#1f2937', 'text-halo-color': 'rgba(255,255,255,0.9)', 'text-halo-width': 1.5 },
     }, AREAS_LABEL_ID)
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -71,6 +74,7 @@ export function AreasLayer() {
     for (const r of ranks) {
       if (join.has(r.index)) map.setFeatureState({ source: AREAS_SOURCE_ID, id: r.index }, { score: r.mean, incomplete: r.incomplete })
     }
+    if (performance.getEntriesByName('areas-colored').length === 0) performance.mark('areas-colored')
   }, [map, join, ranks])
 
   // Boost contrast changes the colour range of the buildings; the areas follow.

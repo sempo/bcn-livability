@@ -1,12 +1,14 @@
 import { create } from 'zustand'
 import type { MultiPolygon, Polygon } from 'geojson'
 import { ALL_LANDMARK_IDS } from '../services/cityCore/landmarks'
-import { SERVICE_CATEGORIES } from '../services/walkability/serviceCategories'
 import { DEFAULT_RISK_STRENGTHS, type RiskStrengths } from '../services/climateRisk/climateRisk'
 import { DEFAULT_TOP_PCT, type Bounds } from '../services/bestZonesConfig'
 import { ALL_AGE_ERA_IDS } from '../services/buildings/buildingAge'
 import { DEFAULT_CONDITIONS, type Conditions } from '../services/buildings/conditions'
 import { features } from '../features'
+import {
+  ALL_WALK_CATEGORY_IDS, DEFAULT_COMPOSITE_WEIGHTS, type CompositeWeights, type ScoreSettings,
+} from '../services/buildings/firstVisit'
 import type { AreaRank } from '../services/areas/areaRank'
 import { allowLocals, decodeConfig, type UrlSettings } from '../services/urlConfig'
 import {
@@ -14,28 +16,8 @@ import {
   type ConditionKey, type SettingsPatch,
 } from '../services/conditionOptions'
 
-/** Which Livability conditions are on: 1 = on, 0 = off (049). */
-export interface CompositeWeights {
-  poiAccess: number
-  noise: number
-  cityCore: number
-  openPrice: number
-  /** Residents' satisfaction (042); off by default. */
-  localsOpinion: number
-  /** Building age against the eras the user likes (TODO-047); off by default. */
-  age: number
-}
-
-export const ALL_WALK_CATEGORY_IDS: readonly string[] = SERVICE_CATEGORIES.map((c) => c.id)
-
-export const DEFAULT_COMPOSITE_WEIGHTS: CompositeWeights = {
-  poiAccess: 1,
-  noise: 1,
-  cityCore: 1,
-  openPrice: 1,
-  localsOpinion: 0,
-  age: 0,
-}
+// Defined with the other first-visit settings (TODO-058), exported here as before.
+export { ALL_WALK_CATEGORY_IDS, DEFAULT_COMPOSITE_WEIGHTS, type CompositeWeights }
 
 /** The one map layer a person looks at (TODO-052); the store keeps the four visibility flags. */
 export type MapLayerId = 'none' | 'noise' | 'river' | 'street' | 'wildfire'
@@ -329,6 +311,14 @@ export const URL_DEFAULTS: UrlSettings = {
 }
 
 /** The settings that define the map, as a link carries them (TODO-053). */
+/** The settings the buildings are scored with (no locals' opinion data). */
+export function scoreSettingsOf(s: AppState): ScoreSettings {
+  return {
+    weights: s.compositeWeights, conditions: s.conditions, enabledLandmarkIds: s.enabledLandmarkIds,
+    enabledCategories: s.enabledWalkCategories, riskStrengths: s.compositeRiskStrengths, ageEras: s.ageEras,
+  }
+}
+
 export function settingsOf(s: AppState): UrlSettings {
   return {
     weights: s.compositeWeights, conditions: s.conditions, walkCategories: s.enabledWalkCategories,

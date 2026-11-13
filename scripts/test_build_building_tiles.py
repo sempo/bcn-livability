@@ -61,21 +61,14 @@ class TestJoins(unittest.TestCase):
 
 
 class TestColumns(unittest.TestCase):
-    def test_pack_round_trip_with_sentinels(self):
-        blob, meta = bt.pack([
-            ("lng", "f32", 1, [2.17, np.nan]),
-            ("lden_avg", "u16", 10, [62.4, None]),
-            ("walk_park", "u8", 1, [87, np.nan]),
-            ("cc_sagrada", "u8", 1, [12, 300]),  # clipped below the sentinel
-        ])
-        cols = {c["name"]: c for c in meta}
-        self.assertTrue(all(c["offset"] % 4 == 0 for c in meta))
-        read = lambda name, dt: np.frombuffer(blob, dtype=dt, count=2, offset=cols[name]["offset"])  # noqa: E731
-        self.assertAlmostEqual(float(read("lng", "<f4")[0]), 2.17, places=5)
-        self.assertTrue(np.isnan(read("lng", "<f4")[1]))
-        self.assertEqual(read("lden_avg", "<u2").tolist(), [624, 65535])
-        self.assertEqual(read("walk_park", "<u1").tolist(), [87, 255])
-        self.assertEqual(read("cc_sagrada", "<u1").tolist(), [12, 254])
+    def test_encode_with_sentinels(self):
+        """The binary files themselves: test_building_blob.py (format 2, TODO-058)."""
+        self.assertEqual(bt.encode([62.4, None], "u16", 10).tolist(), [624, 65535])
+        self.assertEqual(bt.encode([87, np.nan], "u8").tolist(), [87, 255])
+        self.assertEqual(bt.encode([12, 300], "u8").tolist(), [12, 254])  # clipped below the sentinel
+        lng = bt.encode([2.17, np.nan], "f32")
+        self.assertAlmostEqual(float(lng[0]), 2.17, places=5)
+        self.assertTrue(np.isnan(lng[1]))
 
     def test_height_from_floors(self):
         self.assertEqual(bt.height_m(pd.Series([5, None])).tolist()[0], 15.0)
@@ -84,25 +77,22 @@ class TestColumns(unittest.TestCase):
 
 @unittest.skipUnless((bt.PUBLIC / "buildings-meta.json").exists(), "map data not built")
 class TestGenerated(unittest.TestCase):
-    def test_meta_matches_bin(self):
-        import gzip
+    def test_meta_matches_files(self):
         import json
+        from building_blob import read_columns
         meta = json.loads((bt.PUBLIC / "buildings-meta.json").read_text())
-        blob = gzip.decompress((bt.PUBLIC / "buildings-scores.bin.gz").read_bytes())
-        last = meta["columns"][-1]
-        self.assertGreaterEqual(len(blob), last["offset"] + meta["count"])
+        self.assertEqual(len(read_columns(bt.PUBLIC, meta)), len(meta["columns"]))
         self.assertGreater(meta["count"], 170_000)
         self.assertLess(meta["price_bounds"]["p5"], meta["price_bounds"]["p95"])
 
     def test_year_built_column(self):
         """Building age (TODO-047) is scored in the browser from the year of construction."""
-        import gzip
         import json
+        from building_blob import read_columns
         meta = json.loads((bt.PUBLIC / "buildings-meta.json").read_text())
         col = next(c for c in meta["columns"] if c["name"] == "year_built")
         self.assertEqual((col["type"], col["scale"], col["sentinel"]), ("u16", 1, 65535))
-        blob = gzip.decompress((bt.PUBLIC / "buildings-scores.bin.gz").read_bytes())
-        years = np.frombuffer(blob, "<u2", meta["count"], col["offset"])
+        years = next(arr for name, _, _, arr in read_columns(bt.PUBLIC, meta) if name == "year_built")
         known = years[years != 65535]
         self.assertGreater(len(known), 0.99 * meta["count"])
         self.assertGreater(np.median(known), 1940)
