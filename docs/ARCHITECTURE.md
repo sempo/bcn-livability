@@ -171,6 +171,9 @@ src/
 │   │                          areaSelect.ts (fly to + outline through the search store)
 │   ├── buildings/scoreClient.ts  scoring in the worker (hand-over of the raw blob, newest request wins, main-thread fallback);
 │   │                          scoreProtocol.ts: the messages. The worker itself: src/workers/score.worker.ts
+│   ├── shareImage/            share pictures (TODO-063): shareImageModel.ts (what a picture says, pure), shareImageDraw.ts (Canvas 2D,
+│   │                          browser and Node), captureMap.ts + shareImageBrowser.ts ("Save image": live-map snapshot, share sheet /
+│   │                          download), shareImageAreaMap.ts + shareImageRender.ts + shareImageBuild.ts (build-time pictures and pages)
 │   ├── presets.ts             the four profiles (Family, Remote worker, City life, Investor) + JSON overrides from ENV
 │   ├── buildings/
 │   │   ├── buildingData.ts    loads buildings-meta.json, the scores file, then the positions file → decoded Float32 columns
@@ -375,6 +378,11 @@ flag and no saved settings (`hasSavedSettings()`); "Change" in the panel reopens
   positions needed); the ranks are used while nothing is scored and the settings key matches
   (`useStartAreaRanks`). The file checks `generated` and `count` against `buildings-meta.json`; the dev server has
   none and falls back to computing both.
+- **Share pictures and pages are made at build time** (TODO-063). `npm run build` ends with `scripts/build-share-images.mjs`:
+  the app's own scoring for the first-visit settings and for each profile, then `dist/og-image.jpg` and, per ranked barri
+  and profile, `dist/share/<profile>/<barri>/index.html` (own Open Graph tags + redirect to the map) and `.jpg`
+  (`@napi-rs/canvas`, the same drawing code the browser uses). `VITE_SITE_URL` sets the public address in them. "Save image"
+  on the building card draws the 4:5 picture in the browser from the live map (code loaded on the first click).
 - **Initial JavaScript is budgeted** (`bundleBudget.initialJsGzipKB` in `frontend/package.json`, 500 KB gzip, now
   ~484): `npm run check:bundle` runs in the deploy workflow after the build. Code that most visitors never run is
   loaded on demand: Best zones (h3-js, turf), the isochrone / exclusion / pin / Idealista layers, terra-draw.
