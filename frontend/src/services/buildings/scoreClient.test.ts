@@ -29,7 +29,7 @@ const SETTINGS: BuildingSettings = {
 let raw: ArrayBuffer | null = null
 vi.mock('./buildingData', async (orig) => ({
   ...(await orig<typeof import('./buildingData')>()),
-  takeRawScores: () => { const r = raw; raw = null; return r },
+  copyRawScores: () => (raw ? raw.slice(0) : null),
 }))
 
 /** A worker that answers like the real one (same scoreAll), by hand, so the test controls the timing. */
@@ -76,9 +76,10 @@ describe('scoreClient without a worker', () => {
     expect(r!.components!.noise[0]).toBeGreaterThan(r!.components!.noise[1])
   })
 
-  it('frees the raw blob it will not use', async () => {
+  it('leaves the raw blob alone (the page decodes its columns from it)', async () => {
+    const before = raw
     await createScoreClient(() => null).score(makeData(), SETTINGS, false)
-    expect(raw).toBeNull()
+    expect(raw).toBe(before)
   })
 
   it('also falls back when the worker cannot be made', async () => {
@@ -99,8 +100,10 @@ describe('scoreClient with a worker', () => {
     worker.answerNext()
     await second
     expect(worker.messages.map((m) => m.type)).toEqual(['init', 'score', 'score'])
-    expect(worker.transfers[0]).toHaveLength(1) // the blob is transferred, not copied
-    expect(raw).toBeNull()
+    // The worker gets its own copy (transferred to it); the page keeps the blob for its columns.
+    expect(worker.transfers[0]).toHaveLength(1)
+    expect(worker.transfers[0][0]).not.toBe(raw)
+    expect(raw!.byteLength).toBeGreaterThan(0)
   })
 
   it('returns what the worker computed, the same as scoreAll', async () => {
@@ -170,11 +173,12 @@ describe('scoreClient with a worker', () => {
     expect(second.messages.map((m) => m.type)).toEqual(['init', 'score'])
   })
 
-  it('with no raw blob left (it was taken already) it scores on the main thread', async () => {
+  it('with no raw blob (data that was not loaded from the blob) it scores on the main thread', async () => {
     raw = null
     const worker = new FakeWorker()
     const r = await createScoreClient(() => worker).score(makeData(), SETTINGS, false)
     expect(r).not.toBeNull()
     expect(worker.messages).toHaveLength(0)
+    expect(worker.terminated).toBe(true)
   })
 })

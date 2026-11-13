@@ -11,6 +11,15 @@
     />
     <meta name="theme-color" content="#ffffff" />
 
+    <!-- Start loading what the map needs while the JavaScript is still on its way (TODO-058): the base map style
+         (services/mapStyle.ts), ICGC's tile host, and the description of the building scores
+         (services/buildings/buildingData.ts). The addresses and the crossorigin attribute must match the fetch()
+         calls, or the files are loaded twice. The scores themselves (1.8 MB) are not preloaded on purpose: they
+         would share the connection with the JavaScript and hold back the first paint. -->
+    <link rel="preconnect" href="https://geoserveis.icgc.cat" crossorigin />
+    <link rel="preload" as="fetch" crossorigin href="%BASE_URL%basemap/icgc-standard.json" />
+    <link rel="preload" as="fetch" crossorigin href="%BASE_URL%data/buildings-meta.json" />
+
     <link rel="icon" type="image/svg+xml" href="%BASE_URL%time2map-mark.svg" />
     <link rel="icon" type="image/png" sizes="32x32" href="%BASE_URL%favicon-32.png" />
     <link rel="apple-touch-icon" href="%BASE_URL%apple-touch-icon.png" />

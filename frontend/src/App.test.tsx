@@ -1,6 +1,7 @@
 import React from 'react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import * as maplibregl from 'maplibre-gl'
 import { MantineProvider } from '@mantine/core'
 import App from './App'
 import { useStore } from './store'
@@ -32,8 +33,9 @@ vi.mock('@mantine/core', async () => {
 
 vi.mock('maplibre-gl', () => ({
   setWorkerUrl: vi.fn(),
+  addProtocol: vi.fn(),
   Map: vi.fn(function () {
-    return { addControl: vi.fn(), on: vi.fn(), remove: vi.fn() }
+    return { addControl: vi.fn(), on: vi.fn(), once: vi.fn(), remove: vi.fn() }
   }),
   NavigationControl: vi.fn(function () { return {} }),
   AttributionControl: vi.fn(function () { return {} }),
@@ -72,10 +74,12 @@ describe('App (integration)', () => {
     expect(() => renderApp()).not.toThrow()
   })
 
-  it('renders the map container', () => {
+  it('renders the map container', async () => {
     const { container } = renderApp()
+    // The map code is loaded after the first render (TODO-058).
+    await waitFor(() => expect(maplibregl.Map).toHaveBeenCalled(), { timeout: 15000 })
     expect(container.querySelector('[style*="width: 100%"]')).toBeTruthy()
-  })
+  }, 20000)
 
   it('renders the filter panel with title', () => {
     renderApp()

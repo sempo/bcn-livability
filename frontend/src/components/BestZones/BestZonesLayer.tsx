@@ -4,6 +4,7 @@ import * as maplibregl from 'maplibre-gl'
 import type { ExpressionSpecification } from 'maplibre-gl'
 import { useMap } from '../Map/MapContext'
 import { addLayerOrdered } from '../Map/layerOrder'
+import { MAP_TEXT_FONT } from '../Map/mapFont'
 
 export const SOURCE_ID = 'best-zones'
 export const FILL_LAYER_ID = 'best-zones-fill'
@@ -66,7 +67,7 @@ export function BestZonesLayer({ zones, urls, labels }: { zones: Polygon[]; urls
       source: SOURCE_ID,
       layout: {
         'text-field': ['get', 'label'],
-        'text-font': ['Noto Sans Regular', 'Arial Unicode MS Regular'],
+        'text-font': MAP_TEXT_FONT,
         'text-size': 18,
         // Zone numbers matter more than landmark/metro labels — never hide them on collision.
         'text-allow-overlap': true,
