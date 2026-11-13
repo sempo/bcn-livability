@@ -43,6 +43,9 @@ jobs:
           VITE_GEOAPIFY_API_KEY: ${{ secrets.VITE_GEOAPIFY_API_KEY }}
           # Only the upstream repo owns livability.time2map.com (base '/'). A fork is served from
           # https://<owner>.github.io/<repo>/, so its assets live under that subpath.
+          # The public address printed on the share images and used in their link previews (TODO-063): the custom
+          # domain upstream, the github.io address on a fork.
+          VITE_SITE_URL: ${{ github.repository == 'time2map/bcn-property-finder' && 'https://livability.time2map.com' || format('https://{0}.github.io/{1}', github.repository_owner, github.event.repository.name) }}
           VITE_BASE: ${{ github.repository == 'time2map/bcn-property-finder' && '/' || format('/{0}/', github.event.repository.name) }}
         run: |
           # The custom domain is claimed in the upstream repo's Pages settings, never by a fork's build.

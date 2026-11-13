@@ -1371,3 +1371,9 @@ html, body { overscroll-behavior: none; }
   .mobile-sheet { transition: none; }
   .building-card-overlay { animation: none; }
 }
+
+/* Save image (TODO-063): under the match header of the building card. */
+.save-image { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+@media (max-width: 768px) {
+  .save-image__button { min-height: 44px; }
+}
