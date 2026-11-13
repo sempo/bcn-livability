@@ -8,7 +8,7 @@ import { SEARCH_DEBOUNCE_MS, SEARCH_MAX_RESULTS, SEARCH_MIN_CHARS } from '../../
 import { useSearchStore } from '../../store/searchStore'
 
 /**
- * "Search an area or address" (TODO-044), opened by the search button of the brand bar: districts, barris, municipalities and colloquial names
+ * "Search an area or address" (044), opened by the search button of the brand bar: districts, barris, municipalities and colloquial names
  * from the areas dataset, plus Geoapify address suggestions. Writes the pick to the search store; the
  * map side is SearchLayer.
  */

@@ -1,8 +1,8 @@
-# TODO-044 — Territory search
+# 044 — Territory search
 
 **Note (2026-11-04):** the hexes were removed in TODO-046; where this file says hex / cell, read building.
 
-**Status:** In progress (2026-11-11). Scope of this pass: area search + address search; the rest is under "Later".
+**Status:** Done (2026-11-12) for this pass: area search + address search. Everything under "Later" is not planned for now.
 
 **Note (2026-11-11):** promoted to a prerequisite of the mass-market UX track (050–053): a public map needs a
 search box (address or area) before an onboarding quiz makes sense. Add a plain address geocoder (Geoapify,
