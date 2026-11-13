@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { ActionIcon, Combobox, Loader, TextInput, useCombobox } from '@mantine/core'
 import { IconX } from '@tabler/icons-react'
 import { loadAreas, type AreaFeature } from '../../services/areas'
@@ -6,13 +6,23 @@ import { searchAreas, areaIdsBounds } from '../../services/areaSearch'
 import { searchAddresses, type AddressSuggestion } from '../../services/geocoding'
 import { SEARCH_DEBOUNCE_MS, SEARCH_MAX_RESULTS, SEARCH_MIN_CHARS } from '../../services/searchConfig'
 import { useSearchStore } from '../../store/searchStore'
+import { useSheetStore } from '../../store/sheetStore'
 
 /**
  * "Search an area or address" (044), opened by the search button of the brand bar: districts, barris, municipalities and colloquial names
  * from the areas dataset, plus Geoapify address suggestions. Writes the pick to the search store; the
  * map side is SearchLayer.
+ *
+ * On a phone, after the onboarding, it is the search pill (TODO-062): always there, with the product name as its
+ * placeholder, a mark on the left (`leftSlot`) and the share button on the right (`rightSlot`) until something is
+ * typed. The results then take the screen (CSS: .search-results).
  */
-export function SearchBox() {
+export function SearchBox({ pill = false, leftSlot, rightSlot }: {
+  pill?: boolean
+  leftSlot?: ReactNode
+  rightSlot?: ReactNode
+}) {
+  const inputRef = useRef<HTMLInputElement>(null)
   const [areas, setAreas] = useState<AreaFeature[]>([])
   const [text, setText] = useState('')
   const [addresses, setAddresses] = useState<AddressSuggestion[]>([])
@@ -36,8 +46,8 @@ export function SearchBox() {
 
   // Closed: forget what was typed.
   useEffect(() => {
-    if (!open) { setText(''); setAddresses([]) }
-  }, [open])
+    if (!open && !pill) { setText(''); setAddresses([]) }
+  }, [open, pill])
 
   const query = text.trim()
   const areaMatches = useMemo(() => searchAreas(areas, query, SEARCH_MAX_RESULTS), [areas, query])
@@ -78,6 +88,10 @@ export function SearchBox() {
       setText(a.label)
     }
     combobox.closeDropdown()
+    if (pill) {
+      inputRef.current?.blur() // the keyboard goes away, the map shows the pick
+      useSheetStore.getState().setPosition('peek')
+    }
   }
 
   const reset = () => {
@@ -86,28 +100,34 @@ export function SearchBox() {
     clear()
   }
 
-  const close = () => { reset(); setOpen(false) }
+  const close = () => { reset(); if (pill) inputRef.current?.blur(); else setOpen(false) }
 
   const showEmpty = query.length >= SEARCH_MIN_CHARS && !loading && areaMatches.length === 0 && addresses.length === 0
 
-  if (!open) return null
+  if (!open && !pill) return null
 
   return (
     <Combobox store={combobox} onOptionSubmit={pick} withinPortal={false}>
       <Combobox.Target>
         <TextInput
-          className="glass-panel search-box"
+          ref={inputRef}
+          className={pill ? 'glass-panel search-box search-box--pill' : 'glass-panel search-box'}
           size="md"
           radius="lg"
-          placeholder="Search area or address"
+          placeholder={pill ? 'Search Barcelona livability map' : 'Search area or address'}
           aria-label="Search an area or address"
-          autoFocus
-          leftSection={loading ? <Loader size={14} /> : null}
-          rightSection={
+          autoFocus={!pill}
+          enterKeyHint="search"
+          autoComplete="off"
+          leftSection={loading ? <Loader size={14} /> : pill ? leftSlot : null}
+          leftSectionWidth={pill ? 52 : undefined}
+          rightSection={pill && text === '' ? rightSlot : (
             <ActionIcon variant="subtle" color="gray" size="md" aria-label="Close search" onClick={close}>
               <IconX size={16} />
             </ActionIcon>
-          }
+          )}
+          rightSectionWidth={pill ? 52 : undefined}
+          leftSectionPointerEvents={pill ? "all" : undefined}
           rightSectionPointerEvents="all"
           value={text}
           onChange={(e) => { setText(e.currentTarget.value); combobox.openDropdown() }}
@@ -116,7 +136,7 @@ export function SearchBox() {
           onBlur={() => combobox.closeDropdown()}
         />
       </Combobox.Target>
-      <Combobox.Dropdown hidden={query.length === 0}>
+      <Combobox.Dropdown className="search-results" hidden={query.length === 0}>
         <Combobox.Options>
           {areaMatches.length > 0 && (
             <Combobox.Group label="Areas">

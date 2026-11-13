@@ -28,9 +28,15 @@ Synced with the code on 2026-11-11 (`frontend/src/main.tsx`, `index.css`, layer 
 
 - Desktop: brand bar, search box and filter panel at the top left, over the map. The building card opens on the right. With
   pins on, the compare pane sits on the left in a resizable split.
-- Mobile (≤ 768 px): filters in a bottom drawer (adjustments button). The brand bar sits on top. With pins on,
-  there is a Map / Compare toggle.
-- The colour scale and the best zones use the visible part of the map: the viewport minus the panel and the card.
+- Mobile (≤ 768 px, TODO-062): the map is always visible. One bottom sheet with three positions (peek, half, full)
+  holds the conditions, the ranked areas and the building card; full stops below the search pill, and a tap on
+  peek opens it halfway. Peek shows the conditions that are on, or the
+  building's address and match. The colour scale, "About" and "Where am I" float above the sheet. On top, one
+  search pill with the product name as placeholder (the first visit shows the full name bar instead). No zoom
+  buttons, rotation or tilt. Touch targets are 44 px (word pills 36 px with a larger hit area); inputs are 16 px;
+  fixed elements respect the safe areas. With pins on, there is a Map / Compare toggle.
+- The colour scale and the best zones use the visible part of the map: the viewport minus the panel and the card
+  (on a phone, minus the sheet at peek or half).
 
 ## Language
 

@@ -1,9 +1,10 @@
 import type * as maplibregl from 'maplibre-gl'
 import type { Bounds } from '../../services/bestZonesConfig'
+import { useSheetStore } from '../../store/sheetStore'
 
 /**
  * Visible part of the map: the viewport minus the left filter panel, the right building card
- * (when open) and the bottom onboarding sheet on a phone. Best zones (038) never hide under them; the colour scale (TODO-032) fits to it.
+ * (when open), and on a phone the bottom onboarding sheet or the conditions sheet. Best zones (038) never hide under them; the colour scale (TODO-032) fits to it.
  */
 export function visibleBounds(map: maplibregl.Map): Bounds {
   const box = map.getContainer().getBoundingClientRect()
@@ -18,6 +19,8 @@ export function visibleBounds(map: maplibregl.Map): Bounds {
   // Mobile onboarding sheet at the bottom: the map above it is what the person sees.
   const sheet = document.querySelector('.onboarding-sheet')?.getBoundingClientRect()
   if (sheet && sheet.bottom >= box.top + box.height - 2) bottom = Math.max(0, sheet.top - box.top)
+  // Phone sheet (TODO-062): the map above peek or half. At full the map stays where half left it.
+  if (document.querySelector('.mobile-sheet')) bottom = Math.max(0, box.height - useSheetStore.getState().mapInset)
   const corners = [[left, 0], [right, 0], [right, bottom], [left, bottom]]
     .map(([x, y]) => map.unproject([x, y]))
   const lngs = corners.map((c) => c.lng)

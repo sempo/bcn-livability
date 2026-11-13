@@ -1,5 +1,6 @@
 import { IconX } from '@tabler/icons-react'
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { ActionIcon, Anchor, Divider, Group, Paper, Stack, Text } from '@mantine/core'
 import { useStore } from '../../store'
 import { valueOf } from '../../services/buildings/buildingData'
@@ -20,9 +21,10 @@ import {
 } from './buildingCardText'
 import { minutesShare } from '../../services/buildings/conditions'
 import { features } from '../../features'
-import { matchSummary, riskLine } from '../../services/match/matchSummary'
+import { BAND_LABEL, matchBand, matchSummary, riskLine } from '../../services/match/matchSummary'
 import { ageText, cityCoreText, localsText, noiseText, poiText, priceText } from '../../services/match/matchText'
 import { MatchHeader } from './MatchHeader'
+import { useSheetSlots } from '../MobileSheet/sheetSlots'
 
 const DIM = { fontSize: 10, opacity: 0.75 }
 
@@ -136,7 +138,13 @@ function NoiseDetails({ d, facades }: { d: BuildingDetail; facades: BuildingDeta
   )
 }
 
-export function BuildingCard() {
+/**
+ * The building card. On desktop a card over the top right of the map. With `embedded` (the phone layout, TODO-062)
+ * it fills the slots of the bottom sheet instead: a two-line header for peek (address, match) and the details
+ * below it.
+ */
+export function BuildingCard({ embedded = false }: { embedded?: boolean }) {
+  const slots = useSheetSlots()
   const selected = useStore((s) => s.selectedBuilding)
   const setSelected = useStore((s) => s.setSelectedBuilding)
   const weights = useStore((s) => s.compositeWeights)
@@ -153,6 +161,13 @@ export function BuildingCard() {
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
   }, [setSelected])
+
+  // A new building starts at the top of the sheet's body.
+  const sheetBody = slots.body
+  useEffect(() => {
+    const scroller = sheetBody?.closest('.mobile-sheet__body')
+    if (scroller) scroller.scrollTop = 0
+  }, [selected, sheetBody])
 
   // The positions may arrive a moment after the buildings are coloured (TODO-058): the card shows once they are in.
   const data = useBuildingData(selected !== null)
@@ -201,25 +216,9 @@ export function BuildingCard() {
     .filter((e): e is { id: string; name: string; minutes: number } => e.minutes !== null)
     .sort((a, b) => a.minutes - b.minutes)
 
-  return (
-    <div className="building-card-overlay">
-      <Paper shadow="md" radius="md" w={300} className="building-card">
-        {/* The header stays in view while the details scroll under it. */}
-        <Group justify="space-between" align="flex-start" wrap="nowrap" className="building-card__header">
-          <Stack gap={0}>
-            <Text size="sm" fw={700}>{prettyAddress(d?.address) ?? (d ? 'Building' : 'Loading…')}</Text>
-            {d && (
-              <Text size="xs" c="dimmed">
-                {d.student ? 'Student residence' : USE_LABEL[d.use ?? ''] ?? 'Building'}
-              </Text>
-            )}
-          </Stack>
-          <ActionIcon size={36} radius="md" variant="subtle" color="gray" onClick={() => setSelected(null)}
-            aria-label="Close building card" style={{ flex: 'none', marginTop: -6, marginRight: -8 }}>
-            <IconX size={24} stroke={2} />
-          </ActionIcon>
-        </Group>
-        <div className="building-card__body">
+  const address = prettyAddress(d?.address) ?? (d ? 'Building' : 'Loading…')
+  const shownScore = composite.hasGap && composite.scoreMin < score ? `${composite.scoreMin}–${score}` : String(score)
+  const details = (
         <Stack gap="sm">
           {d && features.facadePhoto && (
             <Stack gap={2}>
@@ -232,7 +231,7 @@ export function BuildingCard() {
 
           <MatchHeader
             score={score} scoreMin={composite.scoreMin} incomplete={composite.hasGap}
-            summary={summary} riskText={riskText} color={color}
+            summary={summary} riskText={riskText} color={color} compact={embedded}
           />
 
           {d && (
@@ -373,6 +372,55 @@ export function BuildingCard() {
             </>
           )}
         </Stack>
+  )
+
+  if (embedded) {
+    if (!slots.header || !slots.body) return null
+    const peek = (
+      <Group justify="space-between" align="flex-start" wrap="nowrap" className="building-peek">
+        <Stack gap={2} style={{ minWidth: 0 }}>
+          <Text fw={700} size="md" truncate>{address}</Text>
+          <Text size="sm" fw={700} style={{ color }} data-testid="peek-match">
+            {BAND_LABEL[matchBand(score)]} · {shownScore}
+            <Text span size="sm" fw={500} c="dimmed">
+              {' · '}{summary.total > 0 ? `Meets ${summary.met} of ${summary.total}` : 'No conditions are on'}
+            </Text>
+          </Text>
+        </Stack>
+        <ActionIcon size={44} radius="md" variant="subtle" color="gray" onClick={() => setSelected(null)}
+          aria-label="Close building card" style={{ flex: 'none', marginTop: -4, marginRight: -8 }}>
+          <IconX size={24} stroke={2} />
+        </ActionIcon>
+      </Group>
+    )
+    return (
+      <>
+        {createPortal(peek, slots.header)}
+        {createPortal(<div className="building-card__body building-card__body--sheet">{details}</div>, slots.body)}
+      </>
+    )
+  }
+
+  return (
+    <div className="building-card-overlay">
+      <Paper shadow="md" radius="md" w={300} className="building-card">
+        {/* The header stays in view while the details scroll under it. */}
+        <Group justify="space-between" align="flex-start" wrap="nowrap" className="building-card__header">
+          <Stack gap={0}>
+            <Text size="sm" fw={700}>{prettyAddress(d?.address) ?? (d ? 'Building' : 'Loading…')}</Text>
+            {d && (
+              <Text size="xs" c="dimmed">
+                {d.student ? 'Student residence' : USE_LABEL[d.use ?? ''] ?? 'Building'}
+              </Text>
+            )}
+          </Stack>
+          <ActionIcon size={36} radius="md" variant="subtle" color="gray" onClick={() => setSelected(null)}
+            aria-label="Close building card" style={{ flex: 'none', marginTop: -6, marginRight: -8 }}>
+            <IconX size={24} stroke={2} />
+          </ActionIcon>
+        </Group>
+        <div className="building-card__body">
+{details}
         </div>
       </Paper>
     </div>

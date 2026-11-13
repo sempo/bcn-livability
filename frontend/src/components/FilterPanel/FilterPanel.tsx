@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Divider, Modal, Paper, Slider, Stack, Switch, Table, Tabs, Text } from '@mantine/core'
 import { IconInfoCircle } from '@tabler/icons-react'
 import { useStore } from '../../store'
+import { useSheetStore } from '../../store/sheetStore'
 import { NoiseLegend } from '../NoiseLayer/NoiseLegend'
 import { ClimateLayerControls } from './ClimateLayerControls'
 import { CompositeControls } from './CompositeControls'
@@ -83,22 +84,26 @@ function IsochroneInfoModal({ opened, onClose }: { opened: boolean; onClose: () 
   )
 }
 
-export function FilterPanel() {
+/** The conditions panel: a glass panel on desktop; with `embedded` (the phone's bottom sheet) just its content. */
+export function FilterPanel({ embedded = false }: { embedded?: boolean }) {
   const {
     minutes, setMinutes,
     noiseLayerVisible, setNoiseLayerVisible,
     mapAttribution,
   } = useStore()
   const [isoModalOpen, setIsoModalOpen] = useState(false)
-  const [tab, setTab] = useState<'settings' | 'areas'>('settings')
+  const tab = useSheetStore((s) => s.tab)
+  const setTab = useSheetStore((s) => s.setTab)
 
   return (
     <Paper
-      className="glass-panel"
-      p="md"
+      className={embedded ? 'filter-panel--sheet' : 'glass-panel'}
+      p={embedded ? 0 : 'md'}
       radius="md"
-      // The tabs stay put; only the body below them scrolls (panel on desktop, drawer on a phone).
-      style={{ minHeight: 0, display: 'flex', flexDirection: 'column', maxHeight: 'calc(100dvh - 130px)' }}
+      // The tabs stay put; only the body below them scrolls (the panel on desktop). In the phone's sheet the sheet scrolls.
+      style={embedded
+        ? { background: 'transparent', boxShadow: 'none' }
+        : { minHeight: 0, display: 'flex', flexDirection: 'column', maxHeight: 'calc(100dvh - 130px)' }}
     >
       {features.isochrone && <IsochroneInfoModal opened={isoModalOpen} onClose={() => setIsoModalOpen(false)} />}
       {features.areas && (

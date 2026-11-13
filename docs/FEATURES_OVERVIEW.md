@@ -63,6 +63,7 @@ in the feature files; the order and dependencies of the planned work are in [ROA
 | 053 | Shareable state: conditions in the URL, Share button |
 | 060 | Incomplete data: score range and hatched fill |
 | 061 | No conditions: neutral map with a hint |
+| 062 | Mobile web: one bottom sheet (peek / half / full) over a live map, search pill, "Where am I", touch-sized controls |
 
 ### Branding and sharing
 | # | Feature |
@@ -89,7 +90,6 @@ before a launch post (B1 is already done).
 ### Now
 | Feature | State |
 |---|---|
-| TODO-062 Mobile web: the map on a phone (bottom-sheet card, filters over a live map, area tap, legend) | In progress on branch `feat/062-mobile-web` |
 | TODO-058 Frontend performance budget | Partly done: worker scoring, code splitting, faster start, smaller data. Open: cache headers (needs 054), Lighthouse ≥ 80, a real low-end phone, chunk tuning |
 
 ### Track A — scale (before any press link)
