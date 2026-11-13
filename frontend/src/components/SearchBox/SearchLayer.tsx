@@ -19,7 +19,7 @@ function fitPadding(): maplibregl.PaddingOptions {
 }
 
 /**
- * Map side of the search box (TODO-044): reacts to the store — fits the map to a picked area and draws
+ * Map side of the search box (044): reacts to the store — fits the map to a picked area and draws
  * its outline, or flies to a picked address and drops a temporary marker. Esc clears it.
  */
 export function SearchLayer() {

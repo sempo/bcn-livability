@@ -9,7 +9,7 @@ const TOAST_MS = 3000
 /**
  * Top-left brand mini-panel: the time2map agency mark (coral, links to time2map.com) + the page
  * heading "Barcelona livability map" as the single <h1>, a search button that opens the search field
- * under it (TODO-044) and a Share button (TODO-053). Glass style — see .app-brand / .top-panel.
+ * under it (044) and a Share button (TODO-053). Glass style — see .app-brand / .top-panel.
  */
 export function BrandBar() {
   const searchOpen = useSearchStore((s) => s.open)
