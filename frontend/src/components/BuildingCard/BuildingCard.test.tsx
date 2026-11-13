@@ -76,7 +76,14 @@ vi.mock('../../services/localsOpinion/localsOpinion', async (orig) => {
   }
 })
 
+vi.mock('../../services/shareImage/shareImageBrowser', () => ({
+  renderShareBlob: vi.fn(() => Promise.resolve(new Blob(['x'], { type: 'image/png' }))),
+  deliverImage: vi.fn(() => Promise.resolve('saved')),
+}))
+
 import { BuildingCard } from './BuildingCard'
+import { useMapStore } from '../../store/mapStore'
+import { deliverImage, renderShareBlob } from '../../services/shareImage/shareImageBrowser'
 
 async function renderCard(i: number | null) {
   useStore.setState({ selectedBuilding: i })
@@ -225,5 +232,49 @@ describe('BuildingCard (TODO-046)', () => {
     await renderCard(0)
     fireEvent.keyDown(window, { key: 'Escape' })
     expect(useStore.getState().selectedBuilding).toBeNull()
+  })
+
+  describe('Save image (TODO-063)', () => {
+    beforeEach(() => {
+      vi.mocked(renderShareBlob).mockClear()
+      vi.mocked(deliverImage).mockClear()
+      useMapStore.setState({ map: { id: 'map' } as never })
+    })
+
+    it('makes the picture of the building: street without the number, the score, the rows', async () => {
+      await renderCard(0)
+      await act(async () => { fireEvent.click(screen.getByRole('button', { name: /Save image/ })) })
+      expect(renderShareBlob).toHaveBeenCalledTimes(1)
+      const [, lngLat, model] = vi.mocked(renderShareBlob).mock.calls[0]
+      expect(lngLat).toEqual([expect.closeTo(2.16, 3), expect.closeTo(41.39, 3)])
+      expect(model.place).toBe('Carrer Arago')
+      expect(model.subtitle).toBe('el Raval, Barcelona')
+      expect(model.value).toMatch(/^\d+$/)
+      expect(model.rows.length).toBeGreaterThan(0)
+      expect(JSON.stringify(model)).not.toMatch(/255|Meets/)
+      expect(deliverImage).toHaveBeenCalledWith(expect.any(Blob), 'Carrer Arago', expect.stringContaining('http'))
+      expect(await screen.findByText('Image saved.')).toBeInTheDocument()
+    })
+
+    it('says "For a family" only when the settings are that profile', async () => {
+      await renderCard(0)
+      await act(async () => { fireEvent.click(screen.getByRole('button', { name: /Save image/ })) })
+      expect(vi.mocked(renderShareBlob).mock.calls[0][2].forWhom).toBeNull()
+    })
+
+    it('says so when the picture cannot be made', async () => {
+      vi.mocked(renderShareBlob).mockRejectedValueOnce(new Error('no canvas'))
+      vi.spyOn(console, 'error').mockImplementation(() => {})
+      await renderCard(0)
+      await act(async () => { fireEvent.click(screen.getByRole('button', { name: /Save image/ })) })
+      expect(await screen.findByText('Could not make the image. Try again.')).toBeInTheDocument()
+    })
+
+    it('does nothing without a map', async () => {
+      useMapStore.setState({ map: null })
+      await renderCard(0)
+      await act(async () => { fireEvent.click(screen.getByRole('button', { name: /Save image/ })) })
+      expect(renderShareBlob).not.toHaveBeenCalled()
+    })
   })
 })

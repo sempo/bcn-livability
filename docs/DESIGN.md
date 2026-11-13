@@ -24,6 +24,14 @@ Synced with the code on 2026-11-11 (`frontend/src/main.tsx`, `index.css`, layer 
 | Exclusion zones | `#555555`, fill 28 %, outline 1.5 px |
 | Noise, flood, wildfire, street flooding | official palettes of each source (see the legend components) |
 
+## Share pictures (TODO-063)
+
+A white panel over the map, the same type and colours as the app. In priority order: the score on the colour of its band
+(or the share of good homes for an area), the place (street without a number, or the barri), "For a family" (only for a
+profile), up to four condition rows (✓ / ◐ / ✗ / ▲, colour and shape both), the brand and the address. 1200×630 for link
+previews (panel on the right), 1080×1350 for the saved image (panel at the bottom). Safe margin 36–60 px, row text 18–34 px.
+The map attribution is on every picture. No "Meets N of M" line, no house numbers.
+
 ## Layout
 
 - Desktop: brand bar, search box and filter panel at the top left, over the map. The building card opens on the right. With

@@ -24,6 +24,8 @@ import { features } from '../../features'
 import { BAND_LABEL, matchBand, matchSummary, riskLine } from '../../services/match/matchSummary'
 import { ageText, cityCoreText, localsText, noiseText, poiText, priceText } from '../../services/match/matchText'
 import { MatchHeader } from './MatchHeader'
+import { SaveImageButton } from './SaveImageButton'
+import { buildingShareModel } from '../../services/shareImage/shareImageModel'
 import { useSheetSlots } from '../MobileSheet/sheetSlots'
 
 const DIM = { fontSize: 10, opacity: 0.75 }
@@ -233,6 +235,15 @@ export function BuildingCard({ embedded = false }: { embedded?: boolean }) {
             score={score} scoreMin={composite.scoreMin} incomplete={composite.hasGap}
             summary={summary} riskText={riskText} color={color} compact={embedded}
           />
+
+          {d && (
+            <SaveImageButton
+              lngLat={[data.cols.lng[selected], data.cols.lat[selected]]}
+              build={(profile) => buildingShareModel({
+                address: prettyAddress(d.address), area, score, summary, riskText, profile,
+              })}
+            />
+          )}
 
           {d && (
             <>

@@ -64,6 +64,7 @@ in the feature files; the order and dependencies of the planned work are in [ROA
 | 060 | Incomplete data: score range and hatched fill |
 | 061 | No conditions: neutral map with a hint |
 | 062 | Mobile web: one bottom sheet (peek / half / full) over a live map, search pill, "Where am I", touch-sized controls |
+| 063 | Share image of the result: "Save image" on the building card (4:5), link-preview pictures and pages for the home page and every barri × profile |
 
 ### Branding and sharing
 | # | Feature |
