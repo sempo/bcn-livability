@@ -1,4 +1,5 @@
 import { useMapStore } from '../../store/mapStore'
+import { useMediaQuery } from '@mantine/hooks'
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import * as maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
@@ -34,6 +35,7 @@ const ExclusionDraw = lazyNamed(() => import('../ExclusionDraw/ExclusionDraw'), 
 const BestZones = lazyNamed(() => import('../BestZones/BestZones'), 'BestZones')
 const IdealistaPricesLayer = lazyNamed(() => import('../IdealistaPricesLayer/IdealistaPricesLayer'), 'IdealistaPricesLayer')
 import { features } from '../../features'
+import { PHONE_QUERY } from '../../services/phoneConfig'
 import { loadMapStyle, styleAttribution, type MapStyle } from '../../services/mapStyle'
 import { registerPmtilesProtocol } from '../../services/noise/pmtilesProtocol'
 
@@ -114,7 +116,6 @@ export function Map() {
       zoom: zoomRef.current,
       attributionControl: false,
     })
-    map.addControl(new maplibregl.NavigationControl(), 'top-right')
     map.on('click', (e) => {
       if (features.exclusions && drawingModeRef.current) return
       if (features.pins && isAddingPinRef.current) {
@@ -145,6 +146,25 @@ export function Map() {
       map.remove()
     }
   }, [mapStyle]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Desktop: zoom buttons and a compass. Phone (TODO-062): pinch to zoom, and no rotation or tilt by accident.
+  const phone = useMediaQuery(PHONE_QUERY, false, { getInitialValueInEffect: false })
+  useEffect(() => {
+    if (!mapInstance) return
+    if (phone) {
+      mapInstance.dragRotate.disable()
+      mapInstance.touchZoomRotate.disableRotation()
+      mapInstance.touchPitch?.disable()
+      return () => {
+        mapInstance.dragRotate.enable()
+        mapInstance.touchZoomRotate.enableRotation()
+        mapInstance.touchPitch?.enable()
+      }
+    }
+    const nav = new maplibregl.NavigationControl()
+    mapInstance.addControl(nav, 'top-right')
+    return () => { mapInstance.removeControl(nav) }
+  }, [mapInstance, phone])
 
   // Keep the canvas in sync when the map pane resizes (split divider drag,
   // panel collapse, mobile Map/Compare toggle, window resize).

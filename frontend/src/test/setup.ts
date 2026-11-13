@@ -32,6 +32,20 @@ Object.defineProperty(window, 'matchMedia', {
   })),
 })
 
+// jsdom has no PointerEvent: a MouseEvent with the pointer fields is enough for the drag tests.
+if (typeof window.PointerEvent === 'undefined') {
+  class PointerEventPolyfill extends MouseEvent {
+    pointerId: number
+    pointerType: string
+    constructor(type: string, init: PointerEventInit = {}) {
+      super(type, init)
+      this.pointerId = init.pointerId ?? 0
+      this.pointerType = init.pointerType ?? 'touch'
+    }
+  }
+  Object.defineProperty(window, 'PointerEvent', { writable: true, value: PointerEventPolyfill })
+}
+
 global.ResizeObserver = vi.fn().mockImplementation(function () {
   return { observe: vi.fn(), unobserve: vi.fn(), disconnect: vi.fn() }
 })

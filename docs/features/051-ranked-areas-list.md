@@ -40,8 +40,8 @@ mean score with the 050 bands; label = name. Hover shows "62 % good match · 1,2
 list click. The building dots are hidden below z13; the fill is hidden from z13.
 
 **Where the list lives**: a tab in the filter panel ("Settings" / "Your areas"), on desktop and inside the bottom
-drawer on a phone (a separate bottom-sheet snap is a later refinement). The list updates with the settings (same
-debounce as rescoring).
+bottom sheet on a phone (062: a tap on an area drops the sheet to peek with the area's name and a "Back to the list"
+button). The list updates with the settings (same debounce as rescoring).
 
 ## Implementation
 

@@ -290,6 +290,26 @@ describe('BuildingsLayer (TODO-046)', () => {
     expect(useStore.getState().compositeColorRange).toEqual([0, 100])
   })
 
+  it('on a touch screen the card waits for a possible double-tap zoom (TODO-062)', async () => {
+    vi.useRealTimers()
+    const map = makeFakeMap()
+    await renderLayer(map)
+    vi.stubGlobal('matchMedia', (q: string) => ({ matches: q === '(pointer: coarse)' }))
+    vi.useFakeTimers()
+    const click = handler(map, 'click', FILL_LAYER_ID)
+    // A single tap: the card opens after the pause.
+    act(() => click({ features: [{ id: 1 }], point: { x: 0, y: 0 } }))
+    expect(useStore.getState().selectedBuilding).toBeNull()
+    act(() => { vi.advanceTimersByTime(300) })
+    expect(useStore.getState().selectedBuilding).toBe(1)
+    // A double tap: the second touch cancels the first tap's pick.
+    act(() => click({ features: [{ id: 2 }], point: { x: 0, y: 0 } }))
+    act(() => handler(map, 'touchstart')())
+    act(() => { vi.advanceTimersByTime(1000) })
+    expect(useStore.getState().selectedBuilding).toBe(1)
+    vi.unstubAllGlobals()
+  })
+
   it('click selects a building, a second click closes it; hiding the index clears it', async () => {
     const map = makeFakeMap()
     await renderLayer(map)

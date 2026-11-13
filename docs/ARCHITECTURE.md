@@ -70,7 +70,8 @@ suite covers the flagged code.
 src/
 ├── main.tsx                 registers the pmtiles:// protocol; Mantine theme (brand colour #F06965, IBM Plex Sans)
 ├── App.tsx                  layout: desktop = top-left panel (BrandBar + FilterPanel) over the map, ComparePane
-│                            on the left when pins are on; mobile = filters in a bottom Drawer, Map/Compare toggle
+│                            on the left when pins are on; mobile = map + bottom sheet (MobileSheet), search pill,
+│                            map buttons (TODO-062), Map/Compare toggle
 ├── features.ts              feature flags from VITE_FEATURE_* (see docs/FEATURE_FLAGS.md)
 ├── components/
 │   ├── Map/
@@ -110,7 +111,11 @@ src/
 │   │   ├── FacadeNoiseLayer.tsx   noise circles at the facades of the selected building (z≥15)
 │   │   ├── CompositeLegend.tsx    legend: four match bands (050); gradient of the fitted range with Boost contrast
 │   │   └── scoreRamp.ts           RdYlGn ramp; colorRange(): fixed 0–100, or fitScoreRange() with Boost contrast (032, 050)
-│   ├── BuildingCard/              card of the clicked building: address, facade photo (flag), Catastro link, facts,
+│   ├── MobileSheet/               phone bottom sheet (TODO-062): MobileSheet.tsx (peek / half / full, native pointer
+│   │                              drag, slots for the card), ConditionsSheetHeader.tsx, sheetSlots.ts
+│   ├── MobileTop/                 MobileTopBar.tsx (search pill), AboutSheet.tsx
+│   ├── MobileMap/                 MapOverlay.tsx, LocateButton.tsx ("Where am I"), MobileLegend.tsx
+│   ├── BuildingCard/              card of the clicked building (`embedded` = inside the sheet): address, facade photo (flag), Catastro link, facts,
 │   │                              below-ground uses, per-condition scores, noise by facade side, climate risk,
 │   │                              Barri-level / Municipality-level block (price, "What locals say");
 │   │                              MatchHeader.tsx on top: band, "Meets N of M", a row per condition, risk line (050)
@@ -196,6 +201,9 @@ src/
 │   ├── areaSearch.ts          searchAreas (accent/article-insensitive ranking over areas + colloquial aliases), areaIdsBounds
 │   ├── areaAliases.ts         colloquial names (El Born, Poblenou, …) → official barri ids
 │   ├── searchConfig.ts        search ENV settings (min chars, debounce, max results, address zoom)
+│   ├── phoneConfig.ts         phone ENV settings (nearest-home radius for "Where am I", tap tolerance)
+│   ├── sheetSnap.ts           sheet heights and where a released drag settles
+│   ├── locate.ts              nearest home to a point, coverage box, nearest of the homes under a tap
 │   ├── exclusions.ts          subtractExclusions (Turf union + difference), isPointInExclusions
 │   ├── areas.ts               areas.geojson (districts, barris, AMB municipalities) for the exclusion picker
 │   ├── idealista/idealistaRawData.ts  loads data/idealista_prices.geojson (local only)

@@ -1,6 +1,6 @@
 import React from 'react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import * as maplibregl from 'maplibre-gl'
 import { MantineProvider } from '@mantine/core'
 import App from './App'
@@ -176,29 +176,48 @@ describe('App (integration) - mobile', () => {
     })
   })
 
-  it('opens drawer when filter button is clicked', () => {
-    renderApp()
-    const toggleBtn = screen.getByRole('button', { name: /open filters/i })
-    fireEvent.click(toggleBtn)
-    expect(screen.getByRole('dialog', { name: 'Filters' })).toBeInTheDocument()
+  it('shows the search pill with the product name, the conditions sheet at peek and the map buttons', () => {
+    const { container } = renderApp()
+    expect(screen.getByPlaceholderText('Search Barcelona livability map')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Barcelona livability map', hidden: true })).toBeInTheDocument()
+    expect(container.querySelector('.mobile-sheet')).toHaveAttribute('data-position', 'peek')
+    expect(screen.getByRole('button', { name: 'Show my location' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'About this map' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /open filters/i })).not.toBeInTheDocument()
   })
 
-  it('closes drawer via close button', () => {
-    renderApp()
-    fireEvent.click(screen.getByRole('button', { name: /open filters/i }))
-    const closeBtn = screen.getByRole('button', { name: /^close$/i })
-    fireEvent.click(closeBtn)
-    expect(screen.queryByRole('dialog', { name: 'Filters' })).not.toBeInTheDocument()
+  it('opens the conditions when the handle is tapped', () => {
+    const { container } = renderApp()
+    fireEvent.click(screen.getByRole('button', { name: 'Open the panel' }))
+    expect(container.querySelector('.mobile-sheet')).toHaveAttribute('data-position', 'half')
+    expect(screen.getByRole('tab', { name: 'Settings' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Your areas' })).toBeInTheDocument()
   })
 
-  it('first visit: the onboarding is a sheet over the map and the filter button waits', () => {
+  it('shows a selected building in the sheet instead of the conditions', () => {
+    const { container } = renderApp()
+    act(() => useStore.getState().setSelectedBuilding(3))
+    expect(container.querySelector('.mobile-sheet')).toHaveAttribute('data-view', 'building')
+    act(() => useStore.getState().setSelectedBuilding(null))
+    expect(container.querySelector('.mobile-sheet')).toHaveAttribute('data-view', 'main')
+  })
+
+  it('opens About from the map button', () => {
+    renderApp()
+    fireEvent.click(screen.getByRole('button', { name: 'About this map' }))
+    expect(screen.getByRole('dialog', { name: 'About' })).toBeInTheDocument()
+  })
+
+  it('first visit: the onboarding is a sheet over the map, with the full name on top', () => {
     useStore.setState({ onboardingOpen: true, onboarded: false })
     const { container } = renderApp()
     expect(container.querySelector('.onboarding-sheet')).toBeTruthy()
     expect(screen.getByRole('heading', { name: /Where in Barcelona/ })).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: /open filters/i })).not.toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Barcelona livability map' })).toBeInTheDocument()
+    expect(container.querySelector('.mobile-sheet')).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'Just show me the map' }))
     expect(container.querySelector('.onboarding-sheet')).toBeNull()
-    expect(screen.getByRole('button', { name: /open filters/i })).toBeInTheDocument()
+    expect(container.querySelector('.mobile-sheet')).toBeTruthy()
+    expect(screen.getByPlaceholderText('Search Barcelona livability map')).toBeInTheDocument()
   })
 })

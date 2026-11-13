@@ -1,7 +1,6 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
 import { useMediaQuery } from '@mantine/hooks'
-import { Drawer, ActionIcon, Notification, SegmentedControl } from '@mantine/core'
-import { IconAdjustmentsHorizontal } from '@tabler/icons-react'
+import { Notification, SegmentedControl } from '@mantine/core'
 import { BrandBar } from './components/BrandBar/BrandBar'
 import { FilterPanel } from './components/FilterPanel/FilterPanel'
 import { OnboardingPanel } from './components/Onboarding/OnboardingPanel'
@@ -11,6 +10,15 @@ import { ComparePane } from './components/PropertyPins/ComparePane'
 import { AddPinButton } from './components/PropertyPins/AddPinButton'
 import { ScreenshotDropZone } from './components/PropertyPins/ScreenshotDropZone'
 import { BuildingCard } from './components/BuildingCard/BuildingCard'
+import { MobileSheet } from './components/MobileSheet/MobileSheet'
+import { ConditionsSheetHeader } from './components/MobileSheet/ConditionsSheetHeader'
+import { MobileTopBar } from './components/MobileTop/MobileTopBar'
+import { AboutSheet } from './components/MobileTop/AboutSheet'
+import { MapOverlay } from './components/MobileMap/MapOverlay'
+import { useSheetFlow } from './hooks/useSheetFlow'
+import { useSheetMapPadding } from './hooks/useSheetMapPadding'
+import { useVisualViewportVar } from './hooks/useVisualViewport'
+import { PHONE_QUERY } from './services/phoneConfig'
 import { usePinsStore } from './store/pinsStore'
 import { useUrlState } from './hooks/useUrlState'
 import { useIsochrone } from './hooks/useIsochrone'
@@ -42,12 +50,18 @@ function Map() {
 export function App() {
   useUrlState()
   usePinAnalytics()
-  const isMobile = useMediaQuery('(max-width: 768px)')
-  const [drawerOpen, setDrawerOpen] = useState(false)
+  // Read at once, not after the first render: a phone must never start with the desktop layout.
+  const isMobile = useMediaQuery(PHONE_QUERY, false, { getInitialValueInEffect: false })
+  const [aboutOpen, setAboutOpen] = useState(false)
+  const buildingOpen = useStore((s) => s.selectedBuilding !== null)
   const [mobileView, setMobileView] = useState<'map' | 'compare'>('map')
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const pinCount = usePinsStore((s) => s.pins.length)
   const onboardingOpen = useStore((s) => s.onboardingOpen)
+  const sheetOn = isMobile && !onboardingOpen
+  useSheetFlow(sheetOn)
+  useSheetMapPadding(sheetOn)
+  useVisualViewportVar(isMobile)
 
   useIsochrone((err) => {
     setErrorMsg(err.message)
@@ -86,7 +100,7 @@ export function App() {
           {onboardingOpen ? <OnboardingPanel /> : <FilterPanel />}
         </div>
       )}
-      <BuildingCard />
+      {!isMobile && <BuildingCard />}
     </div>
   )
 
@@ -95,10 +109,14 @@ export function App() {
       <div className="app">
         {mapPane}
 
-        <div className="brand-mobile">
-          <BrandBar />
-          <SearchBox />
-        </div>
+        {onboardingOpen ? (
+          <div className="brand-mobile">
+            <BrandBar />
+            <SearchBox />
+          </div>
+        ) : (
+          <MobileTopBar onAbout={() => setAboutOpen(true)} />
+        )}
 
         {features.pins && mobileView === 'compare' && pinCount > 0 && (
           <div className="mobile-compare">
@@ -113,26 +131,16 @@ export function App() {
         )}
 
         {!onboardingOpen && (
-          <ActionIcon
-            className="filter-toggle"
-            size="xl"
-            radius="xl"
-            variant="white"
-            onClick={() => setDrawerOpen(true)}
-            aria-label="Open filters"
+          <MobileSheet
+            view={buildingOpen ? 'building' : 'main'}
+            header={<ConditionsSheetHeader />}
+            main={<FilterPanel embedded />}
+            floating={<MapOverlay onAbout={() => setAboutOpen(true)} />}
           >
-            <IconAdjustmentsHorizontal size={22} />
-          </ActionIcon>
+            <BuildingCard embedded />
+          </MobileSheet>
         )}
-        <Drawer
-          opened={drawerOpen}
-          onClose={() => setDrawerOpen(false)}
-          position="bottom"
-          size="auto"
-          title="Filters"
-        >
-          <FilterPanel />
-        </Drawer>
+        <AboutSheet opened={aboutOpen} onClose={() => setAboutOpen(false)} />
 
         {features.pins && pinCount > 0 && (
           <SegmentedControl
