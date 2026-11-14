@@ -1,6 +1,8 @@
 import { IconSearch, IconShare } from '@tabler/icons-react'
 import { useSearchStore } from '../../store/searchStore'
+import { useTranslation } from 'react-i18next'
 import { useShare } from '../../hooks/useShare'
+import { LanguageSwitcher } from '../LanguageSwitcher/LanguageSwitcher'
 
 /**
  * Top-left brand mini-panel: the time2map agency mark (coral, links to time2map.com) + the page
@@ -11,6 +13,7 @@ import { useShare } from '../../hooks/useShare'
 export function BrandBar() {
   const searchOpen = useSearchStore((s) => s.open)
   const setSearchOpen = useSearchStore((s) => s.setOpen)
+  const { t } = useTranslation()
   const { share, message } = useShare()
 
   return (
@@ -20,7 +23,7 @@ export function BrandBar() {
         href="https://time2map.com"
         target="_blank"
         rel="noopener noreferrer"
-        title="Visit time2map.com"
+        title={t('brand.visit')}
       >
         <img
           className="brand-mark"
@@ -28,14 +31,15 @@ export function BrandBar() {
           alt="time2map"
         />
       </a>
-      <h1 className="app-title">Barcelona livability map</h1>
-      <button type="button" className="brand-share" aria-label="Share this map" title="Share this map" onClick={share}>
+      <h1 className="app-title" title={t('brand.title')}>{t('brand.short')}</h1>
+      <LanguageSwitcher />
+      <button type="button" className="brand-share" aria-label={t('brand.share')} title={t('brand.share')} onClick={share}>
         <IconShare size={18} stroke={2} />
       </button>
       <button
         type="button"
         className="brand-search"
-        aria-label="Search an area or address"
+        aria-label={t('brand.search')}
         aria-expanded={searchOpen}
         aria-pressed={searchOpen}
         onClick={() => setSearchOpen(!searchOpen)}

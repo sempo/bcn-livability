@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useStore } from '../../store'
 import { features } from '../../features'
 import {
@@ -10,6 +11,7 @@ import { MatchBar } from './MatchBar'
 
 /** The conditions as numbered sentences, "+ add" chips for the rest, and the match bar (TODO-031). */
 export function ConditionsEditor() {
+  const { t } = useTranslation('editor')
   const weights = useStore((s) => s.compositeWeights)
   const strengths = useStore((s) => s.compositeRiskStrengths)
   const order = useStore((s) => s.conditionOrder)
@@ -27,17 +29,17 @@ export function ConditionsEditor() {
   return (
     <div className="conditions-editor">
       {active.length === 0 ? (
-        <p className="conditions-editor__empty">No conditions yet. Add one below and the map will colour in.</p>
+        <p className="conditions-editor__empty">{t('editor.empty')}</p>
       ) : (
         <div className="conditions-editor__rows">
           {active.map((k, i) => (
             <div key={k} className="condition-row">
-              <span className="condition-row__num" aria-label={`Priority ${i + 1}`}>{i + 1}</span>
+              <span className="condition-row__num" aria-label={t('editor.priority', { n: i + 1 })}>{i + 1}</span>
               <SentenceRow condition={k} />
               <button
                 type="button"
                 className="condition-row__remove"
-                aria-label={`Remove ${SHORT_LABEL[k]}`}
+                aria-label={t('editor.remove', { name: SHORT_LABEL[k] })}
                 onClick={() => change(k, false)}
               >
                 ×

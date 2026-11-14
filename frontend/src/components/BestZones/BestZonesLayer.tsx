@@ -1,3 +1,4 @@
+import i18n from '../../i18n'
 import { useEffect, useRef } from 'react'
 import type { Feature, FeatureCollection, Polygon } from 'geojson'
 import * as maplibregl from 'maplibre-gl'
@@ -29,7 +30,7 @@ function idealistaLink(url: string, n: number | string): HTMLAnchorElement {
   a.href = url
   a.target = '_blank'
   a.rel = 'noopener noreferrer'
-  a.textContent = `Open zone ${n} in Idealista ↗`
+  a.textContent = i18n.t('panel:tip.zone', { n })
   a.style.fontWeight = '600'
   return a
 }

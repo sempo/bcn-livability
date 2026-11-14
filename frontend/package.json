@@ -30,11 +30,13 @@
     "@turf/union": "^7.3.5",
     "@types/geojson": "^7946.0.16",
     "h3-js": "^4.4.0",
+    "i18next": "^27.1.1",
     "maplibre-gl": "^6.11.2",
     "pbf": "^4.0.2",
     "pmtiles": "^4.4.1",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
+    "react-i18next": "^18.0.1",
     "terra-draw": "^1.31.0",
     "terra-draw-maplibre-gl-adapter": "^1.4.1",
     "zustand": "^5.0.13"
@@ -60,6 +62,6 @@
     "vitest": "^4.1.11"
   },
   "bundleBudget": {
-    "initialJsGzipKB": 500
+    "initialJsGzipKB": 530
   }
 }

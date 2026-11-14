@@ -72,6 +72,8 @@ src/
 ├── App.tsx                  layout: desktop = top-left panel (BrandBar + FilterPanel) over the map, ComparePane
 │                            on the left when pins are on; mobile = map + bottom sheet (MobileSheet), search pill,
 │                            map buttons (TODO-062), Map/Compare toggle
+├── i18n/                    i18next setup (TODO-065): languages.ts (ENV list, resolveLanguage), index.ts (init, setLanguage, tIn),
+│                            namespaces.ts; texts in src/locales/<lang>/<ns>.json, see docs/TRANSLATING.md
 ├── features.ts              feature flags from VITE_FEATURE_* (see docs/FEATURE_FLAGS.md)
 ├── components/
 │   ├── Map/
@@ -82,7 +84,7 @@ src/
 │   │   ├── googleMapsUrl.ts       Google Maps URL for a coordinate
 │   │   ├── layerOrder.ts          canonical bottom-to-top z-order; addLayerOrdered()
 │   │   └── visibleBounds.ts       viewport minus the left panel, the right building card and the bottom onboarding sheet
-│   ├── BrandBar/                  time2map mark (link to time2map.com) + the page <h1> + Share (copy / share sheet) + search button
+│   ├── BrandBar/                  time2map mark (link to time2map.com) + the page <h1> + language menu (LanguageSwitcher/) + Share (copy / share sheet) + search button
 │   ├── Conditions/                the sentence editor (TODO-031; 052 moves it into the panel for good)
 │   │   ├── ConditionsEditor.tsx   numbered sentence rows in priority order, "+ add" chips, match bar; adds / removes a
 │   │   │                          condition with one `applySettings`
@@ -176,7 +178,7 @@ src/
 │   │                          browser and Node), captureMap.ts + shareImageBrowser.ts ("Save image": live-map snapshot, share sheet /
 │   │                          download), shareImageAreaMap.ts + shareImageRender.ts + shareImageBuild.ts (build-time pictures and pages)
 │   ├── buildingLink.ts        the link to one building (`b=lng,lat`, TODO-064); areas/areaLink.ts: the link of an area card;
-│   │                          areas/areaDescriptions.ts: the barri texts, by language; areas/areaCardText.ts: the numbers line
+│   │                          areas/areaDescriptions.ts: loads the barri texts of `locales/<lang>/areas.json`; areas/areaCardText.ts: the numbers line
 │   ├── presets.ts             the four profiles (Family, Remote worker, City life, Investor) + JSON overrides from ENV
 │   ├── buildings/
 │   │   ├── buildingData.ts    loads buildings-meta.json, the scores file, then the positions file → decoded Float32 columns
@@ -386,8 +388,8 @@ flag and no saved settings (`hasSavedSettings()`); "Change" in the panel reopens
   and profile, `dist/share/<profile>/<barri>/index.html` (own Open Graph tags + redirect to the map) and `.jpg`
   (`@napi-rs/canvas`, the same drawing code the browser uses). `VITE_SITE_URL` sets the public address in them. "Save image"
   on the building card draws the 4:5 picture in the browser from the live map (code loaded on the first click).
-- **Initial JavaScript is budgeted** (`bundleBudget.initialJsGzipKB` in `frontend/package.json`, 500 KB gzip, now
-  ~484): `npm run check:bundle` runs in the deploy workflow after the build. Code that most visitors never run is
+- **Initial JavaScript is budgeted** (`bundleBudget.initialJsGzipKB` in `frontend/package.json`, 530 KB gzip, now
+  ~521; raised from 500 for i18next, TODO-065): `npm run check:bundle` runs in the deploy workflow after the build. Code that most visitors never run is
   loaded on demand: Best zones (h3-js, turf), the isochrone / exclusion / pin / Idealista layers, terra-draw.
   Keep h3-js and turf's union / difference / buffer out of modules that load at start (`bestZonesConfig.ts`,
   `exclusionsGeometry.ts`, `bestZoneGrid.ts` exist for that).
@@ -491,6 +493,7 @@ build, committed) and `frontend/.env.test` (all flags on). Every default below i
 | `VITE_BEST_ZONES_BUFFER_DEG` / `_SIMPLIFY_TOL` / `_MAX_VERTICES` | 0.0006 / 0.001 / 20 | zone outline smoothing |
 | `VITE_IDEALISTA_MAX_URL_CHARS` | 900 | zone search URL budget |
 | `VITE_TMB_APP_ID` / `VITE_TMB_APP_KEY` | — | metro layer (CI secrets in production) |
+| `VITE_DEFAULT_LANG` / `VITE_ENABLED_LANGS` | en / en,es,ca | source language and fallback / languages in the menu (065) |
 | `VITE_FEATURE_*` | false | see `docs/FEATURE_FLAGS.md` |
 
 **Personal mode (pins, isochrone)**

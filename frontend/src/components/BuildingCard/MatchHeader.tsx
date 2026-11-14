@@ -1,4 +1,5 @@
 import { Stack, Text } from '@mantine/core'
+import { useTranslation } from 'react-i18next'
 import { BAND_LABEL, matchBand, type ConditionStatus, type MatchSummary } from '../../services/match/matchSummary'
 
 const MARK: Record<ConditionStatus, string> = { met: '✓', partly: '◐', missed: '✗', nodata: '–' }
@@ -21,6 +22,7 @@ interface Props {
 
 /** Top of the building card (TODO-050): is this a match, and how it meets each of the user's conditions. */
 export function MatchHeader({ score, summary, riskText, color, scoreMin, incomplete = false, compact = false }: Props) {
+  const { t } = useTranslation('card')
   const range = incomplete && scoreMin !== undefined && scoreMin < score ? `${scoreMin}–${score}` : String(score)
   return (
     <Stack gap={4} data-testid="match-header">
@@ -31,13 +33,12 @@ export function MatchHeader({ score, summary, riskText, color, scoreMin, incompl
       )}
       {incomplete && (
         <Text size="xs" c="dimmed" data-testid="incomplete-note">
-          Incomplete data: some of your conditions have no data here. The score is a range, from the worst case
-          (missing counts 0) to the best (missing ignored).
+          {t('match.incomplete')}
         </Text>
       )}
       {!compact && (
         <Text size="sm" fw={500}>
-          {summary.total > 0 ? `Meets ${summary.met} of ${summary.total} of your conditions` : 'No conditions are on'}
+          {summary.total > 0 ? t('match.meets', { met: summary.met, total: summary.total }) : t('match.noneOn')}
         </Text>
       )}
       {summary.rows.map((r) => (

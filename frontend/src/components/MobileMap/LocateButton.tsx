@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import * as maplibregl from 'maplibre-gl'
 import { IconCurrentLocation } from '@tabler/icons-react'
 import { useMapStore } from '../../store/mapStore'
@@ -10,18 +11,16 @@ import { LOCATE_NEAREST_BUILDING_M } from '../../services/phoneConfig'
 const NOTE_MS = 4000
 const LOCATE_ZOOM = 17
 
-const NOTES = {
-  outside: 'You are outside the map area.',
-  denied: 'Location is blocked. Allow it for this site in your browser settings.',
-  failed: 'Could not find your position. Try again outside or near a window.',
-  unsupported: 'This browser cannot tell where you are.',
-} as const
 
 /**
  * "Where am I" (TODO-062), asked only on tap. Flies to the position and, when a home is within
  * LOCATE_NEAREST_BUILDING_M metres, opens it in the sheet.
  */
 export function LocateButton() {
+  const { t } = useTranslation('panel')
+  const NOTES = {
+    outside: t('mobile.outside'), denied: t('mobile.denied'), failed: t('mobile.failed'), unsupported: t('mobile.unsupported'),
+  } as const
   const map = useMapStore((s) => s.map)
   const data = useBuildingData(true)
   const setSelectedBuilding = useStore((s) => s.setSelectedBuilding)
@@ -69,7 +68,7 @@ export function LocateButton() {
       <button
         type="button"
         className="round-button"
-        aria-label="Show my location"
+        aria-label={t('mobile.locate')}
         aria-busy={busy}
         disabled={busy || !map}
         onClick={locate}

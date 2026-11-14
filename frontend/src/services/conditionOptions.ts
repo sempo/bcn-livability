@@ -1,4 +1,6 @@
 import { features } from '../features'
+import i18n from '../i18n'
+import { formatNumber, lazyLabels } from '../i18n/format'
 import { ALL_LANDMARK_IDS } from './cityCore/landmarks'
 import { SERVICE_CATEGORIES } from './walkability/serviceCategories'
 import { ALL_AGE_ERA_IDS } from './buildings/buildingAge'
@@ -20,16 +22,10 @@ export const CONDITION_KEYS: readonly ConditionKey[] = [
 ]
 
 /** Short name for the "Your conditions" row. */
-export const SHORT_LABEL: Record<ConditionKey, string> = {
-  noise: 'Quiet', poiAccess: 'On foot', cityCore: 'Centre', openPrice: 'Budget',
-  localsOpinion: 'Locals', age: 'Buildings', risk: 'Risks',
-}
+export const SHORT_LABEL = lazyLabels('conditions:short', CONDITION_KEYS)
 
 /** Label of the "+ add" chip. */
-export const ADD_LABEL: Record<ConditionKey, string> = {
-  noise: 'Quiet', poiAccess: 'Everything on foot', cityCore: 'Close to the centre', openPrice: 'Within my budget',
-  localsOpinion: 'What locals think', age: 'Kind of building', risk: 'Avoid risks',
-}
+export const ADD_LABEL = lazyLabels('conditions:add', CONDITION_KEYS)
 
 export interface WordOption {
   value: number
@@ -44,24 +40,37 @@ export function parseNumberList(raw: string | undefined, fallback: readonly numb
   return parts.length > 0 && parts.every((p) => p !== '') && nums.every(Number.isFinite) ? nums : [...fallback]
 }
 
-/** 3500 → "3,500" (fixed grouping: the same text in every locale). */
+/** 3500 → "3,500" (in the page language: "3.500" in Spanish and Catalan). */
 function group(n: number): string {
-  return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+  return formatNumber(Math.round(n), { maximumFractionDigits: 0 })
 }
 
 export function formatEuroM2(v: number): string {
   return `€${group(v)}/m²`
 }
 
-const NOISE_NAMES: Record<number, string> = { 50: 'a courtyard', 58: 'a calm street', 65: 'normal city noise' }
-const LOCALS_NAMES: Record<number, string> = { 7: 'Happy', 7.5: 'Very happy', 8: 'Among the happiest' }
+/** Text of a word whose value is one of the known steps; undefined for any other value. */
+function named(ns: 'noiseName' | 'localsName', v: number): string | undefined {
+  const key = `conditions:${ns}.${String(v).replace('.', '_')}`
+  return i18n.exists(key) ? i18n.t(key as never) : undefined
+}
+const unit = (name: 'min' | 'db' | 'm2', value: number) => i18n.t(`conditions:unit.${name}`, { value })
+
+/** A step of a picker: its texts are read when asked for, so they follow the language. */
+function step(value: number, label: () => string, hint?: () => string | undefined): WordOption {
+  return {
+    value,
+    get label() { return label() },
+    get hint() { return hint?.() },
+  }
+}
 
 export const NOISE_OPTIONS: WordOption[] = parseNumberList(import.meta.env.VITE_QUIZ_NOISE_OPTIONS, [50, 58, 65])
-  .map((v) => ({ value: v, label: NOISE_NAMES[v] ?? `${v} dB`, hint: `${v} dB` }))
+  .map((v) => step(v, () => named('noiseName', v) ?? unit('db', v), () => unit('db', v)))
 export const WALK_OPTIONS: WordOption[] = parseNumberList(import.meta.env.VITE_QUIZ_WALK_OPTIONS, [5, 10, 15])
-  .map((v) => ({ value: v, label: `${v} min` }))
+  .map((v) => step(v, () => unit('min', v)))
 export const CENTRE_OPTIONS: WordOption[] = parseNumberList(import.meta.env.VITE_QUIZ_CENTRE_OPTIONS, [15, 30, 45])
-  .map((v) => ({ value: v, label: `${v} min` }))
+  .map((v) => step(v, () => unit('min', v)))
 
 // ---- budget: "A [70 m²] flat costs up to [€250,000] on average" ----
 // The data is the average sale price per m² of the area, so a budget for a flat of a given size is a price per
@@ -77,9 +86,9 @@ export const FLAT_AREA_RANGE = { min: 25, max: 250, step: 5 }
 export const BUDGET_RANGE = { min: 50_000, max: 1_500_000, step: 10_000 }
 
 export const FLAT_AREA_OPTIONS: WordOption[] = parseNumberList(import.meta.env.VITE_QUIZ_FLAT_AREA_OPTIONS, [50, 70, 90, 120])
-  .map((v) => ({ value: v, label: `${v} m²` }))
+  .map((v) => step(v, () => unit('m2', v)))
 export const BUDGET_OPTIONS: WordOption[] = parseNumberList(import.meta.env.VITE_QUIZ_BUDGET_OPTIONS, [150_000, 250_000, 350_000, 500_000])
-  .map((v) => ({ value: v, label: formatEuro(v) }))
+  .map((v) => step(v, () => formatEuro(v)))
 
 /** Price per m² that a budget for a flat of `areaM2` stands for (kept to cents). */
 export function priceForBudget(budgetEur: number, areaM2: number): number {
@@ -96,7 +105,7 @@ export function priceAfterAreaChange(pricePerM2: number, oldAreaM2: number, newA
   return Math.round(((pricePerM2 * oldAreaM2) / newAreaM2) * 100) / 100
 }
 export const LOCALS_OPTIONS: WordOption[] = parseNumberList(import.meta.env.VITE_QUIZ_LOCALS_OPTIONS, [7, 7.5, 8])
-  .map((v) => ({ value: v, label: v.toFixed(1), hint: LOCALS_NAMES[v] }))
+  .map((v) => step(v, () => formatNumber(v, { minimumFractionDigits: 1, maximumFractionDigits: 1 }), () => named('localsName', v)))
 
 /** The option with exactly this value; null = a custom value between the steps. */
 export function optionFor(options: readonly WordOption[], value: number): WordOption | null {
@@ -156,8 +165,9 @@ export interface SettingsPatch {
 
 export interface Profile {
   id: string
-  name: string
-  blurb: string
+  /** Only from an ENV override; otherwise the name and blurb come from the language files (`profileName()`). */
+  name?: string
+  blurb?: string
   /** Rows, in priority order. */
   order: ConditionKey[]
   /** Limits that differ from the defaults. */

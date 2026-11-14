@@ -1,4 +1,5 @@
 import { IconShare } from '@tabler/icons-react'
+import { useTranslation } from 'react-i18next'
 import { SearchBox } from '../SearchBox/SearchBox'
 import { useShare } from '../../hooks/useShare'
 
@@ -8,19 +9,20 @@ import { useShare } from '../../hooks/useShare'
  * The page heading stays for screen readers and search engines.
  */
 export function MobileTopBar({ onAbout }: { onAbout: () => void }) {
+  const { t } = useTranslation(['common', 'panel'])
   const { share, message } = useShare()
   return (
     <div className="mobile-top">
-      <h1 className="visually-hidden">Barcelona livability map</h1>
+      <h1 className="visually-hidden">{t('brand.title')}</h1>
       <SearchBox
         pill
         leftSlot={
-          <button type="button" className="pill-button pill-mark" aria-label="About Barcelona livability map" onClick={onAbout}>
+          <button type="button" className="pill-button pill-mark" aria-label={t('panel:mobile.aboutMap')} onClick={onAbout}>
             <img src={`${import.meta.env.BASE_URL}time2map-mark.svg`} alt="" />
           </button>
         }
         rightSlot={
-          <button type="button" className="pill-button" aria-label="Share this map" onClick={share}>
+          <button type="button" className="pill-button" aria-label={t('brand.share')} onClick={share}>
             <IconShare size={20} stroke={2} />
           </button>
         }

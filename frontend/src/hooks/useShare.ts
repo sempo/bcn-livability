@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import i18n from '../i18n'
 import { useStore, URL_DEFAULTS, settingsOf } from '../store'
 import { encodeConfig, shareUrl } from '../services/urlConfig'
 import { PHONE_QUERY } from '../services/phoneConfig'
@@ -28,7 +29,7 @@ export function useShare(options: { url?: () => string; copied?: string } = {}) 
     const phone = typeof window.matchMedia === 'function' && window.matchMedia(PHONE_QUERY).matches
     if (phone && typeof navigator.share === 'function') {
       try {
-        await navigator.share({ title: 'Barcelona livability map', url })
+        await navigator.share({ title: i18n.t('brand.title'), url })
         return
       } catch (err) {
         if (err instanceof DOMException && err.name === 'AbortError') return // the person closed the sheet
@@ -36,9 +37,9 @@ export function useShare(options: { url?: () => string; copied?: string } = {}) 
     }
     try {
       await navigator.clipboard.writeText(url)
-      say(options.copied ?? 'Link copied. It opens your map with your conditions.')
+      say(options.copied ?? i18n.t('share.copied'))
     } catch {
-      say('Could not copy. Copy the link from the address bar.')
+      say(i18n.t('share.copyFailed'))
     }
   }
 

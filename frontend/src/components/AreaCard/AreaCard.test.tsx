@@ -45,10 +45,10 @@ describe('AreaCard (TODO-064)', () => {
   })
   afterEach(cleanup)
 
-  it('shows the name, the description and the numbers', () => {
+  it('shows the name, the description and the numbers', async () => {
     renderCard()
     expect(screen.getByText('la Vila de Gràcia')).toBeInTheDocument()
-    expect(screen.getByText(/Formerly an independent town/)).toBeInTheDocument()
+    expect(await screen.findByText(/Formerly an independent town/)).toBeInTheDocument()
     expect(screen.getByText('71%')).toBeInTheDocument()
     expect(screen.getByText('of 1,240 homes are a good match')).toBeInTheDocument()
     expect(screen.getByText(/22% are a great match/)).toBeInTheDocument()

@@ -1,3 +1,6 @@
+import { Trans, useTranslation } from 'react-i18next'
+import i18n from '../../i18n'
+import { formatNumber } from '../../i18n/format'
 import { useStore } from '../../store'
 import { useBudgetShares } from '../../hooks/useBudgetShares'
 import {
@@ -42,11 +45,12 @@ function LimitWord({ field, options, title, note, format }: {
 
 /** "70 m²": the size of the flat the budget is for. Another size keeps the budget in euros. */
 function FlatAreaWord() {
+  const { t } = useTranslation('editor')
   const area = useStore((s) => s.flatAreaM2)
   const setFlatArea = useStore((s) => s.setFlatArea)
-  const format = (v: number) => `${v} m²`
+  const format = (v: number) => i18n.t('conditions:unit.m2', { value: v })
   return (
-    <WordPicker label={optionFor(FLAT_AREA_OPTIONS, area)?.label ?? format(area)} title="How big is the flat?">
+    <WordPicker label={optionFor(FLAT_AREA_OPTIONS, area)?.label ?? format(area)} title={t('sentence.areaTitle')}>
       {(close) => (
         <OptionList
           options={FLAT_AREA_OPTIONS}
@@ -64,6 +68,7 @@ function FlatAreaWord() {
  * m², so the limit that is stored is the budget ÷ the size of the flat.
  */
 function BudgetWord() {
+  const { t } = useTranslation('editor')
   const conditions = useStore((s) => s.conditions)
   const setConditions = useStore((s) => s.setConditions)
   const area = useStore((s) => s.flatAreaM2)
@@ -71,13 +76,13 @@ function BudgetWord() {
   const budget = budgetFor(conditions.priceMaxEurM2, area)
   const set = (b: number) => setConditions({ ...conditions, priceMaxEurM2: priceForBudget(b, area) })
   const options = BUDGET_OPTIONS.map((o) => ({
-    ...o, hint: share ? `≈ ${share(priceForBudget(o.value, area))}% of homes` : undefined,
+    ...o, hint: share ? t('sentence.budgetHint', { share: share(priceForBudget(o.value, area)) }) : undefined,
   }))
   return (
     <WordPicker
       label={optionFor(BUDGET_OPTIONS, budget)?.label ?? formatEuro(budget)}
-      title="What a flat of this size costs on average in the area (area price per m² × size)"
-      note={`Homes in pricier areas lose points; ${PRICE_FALLOFF_PCT}% over scores zero.`}
+      title={t('sentence.budgetTitle')}
+      note={t('sentence.budgetNote', { pct: PRICE_FALLOFF_PCT })}
     >
       {(close) => (
         <OptionList
@@ -91,24 +96,25 @@ function BudgetWord() {
   )
 }
 
-const dB = (v: number) => `${v} dB`
-const min = (v: number) => `${v} min`
+const dB = (v: number) => i18n.t('conditions:unit.db', { value: v })
+const min = (v: number) => i18n.t('conditions:unit.min', { value: v })
 
 function ServicesWord() {
+  const { t } = useTranslation('editor')
   const selected = useStore((s) => s.enabledWalkCategories)
   const set = useStore((s) => s.setEnabledWalkCategories)
   const all = SERVICE_CATEGORIES.every((c) => selected.includes(c.id))
-  const label = all ? 'Everyday services' : selected.length === 1
-    ? SERVICE_CATEGORIES.find((c) => c.id === selected[0])?.label ?? 'My service'
-    : `My ${selected.length} services`
+  const label = all ? t('sentence.servicesAll') : selected.length === 1
+    ? SERVICE_CATEGORIES.find((c) => c.id === selected[0])?.label ?? t('sentence.servicesOne')
+    : t('sentence.servicesMany', { count: selected.length })
   return (
-    <WordPicker label={label} title="Which services should be close?">
+    <WordPicker label={label} title={t('sentence.servicesTitle')}>
       {() => (
         <CheckList
           items={SERVICE_CATEGORIES.map((c) => ({ id: c.id, label: c.label }))}
           selected={selected}
           onChange={set}
-          allLabel="All services"
+          allLabel={t('sentence.servicesAllBox')}
         />
       )}
     </WordPicker>
@@ -116,20 +122,21 @@ function ServicesWord() {
 }
 
 function PlacesWord() {
+  const { t } = useTranslation('editor')
   const selected = useStore((s) => s.enabledLandmarkIds)
   const set = useStore((s) => s.setEnabledLandmarkIds)
   const all = LANDMARKS.every((l) => selected.includes(l.id))
-  const label = all ? 'The centre' : selected.length === 1
-    ? LANDMARKS.find((l) => l.id === selected[0])?.name ?? 'My place'
-    : `My ${selected.length} places`
+  const label = all ? t('sentence.placesAll') : selected.length === 1
+    ? LANDMARKS.find((l) => l.id === selected[0])?.name ?? t('sentence.placesOne')
+    : t('sentence.placesMany', { count: selected.length })
   return (
-    <WordPicker label={label} title="Close to which places?">
+    <WordPicker label={label} title={t('sentence.placesTitle')}>
       {() => (
         <CheckList
           items={LANDMARKS.map((l) => ({ id: l.id, label: l.name }))}
           selected={selected}
           onChange={set}
-          allLabel="The whole centre (all 13)"
+          allLabel={t('sentence.placesAllBox')}
         />
       )}
     </WordPicker>
@@ -137,38 +144,39 @@ function PlacesWord() {
 }
 
 function ErasWord() {
+  const { t } = useTranslation('editor')
   const selected = useStore((s) => s.ageEras)
   const set = useStore((s) => s.setAgeEras)
   const all = AGE_ERAS.every((e) => selected.includes(e.id))
-  const label = all ? 'any era' : selected.length === 1
-    ? AGE_ERAS.find((e) => e.id === selected[0])?.years ?? 'one era'
-    : `${selected.length} eras`
+  const label = all ? t('sentence.erasAll') : selected.length === 1
+    ? AGE_ERAS.find((e) => e.id === selected[0])?.years ?? t('sentence.erasOne')
+    : t('sentence.erasMany', { count: selected.length })
   return (
-    <WordPicker label={label} title="Which buildings do you like?">
+    <WordPicker label={label} title={t('sentence.erasTitle')}>
       {() => (
         <CheckList
           items={AGE_ERAS.map((e) => ({ id: e.id, label: e.name, hint: e.years }))}
           selected={selected}
           onChange={set}
-          allLabel="Any era"
+          allLabel={t('sentence.erasAllBox')}
         />
       )}
     </WordPicker>
   )
 }
 
-const RISK_CHOICES: Choice<'avoid' | 'strong'>[] = [
-  { value: 'avoid', label: 'Avoid' },
-  { value: 'strong', label: 'Strongly avoid' },
-]
-
 function RiskWord() {
+  const { t } = useTranslation('editor')
+  const RISK_CHOICES: Choice<'avoid' | 'strong'>[] = [
+    { value: 'avoid', label: t('sentence.avoid') },
+    { value: 'strong', label: t('sentence.strong') },
+  ]
   const strengths = useStore((s) => s.compositeRiskStrengths)
   const set = useStore((s) => s.setCompositeRiskStrengths)
   const level = riskLevel(strengths)
-  const label = level === 'strong' ? 'Strongly avoid' : level === 'custom' ? 'Custom' : 'Avoid'
+  const label = level === 'strong' ? t('sentence.strong') : level === 'custom' ? t('sentence.custom') : t('sentence.avoid')
   return (
-    <WordPicker label={label} title="How much should flood and wildfire risk count?">
+    <WordPicker label={label} title={t('sentence.riskTitle')}>
       {(close) => (
         <OptionList
           options={RISK_CHOICES}
@@ -180,38 +188,42 @@ function RiskWord() {
   )
 }
 
-/** One condition as a sentence whose highlighted words are the controls (TODO-031). */
+/**
+ * One condition as a sentence whose highlighted words are the controls (TODO-031). The sentence is one string of
+ * the language files with the controls as tags (`<limit/>`), so each language puts them where its grammar wants.
+ */
 export function SentenceRow({ condition }: { condition: ConditionKey }) {
+  useTranslation('editor') // render again when the language changes
+  const sentence = (key: string, components: Record<string, React.ReactElement>) => (
+    <p className="sentence"><Trans i18nKey={`sentence.${key}` as never} ns="editor" components={components} /></p>
+  )
   switch (condition) {
     case 'noise':
-      return (
-        <p className="sentence">
-          No louder than <LimitWord field="noiseMaxDb" options={NOISE_OPTIONS} title="How quiet should it be outside your window?" format={dB} /> outside my window
-        </p>
-      )
+      return sentence('noise', {
+        limit: <LimitWord field="noiseMaxDb" options={NOISE_OPTIONS} title={i18n.t('editor:sentence.noiseTitle')} format={dB} />,
+      })
     case 'poiAccess':
-      return (
-        <p className="sentence">
-          <ServicesWord /> within <LimitWord field="walkMaxMin" options={WALK_OPTIONS} title="How far would you walk for daily errands?" format={min} /> on foot
-        </p>
-      )
+      return sentence('poiAccess', {
+        services: <ServicesWord />,
+        limit: <LimitWord field="walkMaxMin" options={WALK_OPTIONS} title={i18n.t('editor:sentence.walkTitle')} format={min} />,
+      })
     case 'cityCore':
-      return (
-        <p className="sentence">
-          <PlacesWord /> within <LimitWord field="cityCoreMaxMin" options={CENTRE_OPTIONS} title="How close to the centre?" format={min} /> on foot
-        </p>
-      )
+      return sentence('cityCore', {
+        places: <PlacesWord />,
+        limit: <LimitWord field="cityCoreMaxMin" options={CENTRE_OPTIONS} title={i18n.t('editor:sentence.centreTitle')} format={min} />,
+      })
     case 'openPrice':
-      return <p className="sentence">A <FlatAreaWord /> flat costs up to <BudgetWord /> on average</p>
+      return sentence('openPrice', { area: <FlatAreaWord />, budget: <BudgetWord /> })
     case 'localsOpinion':
-      return (
-        <p className="sentence">
-          Residents rate the area at least <LimitWord field="localsMin" options={LOCALS_OPTIONS} title="How happy should residents be with the area?" format={(v) => v.toFixed(1)} /> out of 10
-        </p>
-      )
+      return sentence('localsOpinion', {
+        limit: (
+          <LimitWord field="localsMin" options={LOCALS_OPTIONS} title={i18n.t('editor:sentence.localsTitle')}
+            format={(v) => formatNumber(v, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} />
+        ),
+      })
     case 'age':
-      return <p className="sentence">Built in <ErasWord /></p>
+      return sentence('age', { eras: <ErasWord /> })
     case 'risk':
-      return <p className="sentence"><RiskWord /> flood and wildfire risk</p>
+      return sentence('risk', { level: <RiskWord /> })
   }
 }

@@ -107,7 +107,7 @@ before a launch post (B1 is already done).
 ### Later (unordered)
 | Feature | Idea |
 |---|---|
-| TODO-028 i18n | EN / ES, language in the URL prefix |
+| 065 i18n | EN / ES / CA, any number of languages, `?lang=` in the URL, texts in `frontend/src/locales/` |
 | TODO-029 CTA subscribe / contact | One unobtrusive CTA: email updates or time2map attribution |
 | TODO-030 Landing / about page | "What is this?" page for cold visitors |
 | TODO-033 Multi-city | Madrid, Valencia, Málaga, Palma; needs a non-Barcelona name and a city-agnostic pipeline |

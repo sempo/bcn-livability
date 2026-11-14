@@ -1,3 +1,5 @@
+import i18n from '../../i18n'
+import { formatNumber } from '../../i18n/format'
 import { useEffect } from 'react'
 import type { FeatureCollection } from 'geojson'
 import * as maplibregl from 'maplibre-gl'
@@ -24,7 +26,7 @@ export const AREAS_LABEL_ID = 'areas-label'
 const LAYER_IDS = [AREAS_FILL_ID, AREAS_HATCH_ID, AREAS_LINE_ID, AREAS_LABEL_ID]
 
 /** "1,240" — fixed grouping, the same text in every locale. */
-const group = (n: number) => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+const group = (n: number) => formatNumber(n, { maximumFractionDigits: 0 })
 
 export function AreasLayer() {
   const map = useMap()
@@ -103,7 +105,7 @@ export function AreasLayer() {
       if (!rank) return
       popup = new maplibregl.Popup({ closeButton: false, closeOnClick: false, offset: 8, className: 'match-tooltip' })
         .setLngLat(e.lngLat)
-        .setText(`${rank.name}: ${Math.round(rank.shareGood)}% good match · ${group(rank.n)} homes`)
+        .setText(i18n.t('panel:tip.area', { count: rank.n, name: rank.name, pct: Math.round(rank.shareGood), n: group(rank.n) }))
         .addTo(map)
     }
     const onLeave = () => { map.getCanvas().style.cursor = ''; hide() }

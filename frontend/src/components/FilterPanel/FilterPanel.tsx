@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Divider, Modal, Paper, Slider, Stack, Switch, Table, Tabs, Text } from '@mantine/core'
 import { IconInfoCircle } from '@tabler/icons-react'
 import { useStore } from '../../store'
@@ -91,6 +92,7 @@ export function FilterPanel({ embedded = false }: { embedded?: boolean }) {
     noiseLayerVisible, setNoiseLayerVisible,
     mapAttribution,
   } = useStore()
+  const { t } = useTranslation('panel')
   const [isoModalOpen, setIsoModalOpen] = useState(false)
   const tab = useSheetStore((s) => s.tab)
   const setTab = useSheetStore((s) => s.setTab)
@@ -109,8 +111,8 @@ export function FilterPanel({ embedded = false }: { embedded?: boolean }) {
       {features.areas && (
         <Tabs value={tab} onChange={(v) => setTab(v === 'areas' ? 'areas' : 'settings')} mb="sm" style={{ flex: 'none' }}>
           <Tabs.List grow>
-            <Tabs.Tab value="settings">Settings</Tabs.Tab>
-            <Tabs.Tab value="areas">Your areas</Tabs.Tab>
+            <Tabs.Tab value="settings">{t('tabs.settings')}</Tabs.Tab>
+            <Tabs.Tab value="areas">{t('tabs.areas')}</Tabs.Tab>
           </Tabs.List>
         </Tabs>
       )}
