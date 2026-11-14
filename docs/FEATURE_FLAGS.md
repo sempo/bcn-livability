@@ -21,7 +21,7 @@ They are build-time values: changing one needs a rebuild or a dev-server restart
 | `VITE_FEATURE_ONBOARDING` | first-visit panel (profiles + one sentence per condition), and the new filter panel (sentences, map layers, best areas, advanced) instead of the old controls (031, 052) | **on** | public; remove the flag and the old `CompositeControls` / `ClimateLayerControls` code next |
 | `VITE_FEATURE_AREAS` | "Your areas" tab (ranked list), `AreasLayer` (area view below z13), per-condition scores and the area ranking after each rescoring, dots only from z13 (051) | **on** | public |
 | `VITE_FEATURE_FACADE_PHOTO` | Catastro facade photo in the building card (hotlinked; the service states no terms of use) | off | TBD |
-| `VITE_COMMERCIAL_USE` | commercial launch: turns off street flooding (layer and penalty), TMB metro and FGC until their licences are confirmed (TODO-066) | off | off until licences are confirmed |
+| `VITE_COMMERCIAL_USE` | commercial launch: turns off street flooding (layer and penalty) and the FGC lines until their licences are confirmed (TODO-066) | off | off until licences are confirmed |
 
 The "Inside commute zone, outside exclusion zones" option of best zones is shown only when `ISOCHRONE` or
 `EXCLUSIONS` is on.

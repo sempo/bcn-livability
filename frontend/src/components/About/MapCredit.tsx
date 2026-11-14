@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { MAP_CREDIT, sourceById } from '../../services/dataSources'
+import { MAP_CREDIT } from '../../services/mapCredit'
 import { useAboutStore } from '../../store/aboutStore'
 
 /**
@@ -13,7 +13,7 @@ export function MapCredit({ className = '' }: { className?: string }) {
     <p className={`map-credit ${className}`.trim()} aria-label={t('credit.label')}>
       {MAP_CREDIT.map((part) => (
         <span key={part.source}>
-          <a href={sourceById(part.source)?.url} target="_blank" rel="noopener noreferrer">{part.text}</a>
+          <a href={part.url} target="_blank" rel="noopener noreferrer">{part.text}</a>
           {' · '}
         </span>
       ))}

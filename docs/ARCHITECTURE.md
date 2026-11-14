@@ -558,4 +558,4 @@ See `docs/ROADMAP.md`.
 - `services/dataSources.ts` is the one registry of sources (publisher, licence, link, edition, `commercial` flag). The map credit (`components/About/MapCredit.tsx`), the dialog (`About/AboutDialog.tsx`, state in `store/aboutStore.ts`) and the cards read from it. Add a source there when the code adds one; `dataSources.test.ts` fails when a `*Layer.tsx` with an `attribution` has no entry.
 - Texts of the dialog and the in-context credits: `locales/<lang>/legal.json`.
 - Fetch dates: `buildings-meta.json` → `sources` (written by `build_building_tiles.py` from the dates of its input files); without it the dialog shows the build date.
-- `VITE_COMMERCIAL_USE=true` turns off street flooding (layer, penalty), TMB and FGC.
+- `VITE_COMMERCIAL_USE=true` turns off street flooding (layer, penalty) and FGC.
