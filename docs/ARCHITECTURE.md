@@ -444,7 +444,7 @@ Outputs in `frontend/public/` are committed.
 | `climate_risk.py` (helpers for step 2c + view tiles) | `flood-zones.pmtiles`, `wildfire.pmtiles`, `street-flooding.pmtiles` |
 | `prepare-noise-data.sh` (BCN 2022 Total Lden isophones → tippecanoe z10–16) | `noise.pmtiles` |
 | `extract_poi.py` (OSM PBF → POI) | `frontend/public/barcelona_poi.pmtiles` |
-| `prepare-areas-data.sh` + `_amb_muni_url.py` | `areas.geojson` |
+| `prepare-areas-data.sh` | `areas.geojson` |
 | `fgc-gtfs-to-geojson.mjs` | `frontend/public/fgc-*.geojson` |
 | `prepare-landmark-geometries.py` | `landmark-geometries.json`: not read by the app (see "Known leftovers") |
 | `har_to_geojson.py` (gitignored, local only) | `idealista_prices.geojson` |

@@ -233,7 +233,7 @@ export function Map() {
       </Suspense>
       {transitReady && <MetroLayer />}
       {/* FGC's licence is not stated: off for commercial use (TODO-066) */}
-      {transitReady && !features.commercialUse && <FgcLayer />}
+      {transitReady && <FgcLayer />}
       {poiEver && <PoiLayer />}
       <Suspense fallback={null}>
         {features.pins && <PinAccuracyLayer />}
