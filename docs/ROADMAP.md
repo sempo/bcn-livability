@@ -87,7 +87,7 @@ A link preview (Open Graph / Twitter card) and a downloadable image showing the 
 barri, the match band and score, the conditions that were met, and the map around it. Needs a way to render an
 image from the URL state (053): a small image service behind the CDN, or pre-rendered images for the ~70 barris
 plus a client-side canvas for an address. Static hosting cannot set per-URL meta tags, so this depends on A1.
-Also a "Save image" / native share button on the building card and the area card.
+Also a "Save image" / native share button on the building card and the area card (the area card and the building link: 064, done 2026-11-14).
 
 #### L2. Language switch (required)
 

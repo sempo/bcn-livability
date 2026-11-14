@@ -24,6 +24,13 @@ Synced with the code on 2026-11-11 (`frontend/src/main.tsx`, `index.css`, layer 
 | Exclusion zones | `#555555`, fill 28 %, outline 1.5 px |
 | Noise, flood, wildfire, street flooding | official palettes of each source (see the legend components) |
 
+## Area card (TODO-064)
+
+Same card as the building card (300 px at the top right on desktop, the bottom sheet on a phone). Order: description,
+the share of good homes (big number, a bar in the band colour, "of N homes are a good match"), the great-match line,
+"Strongest on", a note for incomplete data, then Save image and Share side by side. Text stays dark: the band colour is
+only on the bar, pale band colours do not read as text.
+
 ## Share pictures (TODO-063)
 
 A white panel over the map, the same type and colours as the app. In priority order: the score on the colour of its band

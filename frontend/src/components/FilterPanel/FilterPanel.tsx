@@ -103,7 +103,7 @@ export function FilterPanel({ embedded = false }: { embedded?: boolean }) {
       // The tabs stay put; only the body below them scrolls (the panel on desktop). In the phone's sheet the sheet scrolls.
       style={embedded
         ? { background: 'transparent', boxShadow: 'none' }
-        : { minHeight: 0, display: 'flex', flexDirection: 'column', maxHeight: 'calc(100dvh - 130px)' }}
+        : { minHeight: 0, display: 'flex', flexDirection: 'column', flex: '0 1 auto', overflow: 'hidden' }}
     >
       {features.isochrone && <IsochroneInfoModal opened={isoModalOpen} onClose={() => setIsoModalOpen(false)} />}
       {features.areas && (

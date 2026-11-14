@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { useStore } from '../../store'
-import { useSheetStore } from '../../store/sheetStore'
 import { hasConditions } from '../../services/composite/compositeScore'
 import { useAreaJoin } from '../../hooks/useAreaJoin'
 import { selectAreaFeature } from '../../services/areas/areaSelect'
@@ -59,9 +58,8 @@ export function AreasList() {
   const pick = (r: AreaRank) => {
     const feature = join?.get(r.index)
     if (!feature) return
-    selectAreaFeature(feature)
-    // On a phone the sheet drops to peek, so the area is on the map and its name is in the sheet (TODO-062).
-    useSheetStore.getState().pickArea({ name: r.name, share: Math.round(r.shareGood) })
+    // The card of the area opens (TODO-064); on a phone it sits in the sheet at peek, so the area stays on the map.
+    selectAreaFeature(feature, r.index)
   }
   return (
     <div className="areas-list">

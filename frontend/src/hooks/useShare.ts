@@ -7,9 +7,9 @@ const TOAST_MS = 3000
 
 /**
  * Share button (TODO-053): the system share sheet on a phone, a copied link elsewhere. `message` is a short note
- * to show for a moment, or null.
+ * to show for a moment, or null. A card passes its own link (`url`) and note (`copied`) (TODO-064).
  */
-export function useShare() {
+export function useShare(options: { url?: () => string; copied?: string } = {}) {
   const [message, setMessage] = useState<string | null>(null)
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   useEffect(() => () => clearTimeout(timer.current), [])
@@ -22,7 +22,9 @@ export function useShare() {
 
   async function share() {
     // The settings as they are now, not as the address shows them (it follows after a short pause).
-    const url = shareUrl(window.location.href, encodeConfig(settingsOf(useStore.getState()), URL_DEFAULTS))
+    const url = options.url
+      ? options.url()
+      : shareUrl(window.location.href, encodeConfig(settingsOf(useStore.getState()), URL_DEFAULTS))
     const phone = typeof window.matchMedia === 'function' && window.matchMedia(PHONE_QUERY).matches
     if (phone && typeof navigator.share === 'function') {
       try {
@@ -34,7 +36,7 @@ export function useShare() {
     }
     try {
       await navigator.clipboard.writeText(url)
-      say('Link copied. It opens your map with your conditions.')
+      say(options.copied ?? 'Link copied. It opens your map with your conditions.')
     } catch {
       say('Could not copy. Copy the link from the address bar.')
     }

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Button, Text } from '@mantine/core'
 import { IconPhoto } from '@tabler/icons-react'
 import { settingsOf, URL_DEFAULTS, useStore } from '../../store'
@@ -16,9 +16,13 @@ const NOTE: Record<Status, string | null> = {
  * "Save image" (TODO-063): the picture of this building's result, for a message or a post. `build` makes the model
  * of the picture from the card's data and the profile (null when the settings are not a profile).
  */
-export function SaveImageButton({ lngLat, build }: {
+export function SaveImageButton({ lngLat, build, link, extra }: {
   lngLat: [number, number]
   build: (profile: ReturnType<typeof profileOf>) => ShareModel
+  /** The link that goes with the picture on a phone's share sheet; the map's own address when absent. */
+  link?: () => string
+  /** Sits next to the button in the same row (the card's Share button). */
+  extra?: ReactNode
 }) {
   const [status, setStatus] = useState<Status>('idle')
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
@@ -34,7 +38,7 @@ export function SaveImageButton({ lngLat, build }: {
       // The drawing code is loaded on the first click, not at start (the bundle budget, TODO-058).
       const { deliverImage, renderShareBlob } = await import('../../services/shareImage/shareImageBrowser')
       const blob = await renderShareBlob(map, lngLat, model)
-      const url = shareUrl(window.location.href, encodeConfig(settingsOf(state), URL_DEFAULTS))
+      const url = link ? link() : shareUrl(window.location.href, encodeConfig(settingsOf(state), URL_DEFAULTS))
       const result = await deliverImage(blob, model.place, url)
       setStatus(result === 'cancelled' ? 'idle' : 'done')
     } catch (err) {
@@ -54,6 +58,7 @@ export function SaveImageButton({ lngLat, build }: {
       >
         Save image
       </Button>
+      {extra}
       {note && <Text size="xs" c={status === 'failed' ? 'red.7' : 'dimmed'} role="status">{note}</Text>}
     </div>
   )

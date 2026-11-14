@@ -83,6 +83,8 @@ export interface AppState {
   onboardingOpen: boolean
   /** Row (= feature id) of the clicked building; null = no card. */
   selectedBuilding: number | null
+  /** Index (`AreaRank.index`) of the area whose card is open (TODO-064); never together with a building. */
+  selectedArea: number | null
   /** Latest score of every building (by row), set by BuildingsLayer; Best zones average it per cell. */
   buildingScores: Uint8Array | null
   /** Areas ranked by how many of their homes fit (TODO-051), set by BuildingsLayer after each rescoring. */
@@ -123,6 +125,7 @@ export interface AppState {
   completeOnboarding: () => void
   openOnboarding: () => void
   setSelectedBuilding: (row: number | null) => void
+  setSelectedArea: (index: number | null) => void
   setBuildingScores: (scores: Uint8Array | null) => void
   setAreaRanks: (ranks: AreaRank[] | null) => void
 }
@@ -531,7 +534,12 @@ export const useStore = create<AppState>((set, get) => {
     },
     openOnboarding: () => set({ onboardingOpen: true }),
     selectedBuilding: null,
-    setSelectedBuilding: (selectedBuilding) => set({ selectedBuilding }),
+    // A building and an area never have a card at the same time: the one picked last stays.
+    setSelectedBuilding: (selectedBuilding) =>
+      set(selectedBuilding === null ? { selectedBuilding } : { selectedBuilding, selectedArea: null }),
+    selectedArea: null,
+    setSelectedArea: (selectedArea) =>
+      set(selectedArea === null ? { selectedArea } : { selectedArea, selectedBuilding: null }),
     buildingScores: null,
     setBuildingScores: (buildingScores) => set({ buildingScores }),
     areaRanks: null,

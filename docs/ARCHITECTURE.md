@@ -91,6 +91,7 @@ src/
 │   │   │                          "Custom…" (slider, ranges from `CONDITION_RANGES`), or a checklist (services, places, eras)
 │   │   ├── AddConditionChips.tsx, MatchBar.tsx   conditions not on yet; share of homes per match band
 │   ├── AreasLayer/                area view below z13 (TODO-051): barris and municipalities coloured by mean score, hover, click
+│   ├── AreaCard/                  card of a clicked area (TODO-064): description, shares, Save image, Share (lazy-loaded)
 │   ├── AreasList/                 "Your areas": ranked list (top 10, show all), click flies to the area
 │   ├── Onboarding/                OnboardingPanel (profiles → sentence → "Show me the map"), PresetCards
 │   ├── FilterPanel/
@@ -174,6 +175,8 @@ src/
 │   ├── shareImage/            share pictures (TODO-063): shareImageModel.ts (what a picture says, pure), shareImageDraw.ts (Canvas 2D,
 │   │                          browser and Node), captureMap.ts + shareImageBrowser.ts ("Save image": live-map snapshot, share sheet /
 │   │                          download), shareImageAreaMap.ts + shareImageRender.ts + shareImageBuild.ts (build-time pictures and pages)
+│   ├── buildingLink.ts        the link to one building (`b=lng,lat`, TODO-064); areas/areaLink.ts: the link of an area card;
+│   │                          areas/areaDescriptions.ts: the barri texts, by language; areas/areaCardText.ts: the numbers line
 │   ├── presets.ts             the four profiles (Family, Remote worker, City life, Investor) + JSON overrides from ENV
 │   ├── buildings/
 │   │   ├── buildingData.ts    loads buildings-meta.json, the scores file, then the positions file → decoded Float32 columns

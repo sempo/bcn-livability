@@ -65,6 +65,7 @@ in the feature files; the order and dependencies of the planned work are in [ROA
 | 061 | No conditions: neutral map with a hint |
 | 062 | Mobile web: one bottom sheet (peek / half / full) over a live map, search pill, "Where am I", touch-sized controls |
 | 063 | Share image of the result: "Save image" on the building card (4:5), link-preview pictures and pages for the home page and every barri × profile |
+| 064 | Area card (click on a barri or a row of "Your areas"): description, how many homes fit, Save image and Share; Share on the building card opens that exact building |
 
 ### Branding and sharing
 | # | Feature |

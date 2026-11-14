@@ -100,6 +100,7 @@ body {
   gap: 8px;
   width: 264px;
   max-width: calc(100vw - 24px);
+  /* The column is capped to the viewport; the layers panel inside shrinks (flex) and scrolls its own body. */
   max-height: calc(100dvh - 24px);
 }
 
@@ -1377,3 +1378,9 @@ html, body { overscroll-behavior: none; }
 @media (max-width: 768px) {
   .save-image__button { min-height: 44px; }
 }
+
+/* Area card (TODO-064): the share of good homes as a bar under the big number. */
+.area-card__bar { height: 6px; border-radius: 3px; background: #e9ecef; overflow: hidden; }
+.area-card__bar i { display: block; height: 100%; border-radius: 3px; }
+/* The caption sits on the bottom line of the big number; when it wraps, its last line stays level with the number. */
+.area-card__headline { display: flex; gap: 8px; align-items: flex-end; align-items: last baseline; }

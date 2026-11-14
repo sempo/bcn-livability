@@ -122,6 +122,11 @@ export function shareFileName(place: string, ext: 'png' | 'jpg'): string {
   return `barcelona-livability${slug ? `-${slug}` : ''}.${ext}`
 }
 
+/** URL-safe name of an area: lower case, no accents; the code is added when two areas would share a name. */
+export function areaSlug(name: string): string {
+  return shareFileName(name, 'jpg').replace(/^barcelona-livability-?/, '').replace(/\.jpg$/, '') || 'area'
+}
+
 /**
  * Breaks `text` at spaces into lines no wider than `maxWidth` (`measure` gives the width of a string). A word wider
  * than the line stays on its own line. Past `maxLines` the last line is cut with an ellipsis.

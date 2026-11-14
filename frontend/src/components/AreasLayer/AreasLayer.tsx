@@ -110,7 +110,7 @@ export function AreasLayer() {
     const onClick = (e: maplibregl.MapLayerMouseEvent) => {
       const id = e.features?.[0]?.id
       const feature = typeof id === 'number' ? join.get(id) : undefined
-      if (feature) selectAreaFeature(feature)
+      if (feature) selectAreaFeature(feature, id as number)
     }
     map.on('mousemove', AREAS_FILL_ID, onMove)
     map.on('mouseleave', AREAS_FILL_ID, onLeave)

@@ -292,3 +292,16 @@ describe('conditions (049)', () => {
     expect(JSON.parse(localStorage.getItem('bcn_conditions')!).walkMaxMin).toBe(7)
   })
 })
+
+describe('selected building and area (TODO-064)', () => {
+  it('keeps only the one picked last', () => {
+    const s = useStore.getState()
+    s.setSelectedBuilding(5)
+    s.setSelectedArea(3)
+    expect(useStore.getState()).toMatchObject({ selectedArea: 3, selectedBuilding: null })
+    useStore.getState().setSelectedBuilding(7)
+    expect(useStore.getState()).toMatchObject({ selectedArea: null, selectedBuilding: 7 })
+    useStore.getState().setSelectedBuilding(null)
+    expect(useStore.getState().selectedBuilding).toBeNull()
+  })
+})

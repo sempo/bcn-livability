@@ -69,9 +69,9 @@ describe('pageTexts / pageHtml', () => {
     expect(html).toContain('og:image:width" content="1200"')
   })
   it('sends people to the map with the profile and the view', () => {
-    const map = 'https://livability.time2map.com/?c=preset:family&amp;zoom=14.00&amp;cx=2.15812&amp;cy=41.40312'
+    const map = 'https://livability.time2map.com/?c=preset:family&amp;zoom=14.00&amp;cx=2.15812&amp;cy=41.40312&amp;a=31'
     expect(html).toContain(`http-equiv="refresh" content="0; url=${map}"`)
-    expect(html).toContain('location.replace("https://livability.time2map.com/?c=preset:family&zoom=14.00&cx=2.15812&cy=41.40312")')
+    expect(html).toContain('location.replace("https://livability.time2map.com/?c=preset:family&zoom=14.00&cx=2.15812&cy=41.40312&a=31")')
   })
   it('keeps the path of a fork', () => {
     const fork = pageHtml(page, 'https://sempo.github.io/bcn-livability', { lng: 2, lat: 41, zoom: 14 })
