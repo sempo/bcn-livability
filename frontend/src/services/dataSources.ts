@@ -150,8 +150,8 @@ export const DATA_SOURCES: readonly DataSource[] = [
     id: 'tmb',
     publisher: 'Transports Metropolitans de Barcelona (TMB)',
     dataset: 'Metro lines and stations',
-    licence: { name: 'TMB developer licence (per application)', url: 'https://developer.tmb.cat/' },
-    url: 'https://developer.tmb.cat/', layers: ['MetroLayer'], commercial: 'needs-terms', offInCommercial: true,
+    licence: { name: 'TMB open-data licence (free, non-exclusive; cite source and update date)', url: 'https://developer.tmb.cat/docs/terms-conditions' },
+    url: 'https://developer.tmb.cat/', edition: 'live from the TMB API', layers: ['MetroLayer'], commercial: 'ok',
   },
   {
     id: 'fgc',
@@ -175,12 +175,7 @@ export function sourceById(id: string): DataSource | undefined {
   return DATA_SOURCES.find((s) => s.id === id)
 }
 
-/** The short line on the map. Each part names the registry entry its link points to. */
-export const MAP_CREDIT: readonly { source: string; text: string }[] = [
-  { source: 'icgc', text: '© ICGC' },
-  { source: 'osm', text: '© OpenStreetMap contributors' },
-  { source: 'catastro', text: '© Dirección General del Catastro' },
-]
+export { MAP_CREDIT } from './mapCredit'
 
 export interface SourceDates {
   generated?: string

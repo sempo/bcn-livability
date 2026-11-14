@@ -37,7 +37,7 @@ our own app and repo: no requests to third parties.
 9. **Geoapify / Mapterhorn** — "Powered by Geoapify" in the search box when a key is set; Mapterhorn / Copernicus /
    CNIG credit in the registry.
 10. **`VITE_COMMERCIAL_USE`** (default `false`, in all env files). When `true`: street flooding layer and penalty
-    off (`RISK_STRENGTH_STREET` = 0), TMB and FGC layers off until their licences are confirmed. A test pins the
+    off (`RISK_STRENGTH_STREET` = 0) and the FGC layer off until its licence is confirmed. A test pins the
     list.
 
 ## Commercial-use differences (**COMMERCIAL** = needs special terms)
@@ -46,7 +46,7 @@ our own app and repo: no requests to third parties.
 |---|---|---|
 | Catastro | credit; transformed data | written confirmation of CC BY 4.0 (the 2016 licence allows commercial use of transformed data only) |
 | RESCCUE street flooding | no licence (all rights reserved) | permission from Ajuntament / BCASA / Aquatec, or off |
-| TMB API | per-application licence, terms unread | read portal terms; commercial plan / static copy may need approval |
+| TMB API | free, non-exclusive licence; cite source and update date; use only for the app named in the application | declare the commercial use in the TMB application; TMB may attach fees to some content |
 | FGC GTFS | licence not stated | confirm with FGC, or draw from OSM |
 | Geoapify | Free plan + credit | paid plan |
 | Catastro DNPRC | one call per click | ask Catastro for terms at scale |
