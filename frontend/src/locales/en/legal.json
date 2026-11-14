@@ -36,7 +36,7 @@
     "pricesYear": "Source: Generalitat de Catalunya, INCASOL, {{year}}.",
     "geoapify": "Search by Geoapify · © OpenStreetMap contributors",
     "noiseBcn": "Source: Ajuntament de Barcelona, Strategic Noise Map 2022 (CC BY 4.0). Averaged per building by time2map.",
-    "noiseSica": "Source: MITECO, SICA strategic noise maps 2022 (CC BY 4.0). Averaged per building by time2map."
+    "noiseSica": "Source: Generalitat de Catalunya, Departament de Territori, Habitatge i Transició Ecològica, strategic noise maps 2022 (published by SICA, MITECO). Averaged per building by time2map."
   },
   "sources": {
     "catastro": {
@@ -44,6 +44,9 @@
     },
     "noise-bcn": {
       "changed": "Sound level at each facade taken from the map and averaged per building."
+    },
+    "fgc": {
+      "changed": "Lines and stations drawn from the GTFS feed."
     },
     "noise-sica": {
       "changed": "Sound level at each facade taken from the map and averaged per building."

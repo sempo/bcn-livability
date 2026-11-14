@@ -36,7 +36,7 @@
     "pricesYear": "Fuente: Generalitat de Catalunya, INCASOL, {{year}}.",
     "geoapify": "Búsqueda de Geoapify · © OpenStreetMap contributors",
     "noiseBcn": "Fuente: Ayuntamiento de Barcelona, Mapa estratégico de ruido 2022 (CC BY 4.0). Promediado por edificio por time2map.",
-    "noiseSica": "Fuente: MITECO, mapas estratégicos de ruido SICA 2022 (CC BY 4.0). Promediado por edificio por time2map."
+    "noiseSica": "Fuente: Generalitat de Catalunya, Departament de Territori, Habitatge i Transició Ecològica, mapas estratégicos de ruido 2022 (publicados por SICA, MITECO). Promediado por edificio por time2map."
   },
   "sources": {
     "catastro": {
@@ -44,6 +44,9 @@
     },
     "noise-bcn": {
       "changed": "Nivel de ruido en cada fachada tomado del mapa y promediado por edificio."
+    },
+    "fgc": {
+      "changed": "Líneas y estaciones dibujadas a partir del feed GTFS."
     },
     "noise-sica": {
       "changed": "Nivel de ruido en cada fachada tomado del mapa y promediado por edificio."
