@@ -1,5 +1,6 @@
 import { Button, Text } from '@mantine/core'
 import { IconShare } from '@tabler/icons-react'
+import { useTranslation } from 'react-i18next'
 import { useShare } from '../../hooks/useShare'
 
 /**
@@ -7,6 +8,7 @@ import { useShare } from '../../hooks/useShare'
  * at the moment of the click, so it carries the settings as they are then.
  */
 export function ShareLinkButton({ getUrl, copied }: { getUrl: () => string; copied: string }) {
+  const { t } = useTranslation('card')
   const { share, message } = useShare({ url: getUrl, copied })
   return (
     <>
@@ -14,7 +16,7 @@ export function ShareLinkButton({ getUrl, copied }: { getUrl: () => string; copi
         variant="light" color="gray" size="xs" className="save-image__button"
         leftSection={<IconShare size={16} stroke={1.8} />} onClick={share}
       >
-        Share
+        {t('save.share')}
       </Button>
       {message && <Text size="xs" c="dimmed" role="status">{message}</Text>}
     </>

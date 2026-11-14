@@ -1,3 +1,5 @@
+import i18n from '../../i18n'
+import { lazyLabels } from '../../i18n/format'
 import type { CompositeResult, CompositeWeights, ComponentScores } from '../composite/compositeScore'
 
 // Match score (TODO-050): how the Livability score is shown. The score keeps its definition (049); this module
@@ -18,9 +20,7 @@ export function parseBands(raw: string | undefined): Bands {
 
 export const MATCH_BANDS = parseBands(import.meta.env.VITE_MATCH_BANDS)
 
-export const BAND_LABEL: Record<MatchBandId, string> = {
-  great: 'Great match', good: 'Good match', partial: 'Partial match', poor: 'Poor match',
-}
+export const BAND_LABEL = lazyLabels('conditions:band', ['great', 'good', 'partial', 'poor'] as const)
 /** Swatch colours; the same stops as the map ramp (scoreRamp.ts). Poor runs from orange to red on the map. */
 export const BAND_COLOR: Record<MatchBandId, string> = {
   great: '#1a9850', good: '#91cf60', partial: '#fee08b', poor: '#fc8d59',
@@ -46,14 +46,7 @@ export type ConditionId = keyof ComponentScores
 export type ConditionStatus = 'met' | 'partly' | 'missed' | 'nodata'
 
 /** Short names of the conditions, in the order the card lists them. */
-export const CONDITION_LABEL: Record<ConditionId, string> = {
-  noise: 'Quiet',
-  poiAccess: 'Everyday services',
-  cityCore: 'Centre',
-  openPrice: 'Budget',
-  localsOpinion: "Locals' opinion",
-  age: 'Building age',
-}
+export const CONDITION_LABEL = lazyLabels('conditions:label', ['noise', 'poiAccess', 'cityCore', 'openPrice', 'localsOpinion', 'age'] as const)
 const ORDER = Object.keys(CONDITION_LABEL) as ConditionId[]
 
 /** Met when the component scores 100, partly at 1–99, not met at 0; null = no data. */
@@ -86,12 +79,13 @@ export function matchSummary(
   for (const id of ORDER) {
     if ((weights[id] ?? 0) <= 0) continue
     const status = conditionStatus(result.components[id])
-    rows.push({ id, label: CONDITION_LABEL[id], status, text: status === 'nodata' ? 'no data' : texts[id] ?? '' })
+    rows.push({ id, label: CONDITION_LABEL[id], status, text: status === 'nodata' ? i18n.t('conditions:match.noData') : texts[id] ?? '' })
   }
   return { met: rows.filter((r) => r.status === 'met').length, total: rows.length, rows }
 }
 
-const RISK_LABEL = { flood: 'river flooding', street: 'street flooding', fire: 'wildfire' } as const
+const RISK_KEYS = ['flood', 'street', 'fire'] as const
+const RISK_LABEL = lazyLabels('conditions:risk', RISK_KEYS)
 
 /** "Risk: −6 points — river flooding (100-year zone), street flooding"; null when no risk costs points. */
 export function riskLine(
@@ -102,7 +96,7 @@ export function riskLine(
   if (costly.length === 0) return null
   const points = costly.reduce((sum, k) => sum + penalties[k], 0)
   const names = costly.map((k) => (detail[k] ? `${RISK_LABEL[k]} (${detail[k]})` : RISK_LABEL[k]))
-  return `Risk: −${points} points — ${names.join(', ')}`
+  return i18n.t('conditions:match.risk', { points, names: names.join(', ') })
 }
 
 /** Hover tooltip on a building: "Good match · 78 — meets 3 of 4"; "~78" when the data is incomplete (060). */
@@ -110,5 +104,5 @@ export function matchTooltip(
   score: number, summary: Pick<MatchSummary, 'met' | 'total'>, bands: Bands = MATCH_BANDS, incomplete = false,
 ): string {
   const head = `${BAND_LABEL[matchBand(score, bands)]} · ${incomplete ? '~' : ''}${score}`
-  return summary.total > 0 ? `${head} — meets ${summary.met} of ${summary.total}` : head
+  return summary.total > 0 ? i18n.t('conditions:match.tooltip', { head, met: summary.met, total: summary.total }) : head
 }

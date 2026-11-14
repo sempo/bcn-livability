@@ -3,7 +3,7 @@ import {
   BAND_COLOR, BAND_LABEL, CONDITION_LABEL, matchBand, type ConditionId, type ConditionStatus, type MatchBandId,
   type MatchSummary,
 } from '../match/matchSummary'
-import { PRESETS } from '../presets'
+import { PRESETS, profileName } from '../presets'
 import { decodeConfig, encodeConfig, type UrlSettings } from '../urlConfig'
 
 // What a share image says (TODO-063). Pure: the building card and the build script both turn their data into this
@@ -45,7 +45,7 @@ const FOR_PHRASE: Record<string, string> = {
   family: 'For a family', remote: 'For a remote worker', city: 'For city life', investor: 'For an investor',
 }
 const forWhom = (profile: Pick<Profile, 'id' | 'name'> | null) =>
-  profile ? FOR_PHRASE[profile.id] ?? `For ${profile.name}` : null
+  profile ? FOR_PHRASE[profile.id] ?? `For ${profileName(profile)}` : null
 
 /** "Carrer Tenerife 59 · Carrer Torre Dulac 14" → "Carrer Tenerife": the first street, no house number. */
 export function streetOnly(address: string | null | undefined): string | null {

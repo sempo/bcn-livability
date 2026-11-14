@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useStore } from '../../store'
 import { hasConditions } from '../../services/composite/compositeScore'
 import { useAreaJoin } from '../../hooks/useAreaJoin'
@@ -17,6 +18,7 @@ function Section({ id, title, ranks, join, onPick }: {
   join: Map<number, AreaFeature> | null
   onPick: (r: AreaRank) => void
 }) {
+  const { t } = useTranslation('card')
   const [showAll, setShowAll] = useState(false)
   if (ranks.length === 0) return null
   const top = TOP[id]
@@ -26,14 +28,14 @@ function Section({ id, title, ranks, join, onPick }: {
     <section className="areas-list__section" aria-label={title}>
       <div className="areas-list__section-head">
         <h3>{title}</h3>
-        <span>{all ? `All ${ranks.length}` : `Top ${top} of ${ranks.length}`}</span>
+        <span>{all ? t('areasList.all', { n: ranks.length }) : t('areasList.top', { top, n: ranks.length })}</span>
       </div>
       {shown.map((r, i) => (
         <AreaRow key={r.index} rank={r} position={i + 1} showKind={false} onPick={join?.has(r.index) ? onPick : undefined} />
       ))}
       {!all && (
         <button type="button" className="areas-list__more" onClick={() => setShowAll(true)}>
-          Show all {ranks.length}
+          {t('areasList.showAll', { n: ranks.length })}
         </button>
       )}
     </section>
@@ -45,15 +47,16 @@ function Section({ id, title, ranks, join, onPick }: {
  * sections: the barris of Barcelona and the towns of the metro area.
  */
 export function AreasList() {
+  const { t } = useTranslation('card')
   const ranks = useStore((s) => s.areaRanks)
   const join = useAreaJoin()
   const anyCondition = useStore((s) => hasConditions(s.compositeWeights, s.compositeRiskStrengths))
 
-  if (!anyCondition) return <p className="areas-list__note">Add a condition to rank the areas.</p>
-  if (!ranks) return <p className="areas-list__note">Scoring the homes…</p>
+  if (!anyCondition) return <p className="areas-list__note">{t('areasList.addCondition')}</p>
+  if (!ranks) return <p className="areas-list__note">{t('areasList.scoring')}</p>
   const ranked = ranks.filter((r) => r.ranked)
   const small = ranks.filter((r) => !r.ranked)
-  if (ranked.length === 0) return <p className="areas-list__note">No areas to rank yet. Pick a condition first.</p>
+  if (ranked.length === 0) return <p className="areas-list__note">{t('areasList.noneYet')}</p>
 
   const pick = (r: AreaRank) => {
     const feature = join?.get(r.index)
@@ -63,14 +66,14 @@ export function AreasList() {
   }
   return (
     <div className="areas-list">
-      <p className="areas-list__note">By the share of homes that fit.</p>
+      <p className="areas-list__note">{t('areasList.byShare')}</p>
       {/* The note above stays put; the sections and the small print scroll together. */}
       <div className="areas-list__rows">
-        <Section id="barri" title="Barcelona" ranks={ranked.filter((r) => r.kind === 'barri')} join={join} onPick={pick} />
-        <Section id="muni" title="Metro area" ranks={ranked.filter((r) => r.kind === 'muni')} join={join} onPick={pick} />
+        <Section id="barri" title={t('area.barcelona')} ranks={ranked.filter((r) => r.kind === 'barri')} join={join} onPick={pick} />
+        <Section id="muni" title={t('area.metro')} ranks={ranked.filter((r) => r.kind === 'muni')} join={join} onPick={pick} />
         {small.length > 0 && (
           <p className="areas-list__small">
-            Too few homes to rank: {small.map((r) => r.name).join(', ')}.
+            {t('areasList.tooFew', { names: small.map((r) => r.name).join(', ') })}
           </p>
         )}
       </div>

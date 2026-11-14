@@ -1,36 +1,32 @@
 import { SegmentedControl, Stack, Text } from '@mantine/core'
+import { useTranslation } from 'react-i18next'
 import { useStore, mapLayerOf, type MapLayerId } from '../../store'
 import { NoiseLegend } from '../NoiseLayer/NoiseLegend'
 import { FloodZonesLegend } from '../FloodZonesLayer/FloodZonesLegend'
 import { StreetFloodingLegend } from '../StreetFloodingLayer/StreetFloodingLegend'
 import { WildfireLegend } from '../WildfireLayer/WildfireLegend'
 
-const LAYERS: { value: MapLayerId; label: string }[] = [
-  { value: 'none', label: 'None' },
-  { value: 'noise', label: 'Noise' },
-  { value: 'river', label: 'River floods' },
-  { value: 'street', label: 'Street flooding' },
-  { value: 'wildfire', label: 'Wildfire' },
-]
+const LAYER_IDS: MapLayerId[] = ['none', 'noise', 'river', 'street', 'wildfire']
 
 /** The expert layers under one control: one at a time, with the legend of the chosen one (TODO-052). */
 export function MapLayersControl() {
+  const { t } = useTranslation('panel')
   const layer = useStore(mapLayerOf)
   const setMapLayer = useStore((s) => s.setMapLayer)
   return (
     <Stack gap={8}>
-      <Text size="xs" c="dimmed" fw={600} tt="uppercase" style={{ letterSpacing: '0.06em' }}>Map layers</Text>
+      <Text size="xs" c="dimmed" fw={600} tt="uppercase" style={{ letterSpacing: '0.06em' }}>{t('layers.title')}</Text>
       <SegmentedControl
         fullWidth
         size="xs"
         radius="md"
         value={layer}
         onChange={(v) => setMapLayer(v as MapLayerId)}
-        data={LAYERS}
-        aria-label="Map layers"
+        data={LAYER_IDS.map((value) => ({ value, label: t(`layers.${value}`) }))}
+        aria-label={t('layers.title')}
         className="map-layers-control"
       />
-      {layer === 'none' && <Text size="xs" c="dimmed">One layer at a time, with its own legend.</Text>}
+      {layer === 'none' && <Text size="xs" c="dimmed">{t('layers.hint')}</Text>}
       {layer === 'noise' && <NoiseLegend />}
       {layer === 'river' && <FloodZonesLegend />}
       {layer === 'street' && <StreetFloodingLegend />}

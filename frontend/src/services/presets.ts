@@ -1,40 +1,52 @@
+import i18n from '../i18n'
 import {
   CONDITION_KEYS, DEFAULT_FLAT_AREA_M2, formatEuro, priceForBudget, type ConditionKey, type Profile,
 } from './conditionOptions'
 
 /** What the budget profiles can spend on a flat of the default size. */
 const BUDGET_EUR = 250_000
-const BUDGET_TEXT = `a ${DEFAULT_FLAT_AREA_M2} m² flat up to ${formatEuro(BUDGET_EUR)}`
+const budgetText = () => i18n.t('conditions:profile.budget', { area: DEFAULT_FLAT_AREA_M2, price: formatEuro(BUDGET_EUR) })
+const upperFirst = (s: string) => `${s.charAt(0).toLocaleUpperCase(i18n.language)}${s.slice(1)}`
+
+type ProfileId = 'family' | 'remote' | 'city' | 'investor'
+
+/** Name of a profile in the page language (an ENV override with its own `name` wins). Read on each call. */
+export function profileName(p: Pick<Profile, 'id' | 'name'>): string {
+  return p.name ?? i18n.t(`conditions:profile.${p.id as ProfileId}.name`)
+}
+
+/** One-line description of a profile in the page language (an ENV override with its own `blurb` wins). */
+export function profileBlurb(p: Pick<Profile, 'id' | 'blurb'>): string {
+  if (p.blurb) return p.blurb
+  const budget = p.id === 'investor' ? upperFirst(budgetText()) : budgetText()
+  return i18n.t(`conditions:profile.${p.id as ProfileId}.blurb`, { budget })
+}
 
 // Profiles of the first onboarding screen (TODO-031). A profile is a sentence that is already filled in; the
 // person can still change every word. Override one with ENV `VITE_PRESET_<ID>` = JSON of the fields to change.
 
 const BASE: Profile[] = [
   {
-    id: 'family', name: 'Family',
-    blurb: `Quiet street, school and park on foot, ${BUDGET_TEXT}`,
+    id: 'family',
     order: ['noise', 'poiAccess', 'openPrice', 'risk'],
     conditions: { noiseMaxDb: 58, walkMaxMin: 10, priceMaxEurM2: priceForBudget(BUDGET_EUR, DEFAULT_FLAT_AREA_M2) },
     walkCategories: ['school', 'kindergarten', 'park', 'supermarket', 'pharmacy'],
     risk: 'avoid',
   },
   {
-    id: 'remote', name: 'Remote worker',
-    blurb: 'Café and park nearby, 30 min to the centre',
+    id: 'remote',
     order: ['poiAccess', 'cityCore', 'noise'],
     conditions: { walkMaxMin: 10, cityCoreMaxMin: 30, noiseMaxDb: 58 },
     walkCategories: ['cafe', 'supermarket', 'park'],
   },
   {
-    id: 'city', name: 'City life',
-    blurb: '15 min to the centre, bars and metro at the door',
+    id: 'city',
     order: ['cityCore', 'poiAccess', 'noise'],
     conditions: { cityCoreMaxMin: 15, walkMaxMin: 5, noiseMaxDb: 65 },
     walkCategories: ['cafe', 'restaurant', 'metro'],
   },
   {
-    id: 'investor', name: 'Investor',
-    blurb: `${BUDGET_TEXT[0].toUpperCase()}${BUDGET_TEXT.slice(1)}, happy residents`,
+    id: 'investor',
     order: ['openPrice', 'cityCore', 'localsOpinion'],
     conditions: { priceMaxEurM2: priceForBudget(BUDGET_EUR, DEFAULT_FLAT_AREA_M2), cityCoreMaxMin: 30, localsMin: 7.5 },
   },

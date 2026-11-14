@@ -31,7 +31,7 @@ Design briefs for track B: `local-docs/design/` (not in git). Architecture notes
 
 ## Later (unchanged)
 
-TODO-028 i18n, TODO-029 CTA, TODO-030 landing page, TODO-033 multi-city, TODO-040 green index,
+TODO-029 CTA, TODO-030 landing page, TODO-033 multi-city, TODO-040 green index,
 TODO-041 market activity, TODO-043 noise outside Barcelona, TODO-048 energy certificates.
 
 ## Launch strategy: functionality vs. reach (2026-11-13)
@@ -72,7 +72,7 @@ order and the press angle.
 | Order | Feature | Why | Depends on | File |
 |---|---|---|---|---|
 | L1 | **Share image of the result** (**required**) | a link without a picture does not travel; this is the only new feature the launch needs | 053 (Share URL) | 063 (done 2026-11-13) |
-| L2 | **Language switch** (**required**) | a local launch on an English-only tool will not spread: press, residents, social media | — | TODO-028 (moves out of "Later") |
+| L2 | **Language switch** (**required**) | a local launch on an English-only tool will not spread: press, residents, social media | — | 065 (was 028; done 2026-11-14, ES / CA need a native read-through) |
 | L3 | **Embeddable widget** for real-estate agencies | each embed is a permanent backlink and a free distribution channel; see below | A1, L1, licence check | not written yet |
 | L4 | Address-first entry: the search box is the first action, not the conditions panel | a personal result in 10 seconds | 044 | not written yet |
 | L5 | 2–3 press stories built from our own data (quietest barris, everything within 10 min on foot, price vs. liveability) | the press writes stories, not tools | L1 | no code, a data note |
@@ -93,7 +93,7 @@ Also a "Save image" / native share button on the building card and the area card
 
 A visible switch with Catalan, Spanish and English (the order depends on the audience decision above). It also
 covers number formats and the texts generated from conditions (the one-sentence settings, the card summary).
-Scope and design are in TODO-028. The language goes into the URL (053) so shared links open in the same language.
+Scope and design are in 065 (EN / ES / CA, any number of languages, texts in `frontend/src/locales/`, guide in `docs/TRANSLATING.md`). The language goes into the URL (053) so shared links open in the same language.
 
 #### L3. Embeddable widget for agencies
 

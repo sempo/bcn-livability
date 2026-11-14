@@ -1,13 +1,14 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Checkbox, Group, Slider, Stack, Text } from '@mantine/core'
 
 /** How much a risk penalty strength 1–10 matters, in words (047). */
-function importance(weight: number): string {
-  if (weight <= 2) return 'Slightly important'
-  if (weight <= 4) return 'Somewhat important'
-  if (weight <= 6) return 'Matters'
-  if (weight <= 8) return 'Important'
-  return 'Top priority'
+function importanceKey(weight: number) {
+  if (weight <= 2) return 'strength.s1' as const
+  if (weight <= 4) return 'strength.s2' as const
+  if (weight <= 6) return 'strength.s3' as const
+  if (weight <= 8) return 'strength.s4' as const
+  return 'strength.s5' as const
 }
 
 interface StrengthRowProps {
@@ -20,6 +21,7 @@ interface StrengthRowProps {
 
 /** A risk penalty: on / off and how much it matters (036, 047). */
 export function StrengthRow({ label, weight, defaultWeight, onChange }: StrengthRowProps) {
+  const { t } = useTranslation('panel')
   const [lastWeight, setLastWeight] = useState(weight > 0 ? weight : defaultWeight)
   const enabled = weight > 0
 
@@ -39,11 +41,11 @@ export function StrengthRow({ label, weight, defaultWeight, onChange }: Strength
           size="xs"
           checked={enabled}
           onChange={(e) => toggle(e.currentTarget.checked)}
-          aria-label={`Enable ${label}`}
+          aria-label={t('strength.enable', { label })}
         />
         <Text size="xs" style={{ flex: 1 }}>{label}</Text>
         {enabled && (
-          <Text size="xs" c="dimmed" ta="right" data-testid={`importance-${label}`}>{importance(weight)}</Text>
+          <Text size="xs" c="dimmed" ta="right" data-testid={`importance-${label}`}>{t(importanceKey(weight))}</Text>
         )}
       </Group>
       {enabled && (
@@ -54,7 +56,7 @@ export function StrengthRow({ label, weight, defaultWeight, onChange }: Strength
           size="xs"
           value={weight}
           onChange={(v) => onChange(v)}
-          aria-label={`${label} strength`}
+          aria-label={t('strength.strength', { label })}
           style={{ '--slider-color': '#F06965' } as React.CSSProperties}
         />
       )}

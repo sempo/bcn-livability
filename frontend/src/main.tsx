@@ -13,6 +13,7 @@ import { afterFirstPaint } from './services/firstPaint'
 import { loadAreaJoin } from './services/areas/areaJoinLoader'
 import { loadScores } from './services/buildings/buildingData'
 import { features } from './features'
+import { initI18n } from './i18n'
 
 // The base map style is asked for before React renders: it is ready when the map code is (TODO-058).
 void loadMapStyle()
@@ -36,10 +37,13 @@ const theme = createTheme({
   colors: { brand },
 })
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <MantineProvider theme={theme}>
-      <App />
-    </MantineProvider>
-  </StrictMode>,
-)
+// The language is ready before the first render (English is in the bundle; another language is one small file).
+void initI18n().then(() => {
+  createRoot(document.getElementById('root')!).render(
+    <StrictMode>
+      <MantineProvider theme={theme}>
+        <App />
+      </MantineProvider>
+    </StrictMode>,
+  )
+})

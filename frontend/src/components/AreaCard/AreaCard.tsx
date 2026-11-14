@@ -1,5 +1,6 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { useTranslation } from 'react-i18next'
 import bbox from '@turf/bbox'
 import { IconX } from '@tabler/icons-react'
 import { ActionIcon, Group, Paper, Stack, Text } from '@mantine/core'
@@ -29,10 +30,12 @@ function closeArea(): void {
  * (the phone) it fills the slots of the bottom sheet, like the building card.
  */
 export function AreaCard({ embedded = false }: { embedded?: boolean }) {
+  const { t, i18n } = useTranslation('card')
   const slots = useSheetSlots()
   const index = useStore((s) => s.selectedArea)
   const ranks = useStore((s) => s.areaRanks)
   const join = useAreaJoin()
+  const [description, setDescription] = useState<{ code: string; lang: string; text: string | null } | null>(null)
 
   useEffect(() => {
     if (index === null) return
@@ -42,13 +45,22 @@ export function AreaCard({ embedded = false }: { embedded?: boolean }) {
   }, [index])
 
   const rank = index === null ? undefined : ranks?.find((r) => r.index === index)
+  const barriCode = rank?.kind === 'barri' ? rank.code : null
+  useEffect(() => {
+    if (!barriCode) return
+    let cancelled = false
+    void areaDescription(barriCode, i18n.language).then((text) => {
+      if (!cancelled) setDescription({ code: barriCode, lang: i18n.language, text })
+    })
+    return () => { cancelled = true }
+  }, [barriCode, i18n.language])
   const feature = index === null ? undefined : join?.get(index)
   if (!rank || !feature) return null
 
   const [w, s, e, n] = bbox(feature)
   const centre: [number, number] = [(w + e) / 2, (s + n) / 2]
-  const description = rank.kind === 'barri' ? areaDescription(rank.code) : null
-  const where = rank.kind === 'barri' ? 'Barcelona' : 'Metro area'
+  const shown = description && description.code === rank.code && description.lang === i18n.language ? description.text : null
+  const where = rank.kind === 'barri' ? t('area.barcelona') : t('area.metro')
   const color = rank.ranked ? scoreColorForRange(rank.mean, 0, 100) : '#868e96'
   const strongest = strongestLine(rank.strongest)
   const incomplete = incompleteNote(rank.incomplete)
@@ -61,7 +73,7 @@ export function AreaCard({ embedded = false }: { embedded?: boolean }) {
 
   const details = (
     <Stack gap="sm" data-testid="area-card">
-      {description && <Text size="sm">{description}</Text>}
+      {shown && <Text size="sm">{shown}</Text>}
       <Stack gap={4}>
         {rank.ranked ? (
           <>
@@ -73,7 +85,7 @@ export function AreaCard({ embedded = false }: { embedded?: boolean }) {
             </div>
             <div className="area-card__bar" aria-hidden="true"><i style={{ width: `${Math.round(rank.shareGood)}%`, background: color }} /></div>
             <Text size="xs" c="dimmed">
-              {Math.round(rank.shareGreat)}% are a great match · average score {Math.round(rank.mean)}
+              {t('area.great', { great: Math.round(rank.shareGreat), mean: Math.round(rank.mean) })}
             </Text>
           </>
         ) : (
@@ -90,10 +102,10 @@ export function AreaCard({ embedded = false }: { embedded?: boolean }) {
             profile,
           })}
           link={link}
-          extra={<ShareLinkButton getUrl={link} copied="Link copied. It opens this area with your conditions." />}
+          extra={<ShareLinkButton getUrl={link} copied={t('shareCopied.area')} />}
         />
       )}
-      {!rank.ranked && <ShareLinkButton getUrl={link} copied="Link copied. It opens this area with your conditions." />}
+      {!rank.ranked && <ShareLinkButton getUrl={link} copied={t('shareCopied.area')} />}
     </Stack>
   )
 
@@ -104,11 +116,11 @@ export function AreaCard({ embedded = false }: { embedded?: boolean }) {
         <Stack gap={2} style={{ minWidth: 0 }}>
           <Text fw={700} size="md" truncate>{rank.name}</Text>
           <Text size="sm" fw={600}>
-            {rank.ranked ? `${Math.round(rank.shareGood)}% of homes are a good match` : matchLine(rank)}
+            {rank.ranked ? t('area.peek', { share: Math.round(rank.shareGood) }) : matchLine(rank)}
           </Text>
         </Stack>
         <ActionIcon size={44} radius="md" variant="subtle" color="gray" onClick={closeArea}
-          aria-label="Close area card" style={{ flex: 'none', marginTop: -4, marginRight: -8 }}>
+          aria-label={t('area.close')} style={{ flex: 'none', marginTop: -4, marginRight: -8 }}>
           <IconX size={24} stroke={2} />
         </ActionIcon>
       </Group>
@@ -130,7 +142,7 @@ export function AreaCard({ embedded = false }: { embedded?: boolean }) {
             <Text size="xs" c="dimmed">{where}</Text>
           </Stack>
           <ActionIcon size={36} radius="md" variant="subtle" color="gray" onClick={closeArea}
-            aria-label="Close area card" style={{ flex: 'none', marginTop: -6, marginRight: -8 }}>
+            aria-label={t('area.close')} style={{ flex: 'none', marginTop: -6, marginRight: -8 }}>
             <IconX size={24} stroke={2} />
           </ActionIcon>
         </Group>

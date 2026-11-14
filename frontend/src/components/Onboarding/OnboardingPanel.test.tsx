@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { screen, fireEvent } from '@testing-library/react'
 import { OnboardingPanel } from './OnboardingPanel'
 import { useStore } from '../../store'
-import { PRESETS } from '../../services/presets'
+import { PRESETS, profileName } from '../../services/presets'
 import { renderWithMantine, resetStore } from '../Conditions/testUtils'
 
 vi.mock('../../hooks/useBudgetShares', () => ({ useBudgetShares: () => undefined }))
@@ -13,7 +13,7 @@ describe('OnboardingPanel', () => {
   it('first screen: the four profiles, build your own and skip', () => {
     renderWithMantine(<OnboardingPanel />)
     expect(screen.getByRole('heading', { name: 'Where in Barcelona would you like to live?' })).toBeTruthy()
-    for (const p of PRESETS) expect(screen.getByRole('button', { name: new RegExp(`^${p.name}`) })).toBeTruthy()
+    for (const p of PRESETS) expect(screen.getByRole('button', { name: new RegExp(`^${profileName(p)}`) })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Build your own' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Just show me the map' })).toBeTruthy()
   })

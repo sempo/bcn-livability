@@ -1,6 +1,10 @@
 import '@testing-library/jest-dom'
 import { cleanup } from '@testing-library/react'
 import { afterEach, vi } from 'vitest'
+import { initI18n } from '../i18n'
+
+// English unless a test switches it (TODO-065).
+await initI18n()
 
 // Polyfill Blob.prototype.text — jsdom does not implement this Blob API method.
 if (typeof Blob !== 'undefined' && !Blob.prototype.text) {

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 import { ActionIcon, Combobox, Loader, TextInput, useCombobox } from '@mantine/core'
 import { IconX } from '@tabler/icons-react'
 import { loadAreas, type AreaFeature } from '../../services/areas'
@@ -22,6 +23,7 @@ export function SearchBox({ pill = false, leftSlot, rightSlot }: {
   leftSlot?: ReactNode
   rightSlot?: ReactNode
 }) {
+  const { t } = useTranslation('panel')
   const inputRef = useRef<HTMLInputElement>(null)
   const [areas, setAreas] = useState<AreaFeature[]>([])
   const [text, setText] = useState('')
@@ -114,15 +116,15 @@ export function SearchBox({ pill = false, leftSlot, rightSlot }: {
           className={pill ? 'glass-panel search-box search-box--pill' : 'glass-panel search-box'}
           size="md"
           radius="lg"
-          placeholder={pill ? 'Search Barcelona livability map' : 'Search area or address'}
-          aria-label="Search an area or address"
+          placeholder={pill ? t('search.pill') : t('search.field')}
+          aria-label={t('search.aria')}
           autoFocus={!pill}
           enterKeyHint="search"
           autoComplete="off"
           leftSection={loading ? <Loader size={14} /> : pill ? leftSlot : null}
           leftSectionWidth={pill ? 52 : undefined}
           rightSection={pill && text === '' ? rightSlot : (
-            <ActionIcon variant="subtle" color="gray" size="md" aria-label="Close search" onClick={close}>
+            <ActionIcon variant="subtle" color="gray" size="md" aria-label={t('search.close')} onClick={close}>
               <IconX size={16} />
             </ActionIcon>
           )}
@@ -139,7 +141,7 @@ export function SearchBox({ pill = false, leftSlot, rightSlot }: {
       <Combobox.Dropdown className="search-results" hidden={query.length === 0}>
         <Combobox.Options>
           {areaMatches.length > 0 && (
-            <Combobox.Group label="Areas">
+            <Combobox.Group label={t('search.areas')}>
               {areaMatches.map((m, i) => (
                 <Combobox.Option key={m.areaIds.join('|')} value={`area:${i}`}>
                   <div>{m.label}</div>
@@ -149,13 +151,13 @@ export function SearchBox({ pill = false, leftSlot, rightSlot }: {
             </Combobox.Group>
           )}
           {addresses.length > 0 && (
-            <Combobox.Group label="Addresses">
+            <Combobox.Group label={t('search.addresses')}>
               {addresses.map((a, i) => (
                 <Combobox.Option key={`${a.label}${i}`} value={`addr:${i}`}>{a.label}</Combobox.Option>
               ))}
             </Combobox.Group>
           )}
-          {showEmpty && <Combobox.Empty>Nothing found</Combobox.Empty>}
+          {showEmpty && <Combobox.Empty>{t('search.empty')}</Combobox.Empty>}
         </Combobox.Options>
       </Combobox.Dropdown>
     </Combobox>

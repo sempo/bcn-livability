@@ -2,6 +2,7 @@ import {
   useEffect, useLayoutEffect, useMemo, useRef, useState,
   type ReactNode,
 } from 'react'
+import { useTranslation } from 'react-i18next'
 import { SheetSlots } from './sheetSlots'
 import { useSheetStore } from '../../store/sheetStore'
 import {
@@ -13,7 +14,7 @@ const DRAG_START_PX = 6
 /** A pointer that rested this long before release is not a flick. */
 const STALE_MS = 80
 
-const LABEL: Record<SheetPosition, string> = { peek: 'Open the panel', half: 'Expand the panel', full: 'Collapse the panel' }
+const LABEL_KEY = { peek: 'mobile.open', half: 'mobile.expand', full: 'mobile.collapse' } as const satisfies Record<SheetPosition, string>
 
 interface Drag { startY: number; startHeight: number; lastY: number; lastT: number; v: number; active: boolean; height: number }
 
@@ -55,6 +56,7 @@ export function MobileSheet({ view, header, main, floating, children }: {
   floating?: ReactNode
   children?: ReactNode
 }) {
+  const { t } = useTranslation('panel')
   const position = useSheetStore((s) => s.position)
   const setPosition = useSheetStore((s) => s.setPosition)
   const setMapInset = useSheetStore((s) => s.setMapInset)
@@ -163,7 +165,7 @@ export function MobileSheet({ view, header, main, floating, children }: {
         data-position={position}
         data-view={view}
         data-dragging={dragHeight !== null}
-        aria-label="Conditions and details"
+        aria-label={t('mobile.sheet')}
         style={{ height: heights.full, transform: `translateY(${heights.full - shown}px)` }}
       >
         {floating && <div className="mobile-sheet__floating">{floating}</div>}
@@ -171,7 +173,7 @@ export function MobileSheet({ view, header, main, floating, children }: {
           <button
             type="button"
             className="mobile-sheet__handle"
-            aria-label={LABEL[position]}
+            aria-label={t(LABEL_KEY[position])}
             aria-expanded={position !== 'peek'}
             onClick={cycle}
           >
