@@ -2,7 +2,7 @@ import { IconX } from '@tabler/icons-react'
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { ActionIcon, Anchor, Divider, Group, Paper, Stack, Text } from '@mantine/core'
-import { useStore } from '../../store'
+import { settingsOf, URL_DEFAULTS, useStore } from '../../store'
 import { valueOf } from '../../services/buildings/buildingData'
 import { useBuildingData } from '../../hooks/useBuildingData'
 import { buildingArea, scoreBuilding } from '../../services/buildings/buildingScore'
@@ -25,6 +25,9 @@ import { BAND_LABEL, matchBand, matchSummary, riskLine } from '../../services/ma
 import { ageText, cityCoreText, localsText, noiseText, poiText, priceText } from '../../services/match/matchText'
 import { MatchHeader } from './MatchHeader'
 import { SaveImageButton } from './SaveImageButton'
+import { ShareLinkButton } from './ShareLinkButton'
+import { buildingLinkUrl } from '../../services/buildingLink'
+import { encodeConfig } from '../../services/urlConfig'
 import { buildingShareModel } from '../../services/shareImage/shareImageModel'
 import { useSheetSlots } from '../MobileSheet/sheetSlots'
 
@@ -220,6 +223,9 @@ export function BuildingCard({ embedded = false }: { embedded?: boolean }) {
 
   const address = prettyAddress(d?.address) ?? (d ? 'Building' : 'Loading…')
   const shownScore = composite.hasGap && composite.scoreMin < score ? `${composite.scoreMin}–${score}` : String(score)
+  const buildingPos: [number, number] = [data.cols.lng[selected], data.cols.lat[selected]]
+  const buildingLink = () => buildingLinkUrl(
+    window.location.href, encodeConfig(settingsOf(useStore.getState()), URL_DEFAULTS), buildingPos)
   const details = (
         <Stack gap="sm">
           {d && features.facadePhoto && (
@@ -238,10 +244,12 @@ export function BuildingCard({ embedded = false }: { embedded?: boolean }) {
 
           {d && (
             <SaveImageButton
-              lngLat={[data.cols.lng[selected], data.cols.lat[selected]]}
+              lngLat={buildingPos}
               build={(profile) => buildingShareModel({
                 address: prettyAddress(d.address), area, score, summary, riskText, profile,
               })}
+              link={buildingLink}
+              extra={<ShareLinkButton getUrl={buildingLink} copied="Link copied. It opens this building with your conditions." />}
             />
           )}
 

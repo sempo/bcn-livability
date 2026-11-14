@@ -70,6 +70,7 @@ describe('AreasList', () => {
     expect(sel?.kind).toBe('area')
     expect(sel?.label).toBe('Area 1')
     if (sel?.kind === 'area') expect(sel.bounds).toEqual([2, 41, 2.1, 41.1])
+    expect(useStore.getState().selectedArea).toBe(1) // its card opens (TODO-064)
     fireEvent.click(within(section('Metro area')).getByRole('button', { name: /^1\. Town 0/ }))
     expect(useSearchStore.getState().selection?.label).toBe('Town 0')
   })

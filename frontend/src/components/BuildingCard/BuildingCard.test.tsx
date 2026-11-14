@@ -277,4 +277,18 @@ describe('BuildingCard (TODO-046)', () => {
       expect(renderShareBlob).not.toHaveBeenCalled()
     })
   })
+  describe('Share (TODO-064)', () => {
+    it('copies a link that opens this building with the conditions', async () => {
+      const writeText = vi.fn().mockResolvedValue(undefined)
+      Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true })
+      await renderCard(0)
+      await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Share' })) })
+      expect(writeText).toHaveBeenCalledTimes(1)
+      const url = new URL(writeText.mock.calls[0][0])
+      expect(url.searchParams.get('b')).toMatch(/^2\.16\d*,41\.39\d*$/)
+      expect(url.searchParams.get('zoom')).toBe('17.00')
+      expect(url.searchParams.has('c')).toBe(true)
+      expect(await screen.findByText(/opens this building/)).toBeInTheDocument()
+    })
+  })
 })

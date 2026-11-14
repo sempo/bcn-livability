@@ -127,3 +127,6 @@ One drawing code for both worlds, `services/shareImage/`:
 
 Per `CLAUDE.md`. Manual: save an image on the card of a building and an area, on desktop and on a phone;
 paste the site link into WhatsApp, Telegram and X and check the preview.
+
+
+Follow-up: the area card with Save image / Share and the share link of a building are in `064-area-card-and-share-links.md`.

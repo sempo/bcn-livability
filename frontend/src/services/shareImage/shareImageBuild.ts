@@ -9,7 +9,9 @@ import { profileToPatch, type Profile } from '../conditionOptions'
 import type { BarriVibeData } from '../localsOpinion/localsOpinion'
 import type { ConditionId } from '../match/matchSummary'
 import { PRESETS } from '../presets'
-import { shareFileName } from './shareImageModel'
+import { areaSlug } from './shareImageModel'
+
+export { areaSlug }
 
 // The share pages and images made at build time (TODO-063): for every barri and every profile, a small static
 // page with its own link-preview tags (Open Graph needs them in the HTML; a script cannot set them for a crawler)
@@ -68,11 +70,6 @@ export interface SharePage {
   path: string
 }
 
-/** URL-safe name of an area: lower case, no accents; the code is added when two areas would share a name. */
-export function areaSlug(name: string): string {
-  return shareFileName(name, 'jpg').replace(/^barcelona-livability-?/, '').replace(/\.jpg$/, '') || 'area'
-}
-
 /** The pages of the barris of every profile (municipalities of the metro area stay out of the launch set). */
 export function sharePages(results: readonly ProfileRanks[]): SharePage[] {
   const pages: SharePage[] = []
@@ -118,7 +115,7 @@ export function pageHtml(page: SharePage, siteUrl: string, view: { lng: number; 
   const { title, description } = pageTexts(page)
   const url = `${siteUrl}/share/${page.path}/`
   const image = `${siteUrl}/share/${page.path}.jpg`
-  const map = `${siteUrl}/?c=preset:${page.profile.id}&zoom=${view.zoom.toFixed(2)}&cx=${view.lng.toFixed(5)}&cy=${view.lat.toFixed(5)}`
+  const map = `${siteUrl}/?c=preset:${page.profile.id}&zoom=${view.zoom.toFixed(2)}&cx=${view.lng.toFixed(5)}&cy=${view.lat.toFixed(5)}&a=${encodeURIComponent(page.rank.code)}`
   const t = escapeHtml(title)
   const d = escapeHtml(description)
   return `<!doctype html>

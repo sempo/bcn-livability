@@ -15,6 +15,8 @@ import { ConditionsSheetHeader } from './components/MobileSheet/ConditionsSheetH
 import { MobileTopBar } from './components/MobileTop/MobileTopBar'
 import { AboutSheet } from './components/MobileTop/AboutSheet'
 import { MapOverlay } from './components/MobileMap/MapOverlay'
+import { useLinkedArea } from './hooks/useLinkedArea'
+import { useLinkedBuilding } from './hooks/useLinkedBuilding'
 import { useSheetFlow } from './hooks/useSheetFlow'
 import { useSheetMapPadding } from './hooks/useSheetMapPadding'
 import { useVisualViewportVar } from './hooks/useVisualViewport'
@@ -30,6 +32,8 @@ import './index.css'
 // MapLibre is more than half of the JavaScript of the page. It is downloaded from the start (index.html preloads it)
 // but runs after the first paint, so the panel shows up without waiting for it (TODO-058).
 const LazyMap = lazy(() => import('./components/Map/Map').then((m) => ({ default: m.Map })))
+// The area card (with the texts of the 73 barris) is only needed after a click on an area (TODO-064, 058).
+const AreaCard = lazy(() => import('./components/AreaCard/AreaCard').then((m) => ({ default: m.AreaCard })))
 const mapPlaceholder = <div style={{ width: '100%', height: '100%' }} />
 
 /**
@@ -48,12 +52,14 @@ function Map() {
 }
 
 export function App() {
+  useLinkedArea()
+  useLinkedBuilding() // before useUrlState rewrites the address and drops `b`
   useUrlState()
   usePinAnalytics()
   // Read at once, not after the first render: a phone must never start with the desktop layout.
   const isMobile = useMediaQuery(PHONE_QUERY, false, { getInitialValueInEffect: false })
   const [aboutOpen, setAboutOpen] = useState(false)
-  const buildingOpen = useStore((s) => s.selectedBuilding !== null)
+  const buildingOpen = useStore((s) => s.selectedBuilding !== null || s.selectedArea !== null)
   const [mobileView, setMobileView] = useState<'map' | 'compare'>('map')
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const pinCount = usePinsStore((s) => s.pins.length)
@@ -101,6 +107,7 @@ export function App() {
         </div>
       )}
       {!isMobile && <BuildingCard />}
+      {!isMobile && <Suspense fallback={null}><AreaCard /></Suspense>}
     </div>
   )
 
@@ -138,6 +145,7 @@ export function App() {
             floating={<MapOverlay onAbout={() => setAboutOpen(true)} />}
           >
             <BuildingCard embedded />
+            <Suspense fallback={null}><AreaCard embedded /></Suspense>
           </MobileSheet>
         )}
         <AboutSheet opened={aboutOpen} onClose={() => setAboutOpen(false)} />

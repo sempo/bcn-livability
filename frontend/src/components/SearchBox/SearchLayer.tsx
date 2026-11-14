@@ -3,6 +3,7 @@ import type { FeatureCollection } from 'geojson'
 import * as maplibregl from 'maplibre-gl'
 import { useMap } from '../Map/MapContext'
 import { addLayerOrdered } from '../Map/layerOrder'
+import { useStore } from '../../store'
 import { useSearchStore } from '../../store/searchStore'
 import { SEARCH_ADDRESS_ZOOM } from '../../services/searchConfig'
 
@@ -15,7 +16,9 @@ const EMPTY: FeatureCollection = { type: 'FeatureCollection', features: [] }
 /** Leaves room for the filter panel (left) and the building card (right) on desktop. */
 function fitPadding(): maplibregl.PaddingOptions {
   const wide = window.innerWidth > 768
-  return { top: 60, bottom: 60, left: wide ? 300 : 40, right: 40 }
+  // The area card (TODO-064) covers the right side while it is open.
+  const card = wide && useStore.getState().selectedArea !== null
+  return { top: 60, bottom: 60, left: wide ? 300 : 40, right: card ? 400 : 40 }
 }
 
 /**
