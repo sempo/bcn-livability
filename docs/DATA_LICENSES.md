@@ -1,6 +1,7 @@
 # Data sources and licences
 
-Checked against the code and the publishers' terms on 2026-11-12. If the code adds or drops a source, update this file.
+Checked against the code and the publishers' terms on 2026-11-12; attribution implemented and links re-checked on 2026-11-14
+(TODO-066). If the code adds or drops a source, update this file **and** `frontend/src/services/dataSources.ts`.
 This is a technical review, not legal advice. Items marked **verify** were not confirmed from a primary source; the
 two "high" risks below are worth a short consultation with a Spanish IP / open-data lawyer before any paid or
 B2B use.
@@ -13,15 +14,20 @@ under open licences: CC BY 4.0, the Generalitat open-information licence, or ODb
 use. All of them **require attribution**, and some add more conditions: don't alter the meaning, state the update
 date, don't imply endorsement, and share-alike for OSM.
 
-**What is wrong today:**
+**Status after TODO-066 (2026-11-14).** Attribution is now shown in the app (item 1), the ODbL notice is published
+(item 3), and a single switch, `VITE_COMMERCIAL_USE`, turns off the layers that are not safe for a commercial
+launch (items 2, 4, 5). What is still open needs a third party: items 2, 4, 5, 6 and the Catastro confirmation.
+The "Risk" column below is the risk **before** the work, except where the Fix column says done.
+
+**What was wrong, and what is left:**
 
 | # | Problem | Risk | Fix |
 |---|---|---|---|
-| 1 | **Attribution is missing for most sources.** `attributionControl: false` in `Map.tsx`; the panel shows only the base-map credit. The `attribution` strings of the noise, flood, wildfire, street-flooding and POI sources are never rendered. Catastro (the buildings layer itself), OSM-derived walkability, the ESM survey, SICA noise, area boundaries, TMB, FGC and Mapterhorn terrain are not credited anywhere visible. On mobile the panel is in a drawer, so the map has no visible credit at all. | **High** (cheap to fix) | Data-sources line on the map + "Data sources" modal (section 6) |
-| 2 | **Street flooding (RESCCUE, Atles de resiliència)** has no licence. It is fetched from the Ajuntament's CARTO account with a read key taken from the public viewer. The product owner accepted the risk in 037. | **High** | Ask the Ajuntament for permission, or for publication on Open Data BCN; until then, consider switching the layer and the penalty off for commercial use |
-| 3 | **OSM share-alike (ODbL).** `barcelona_poi.pmtiles` is an OSM extract, so it is a derivative database. The `min_*` / `cc_*` columns in `buildings-scores.bin.gz` are computed from OSM and are probably one too. Both are public files, but nothing says they are under ODbL. | **Medium** | Declare those files (the OSM-derived part) as ODbL, link the licence, offer the data on request (section 5.3) |
-| 4 | **TMB metro layer.** The app calls the TMB API from the browser with keys built into the public bundle. TMB grants its data licence per application, on approval; the terms could not be read without a login. | **Medium** | Read the terms in the developer portal; confirm that public web use and a static copy (TODO-055) are allowed; credit TMB |
-| 5 | **FGC lines and stations** (`fgc-*.geojson`, from FGC GTFS). The licence is not stated on the portal; its "terms" link leads to the website's legal notice, which forbids commercial reuse of *web content*. The datasets on datos.gob.es point to the Generalitat licences page. | **Medium** (verify) | Confirm the GTFS licence with FGC, or draw the lines from OSM |
+| 1 | **Attribution was missing for most sources. DONE (TODO-066).** The facts below describe the state before.  `attributionControl: false` in `Map.tsx`; the panel shows only the base-map credit. The `attribution` strings of the noise, flood, wildfire, street-flooding and POI sources are never rendered. Catastro (the buildings layer itself), OSM-derived walkability, the ESM survey, SICA noise, area boundaries, TMB, FGC and Mapterhorn terrain are not credited anywhere visible. On mobile the panel is in a drawer, so the map has no visible credit at all. | ~~High~~ fixed | Done: credit line on the map, "About and data sources" dialog, credits on the cards (section 6) |
+| 2 | **Street flooding (RESCCUE, Atles de resiliència)** has no licence. It is fetched from the Ajuntament's CARTO account with a read key taken from the public viewer. The product owner accepted the risk in 037. | **High** (open) | Ask the Ajuntament for permission, or for publication on Open Data BCN. **Commercial: `VITE_COMMERCIAL_USE=true` already turns the layer and the penalty off.** The dialog states that the layer has no licence |
+| 3 | **OSM share-alike (ODbL). Notice added in TODO-066** (`frontend/public/data/DATA_LICENSE.txt`, `THIRD_PARTY_NOTICES.md`). `barcelona_poi.pmtiles` is an OSM extract, so it is a derivative database. The `min_*` / `cc_*` columns in `buildings-scores.bin.gz` are computed from OSM and are probably one too. Both are public files, but nothing says they are under ODbL. | ~~Medium~~ done | Done: `frontend/public/data/DATA_LICENSE.txt` and `THIRD_PARTY_NOTICES.md` declare the OSM-derived files as ODbL, the dialog says so, data on request (section 5.3) |
+| 4 | **TMB metro layer.** The app calls the TMB API from the browser with keys built into the public bundle. TMB grants its data licence per application, on approval; the terms could not be read without a login. | **Medium** | Read the terms in the developer portal; confirm that public web use and a static copy (TODO-055) are allowed. Credited in the dialog; **off with `VITE_COMMERCIAL_USE=true`** |
+| 5 | **FGC lines and stations** (`fgc-*.geojson`, from FGC GTFS). The licence is not stated on the portal; its "terms" link leads to the website's legal notice, which forbids commercial reuse of *web content*. The datasets on datos.gob.es point to the Generalitat licences page. | **Medium** (verify) | Confirm the GTFS licence with FGC, or draw the lines from OSM. Credited in the dialog; **off with `VITE_COMMERCIAL_USE=true`** |
 | 6 | **Municipality outlines** in `areas.geojson` come from Opendatasoft `georef-spain-municipio`. Licence not confirmed. | **Low** | Use the ICGC municipalities (CC BY 4.0) that `fetch_incasol_sale_catalonia.py` already downloads |
 | 7 | **Catastro facade photo** (flag off): hotlinked, no stated terms. | Low while off | Keep off until Catastro confirms |
 | 8 | **Idealista scrape** (`idealista_prices.geojson`, flag off, gitignored). Scraping breaks Idealista's terms, and its listings are a protected database (EU sui generis right). | **High if published**, none while local | Never ship it; keep it out of git and production |
@@ -33,7 +39,7 @@ distorting the meaning. A ban on reuse for 1–5 years can be added. For the Gen
 private providers the realistic consequence is **losing the licence** (with it, the right to use the data) and a
 civil claim (copyright or database right). We found no separate fine regime for them. Under CC BY 4.0 the rights
 come back automatically if the breach is cured within 30 days of discovery. So **fixing attribution quickly**
-(item 1) removes most of the exposure.
+(item 1, done) removes most of the exposure.
 
 ## 2. Licences in play
 
@@ -44,7 +50,7 @@ come back automatically if the breach is cured within 30 days of discovery. So *
 | **Open Data BCN terms** (CC BY 4.0 + art. 8 of Ley 37/2007) | noise, ESM survey, barris | yes | "Source of the data: Barcelona City Council"; identify changes; no suggestion of Council support |
 | **Catastro INSPIRE licence v1.0 (2016)** | buildings, addresses, parcels | yes, **for transformed information only** | see 5.1 |
 | **ODbL 1.0** | OpenStreetMap (POI, walking network, basemap outside Catalonia, OpenFreeMap) | yes | "© OpenStreetMap contributors", visible on the map; a public derivative database must be offered under ODbL |
-| **No licence** | RESCCUE street flooding, Catastro facade photo | — | all rights reserved by default |
+| **No licence** | RESCCUE street flooding, Catastro facade photo | **no: needs permission** | all rights reserved by default. "Non-commercial" is not a safe harbour here: with no licence there is nothing that allows even free use |
 | **Service terms** | TMB API, Geoapify, Catastro web services (SEC), OpenFreeMap, Mapterhorn | per service | keys, rate limits, attribution |
 
 ## 3. Inventory
@@ -53,39 +59,39 @@ come back automatically if the breach is cured within 30 days of discovery. So *
 
 | File | Content | Source (script) | Publisher, licence | Conditions met? |
 |---|---|---|---|---|
-| `data/buildings.pmtiles`, `buildings-detail.pmtiles`, `buildings-scores.bin.gz`, `buildings-positions.bin.gz`, `buildings-meta.json` | ~174k residential buildings: footprints, cadastral ref, address, use, dwellings, floors, year built / renovated, area, condition | Catastro INSPIRE ATOM, province 08: BU, AD, CP (`prepare_buildings.py`, `fetch_exposure_sources.py`) | Dirección General del Catastro. CODSI metadata (2026-05): **CC BY 4.0 "DG Catastro"**, high-value dataset. The linked licence PDF v1.0 (2016) is stricter (5.1) | ✗ no credit for the buildings layer; the card only credits the (flagged) photo |
-| same files: `lden_avg`, card noise fields, facade points | noise at the facade | Barcelona: Open Data BCN `rasters-mapa-estrategic-soroll` 2022 (+ 2017 facades for validation). Other municipalities: SICA / MITECO, 4th round (2022) agglomeration maps | Barcelona: **CC BY 4.0** (confirmed in CKAN). SICA: **CC BY 4.0** in the INSPIRE metadata of the 3rd round; 4th round **verify** | ✗ not credited (only the noise view layer's legend credits Open Data BCN) |
-| same files: `min_<category>`, `cc_<landmark>` | walking minutes to services and City Core places | OpenStreetMap, Geofabrik / BBBike extract (`building_access.py`) | **ODbL 1.0** | ✗ no OSM credit for this use; not declared ODbL (5.3) |
+| `data/buildings.pmtiles`, `buildings-detail.pmtiles`, `buildings-scores.bin.gz`, `buildings-positions.bin.gz`, `buildings-meta.json` | ~174k residential buildings: footprints, cadastral ref, address, use, dwellings, floors, year built / renovated, area, condition | Catastro INSPIRE ATOM, province 08: BU, AD, CP (`prepare_buildings.py`, `fetch_exposure_sources.py`) | Dirección General del Catastro. CODSI metadata (2026-05): **CC BY 4.0 "DG Catastro"**, high-value dataset. The linked licence PDF v1.0 (2016) is stricter (5.1) | ✓ credit in the map line and the dialog; the card says "© Dirección General del Catastro. Not official cadastral information" |
+| same files: `lden_avg`, card noise fields, facade points | noise at the facade | Barcelona: Open Data BCN `rasters-mapa-estrategic-soroll` 2022 (+ 2017 facades for validation). Other municipalities: SICA / MITECO, 4th round (2022) agglomeration maps | Barcelona: **CC BY 4.0** (confirmed in CKAN). SICA: **CC BY 4.0** in the INSPIRE metadata of the 3rd round; 4th round **verify** | ✓ dialog (with edition and what we changed) and the card line under the noise block |
+| same files: `min_<category>`, `cc_<landmark>` | walking minutes to services and City Core places | OpenStreetMap, Geofabrik / BBBike extract (`building_access.py`) | **ODbL 1.0** | ✓ OSM in the map line and the dialog; declared ODbL in `DATA_LICENSE.txt` (5.3) |
 | same files: student residences | filter only | OSM | ODbL | as above |
-| same files: `river_zone` | ACA flood zones T10 / T100 / T500 | `sig.gencat.cat/ows/AIGUA/wfs` (`fetch_climate_risk.py`) | ACA, Generalitat. The WFS states no constraints, so the Generalitat default licence applies (**verify** per layer) | partial: credited in the view layer's legend only, no update date |
-| same files: `street_t10_cm`, `street_t100_cm` | water depth at the door | RESCCUE via CARTO `urbisadmin` (`fetch_climate_risk.py`) | Ajuntament de Barcelona / BCASA / Aquatec, **no licence** | ✗ (5.2) |
-| same files: `fire_hazard`, `fire_wui` | wildfire hazard 2024, WUI zones | Generalitat, Agricultura (`PERILLBASICINCENDI.zip`); Protecció Civil via ICGC geoservei | Generalitat default licence; ICGC CC BY 4.0 | partial (legend of the view layer) |
-| `buildings-meta.json` → `areas[].price` | INCASOL sale price €/m² per barri / municipality | `habitatge.gencat.cat` XLSX (`fetch_incasol_sale_prices.py`, `fetch_incasol_sale_catalonia.py`) | Generalitat (Agència de l'Habitatge / INCASOL), Generalitat default licence (**verify**: the site's own legal notice was not reachable) | partial: "Generalitat official data", no year |
-| `data/barri-vibe.json` | residents' satisfaction, intention to stay, top problems per barri | Open Data BCN `esm-bcn-evo` (`build_neighbourhood_vibe.py`) | Ajuntament de Barcelona, Oficina Municipal de Dades. **CC BY 4.0** (confirmed in CKAN); anonymised microdata | ✗ no "Source: Barcelona City Council"; our shrinkage changes the values and is not labelled as such |
-| `data/noise.pmtiles` | Lden isophones 2022 | Open Data BCN `isofones-mapa-estrategic-soroll` (`prepare-noise-data.sh`) | **CC BY 4.0** | ✓ in the legend; ✗ on the map |
-| `data/flood-zones.pmtiles`, `wildfire.pmtiles` | view layers | as `river_zone`, `fire_*` | as above | legend ✓, map ✗, update date ✗ |
+| same files: `river_zone` | ACA flood zones T10 / T100 / T500 | `sig.gencat.cat/ows/AIGUA/wfs` (`fetch_climate_risk.py`) | ACA, Generalitat. The WFS states no constraints, so the Generalitat default licence applies (**verify** per layer) | ✓ dialog with fetch date; legend credit kept |
+| same files: `street_t10_cm`, `street_t100_cm` | water depth at the door | RESCCUE via CARTO `urbisadmin` (`fetch_climate_risk.py`) | Ajuntament de Barcelona / BCASA / Aquatec, **no licence** | ✗ no licence (5.2); the dialog says so; off in commercial mode |
+| same files: `fire_hazard`, `fire_wui` | wildfire hazard 2024, WUI zones | Generalitat, Agricultura (`PERILLBASICINCENDI.zip`); Protecció Civil via ICGC geoservei | Generalitat default licence; ICGC CC BY 4.0 | ✓ dialog with edition; legend credit kept |
+| `buildings-meta.json` → `areas[].price` | INCASOL sale price €/m² per barri / municipality | `habitatge.gencat.cat` XLSX (`fetch_incasol_sale_prices.py`, `fetch_incasol_sale_catalonia.py`) | Generalitat (Agència de l'Habitatge / INCASOL), Generalitat default licence (**verify**: the site's own legal notice was not reachable) | ✓ card: "Generalitat de Catalunya, INCASOL" (the word "official" was removed: it can read as an endorsement); dialog with date |
+| `data/barri-vibe.json` | residents' satisfaction, intention to stay, top problems per barri | Open Data BCN `esm-bcn-evo` (`build_neighbourhood_vibe.py`) | Ajuntament de Barcelona, Oficina Municipal de Dades. **CC BY 4.0** (confirmed in CKAN); anonymised microdata | ✓ card: "Source: Barcelona City Council … CC BY 4.0", small samples marked; dialog says the values are adjusted |
+| `data/noise.pmtiles` | Lden isophones 2022 | Open Data BCN `isofones-mapa-estrategic-soroll` (`prepare-noise-data.sh`) | **CC BY 4.0** | ✓ in the legend, the map line and the dialog |
+| `data/flood-zones.pmtiles`, `wildfire.pmtiles` | view layers | as `river_zone`, `fire_*` | as above | ✓ legend, map line, dialog with date |
 | `data/street-flooding.pmtiles` | view layer | RESCCUE | **no licence** | legend says "No explicit open-data license" |
-| `data/areas.geojson` | districts, barris, AMB municipalities | barris / districtes: `martgnz/bcn-geodata` (MIT repo; data from Ajuntament / CartoBCN, CC BY). Municipalities: Opendatasoft `georef-spain-municipio` | CC BY via the Ajuntament; Opendatasoft **verify** | ✗ |
-| `data/landmark-geometries.json` | not used by the app | Nominatim / Overpass, i.e. OSM | ODbL | delete it (see ARCHITECTURE "Known leftovers") |
-| `barcelona_poi.pmtiles` | POI icons; walkability of pins | OSM PBF (`extract_poi.py`) | **ODbL** | ✗ (5.3) |
-| `fgc-lines.geojson`, `fgc-stations.geojson` | FGC lines and stations | FGC GTFS `fgc.cat/google/google_transit.zip` | FGC; licence not stated (**verify**) | ✗ |
-| `basemap/icgc-standard.json` | our copy of ICGC's style `icgc_mapa_estandard_general` (TODO-058), byte for byte as ICGC serves it; the tiles, fonts and icons still come from ICGC | `npm run update:basemap` (`scripts/update-basemap-style.mjs`) | ICGC, **CC BY 4.0**: redistribution allowed with credit; unchanged, so nothing to mark as modified | ✓ the credit is in the style's `sources` and shown in the panel; ✗ on mobile (item 1); the Mapterhorn terrain source has no credit (3.2) |
-| `data/area-start.json` (written by `npm run build` into `dist/`, not in git) | the area view of a first visit: area → polygon, and the area ranks for the default settings (TODO-058) | computed from the building files and `areas.geojson` (`scripts/build-area-start.mjs`) | derived from all the score inputs: same terms as the building files (Catastro, noise, prices, climate) and ODbL for the OSM-derived part, as `min_*` / `cc_*` above | as the building files |
+| `data/areas.geojson` | districts, barris, AMB municipalities | barris / districtes: `martgnz/bcn-geodata` (MIT repo; data from Ajuntament / CartoBCN, CC BY). Municipalities: Opendatasoft `georef-spain-municipio` | CC BY via the Ajuntament; Opendatasoft **verify** | ✓ dialog credits CartoBCN / ICGC; the Opendatasoft municipality outlines are still unconfirmed (item 6) |
+| `data/landmark-geometries.json` | removed in TODO-066 | | | |
+| `barcelona_poi.pmtiles` | POI icons; walkability of pins | OSM PBF (`extract_poi.py`) | **ODbL** | ✓ declared ODbL (5.3) |
+| `fgc-lines.geojson`, `fgc-stations.geojson` | FGC lines and stations | FGC GTFS `fgc.cat/google/google_transit.zip` | FGC; licence not stated (**verify**) | credited in the dialog; licence still open |
+| `basemap/icgc-standard.json` | our copy of ICGC's style `icgc_mapa_estandard_general` (TODO-058), byte for byte as ICGC serves it; the tiles, fonts and icons still come from ICGC | `npm run update:basemap` (`scripts/update-basemap-style.mjs`) | ICGC, **CC BY 4.0**: redistribution allowed with credit; unchanged, so nothing to mark as modified | ✓ "© ICGC" in the map line on desktop and mobile; Mapterhorn is credited in the dialog (3.2) |
+| `data/area-start.json` (written by `npm run build` into `dist/`, not in git) | the area view of a first visit: area → polygon, and the area ranks for the default settings (TODO-058) | computed from the building files and `areas.geojson` (`scripts/build-area-start.mjs`) | derived from all the score inputs: same terms as the building files (Catastro, noise, prices, climate) and ODbL for the OSM-derived part, as `min_*` / `cc_*` above | as the building files; declared in `DATA_LICENSE.txt` |
 | `og-image.jpg` | screenshot of the map | ours (contains ICGC / OSM cartography) | — | low: add a small credit when it is regenerated |
 
 ### 3.2 Public product: services the browser calls
 
 | Service | Use | Terms | Status |
 |---|---|---|---|
-| ICGC ContextMaps / Mapa Base: tiles, glyphs, sprites, terrain | base map | **CC BY 4.0**; outside Catalonia © OpenMapTiles © OpenStreetMap (ODbL). No key, no stated limits | ✓ credit shown in the panel (desktop); ✗ not visible on mobile |
-| Mapterhorn `tiles.mapterhorn.com` (source `terrainMapZen` of the ICGC style) | terrain / hillshade | tiles from Copernicus GLO-30 and CNIG MDT ("CC-BY 4.0 scne.es"); code BSD-3; no stated terms for the endpoint | ✗ the style has no credit for it |
+| ICGC ContextMaps / Mapa Base: tiles, glyphs, sprites, terrain | base map | **CC BY 4.0**; outside Catalonia © OpenMapTiles © OpenStreetMap (ODbL). No key, no stated limits | ✓ "© ICGC" and "© OpenStreetMap contributors" in the map line on every screen |
+| Mapterhorn `tiles.mapterhorn.com` (source `terrainMapZen` of the ICGC style) | terrain / hillshade | tiles from Copernicus GLO-30 and CNIG MDT ("CC-BY 4.0 scne.es"); code BSD-3; no stated terms for the endpoint | ✓ credited in the dialog (the style itself still has none) |
 | Share pictures (TODO-063) | a snapshot of the live map (ICGC / OpenStreetMap), or the barri polygons coloured by score | same terms as the sources: CC BY 4.0 (ICGC, Ajuntament), ODbL for the OSM part | ✓ the credit is drawn on every picture ("Map: ICGC, OpenStreetMap contributors" / "Boundaries: Barcelona City Council, CC BY 4.0"); the scores in a picture are derived from all the score inputs |
 | OpenFreeMap (fallback) | base map | commercial use allowed, no limits, no SLA; OSM / OpenMapTiles credit required | ✓ credit from its style |
-| TMB API `api.tmb.cat/v1/transit` | metro lines and stations | per-application licence granted by TMB on approval; secondary sources say: cite TMB, don't alter. Keys are in the public bundle | **verify** in the developer portal |
+| TMB API `api.tmb.cat/v1/transit` | metro lines and stations | per-application licence granted by TMB on approval; secondary sources say: cite TMB, don't alter. Keys are in the public bundle | **verify** in the developer portal; credited in the dialog |
 | Catastro OVC `Consulta_DNPRC` | uses of the floors below ground, one call per card | SEC conditions: no bulk or automated use, per-IP limits (blocks of ~10 days). One call per user click is interactive use | ✓ keep it per click; never prefetch or bulk-download it (TODO-055) |
 | Catastro OVC facade photo | card photo (flag off) | no stated terms | keep off |
 | Catastro Sede, Google Maps, Idealista | links only | links are fine; name Idealista only to describe the link | ✓ |
-| Geoapify geocoding / autocomplete | search box addresses (no key in production now), pins (flag) | Free plan: commercial use "with some limitations" in production; **"Geoapify attribution is mandatory"** on the Free plan, plus OSM attribution | add the credit before the key goes to production |
+| Geoapify geocoding / autocomplete | search box addresses (no key in production now), pins (flag) | Free plan: commercial use "with some limitations" in production; **"Geoapify attribution is mandatory"** on the Free plan, plus OSM attribution | ✓ "Search by Geoapify · © OpenStreetMap contributors" under the address results. **Commercial: a paid plan is needed** |
 
 ### 3.3 Pipeline only (not shipped)
 
@@ -152,16 +158,17 @@ exclusion zones and settings live in the user's localStorage.
 ### 5.3 OpenStreetMap and ODbL
 
 - **Attribution:** "© OpenStreetMap contributors", linked to `openstreetmap.org/copyright`, visible on the map
-  without interaction. It may collapse after 5 s or on the first map move. Today it appears only inside the
-  ICGC credit ("Mapa resta del món"), and only in the desktop panel.
+  without interaction. It may collapse after 5 s or on the first map move. **Done:** it is in the map credit line
+  (`MapCredit`), which never collapses, on desktop and mobile, and links to openstreetmap.org/copyright.
 - `barcelona_poi.pmtiles` is a straight OSM extract that anyone can download from the site, so it is a derivative
   database "publicly used". It must be under ODbL, and say so.
 - The walking-minute columns are computed from the OSM network and POIs and are published per building. The
   OSMF guidelines don't settle whether such computed values are a Produced Work or a Derivative Database. The
   safe and cheap option is to treat the OSM-derived columns as ODbL:
-  - say so in the "Data sources" modal;
-  - add a short `DATA_LICENSE` note next to the files;
-  - be ready to send the OSM-derived columns as a CSV on request.
+  - say so in the "Data sources" modal (**done**);
+  - add a short `DATA_LICENSE` note next to the files (**done**: `frontend/public/data/DATA_LICENSE.txt`, and
+    `THIRD_PARTY_NOTICES.md` in the repo root);
+  - be ready to send the OSM-derived columns as a CSV on request (contact in the dialog: info@time2map.com).
 
   The Catastro and other columns stay under their own terms; the file is a collective database. Don't relicense
   the Generalitat or Catastro data under ODbL: the Generalitat licence forbids sublicensing.
@@ -177,16 +184,21 @@ exclusion zones and settings live in the user's localStorage.
   - check the required credit wording (secondary sources: cite TMB and the update date, don't alter the data).
 - If a static copy is not allowed, draw the metro lines from OSM instead.
 
-## 6. Proposed attribution
+## 6. Attribution (implemented in TODO-066)
 
-**On the map** (MapLibre `AttributionControl`, `compact: true`, bottom right, visible on mobile too). Turn the
-control back on and let it collect the `attribution` strings of every source. Add a source-less credit for the
-buildings data:
+What the app does now. The registry `frontend/src/services/dataSources.ts` is the single source: the map line, the
+dialog and the legends read from it, and `dataSources.test.ts` fails when a layer with an `attribution` has no entry.
+Texts: `frontend/src/locales/<lang>/legal.json`. The original proposal follows; differences are noted.
+
+**On the map** (own component `MapCredit`, not MapLibre's control: always visible, never collapsed, desktop bottom
+right, phone above the sheet and above the first-visit sheet; the raw-HTML credit in the panel and the old About sheet
+were removed):
 
 > © ICGC · © OpenStreetMap contributors · © Dirección General del Catastro · Data: Ajuntament de Barcelona,
 > Generalitat de Catalunya, MITECO · [Data sources](#)
 
-**"Data sources" modal** (link from the attribution, the panel footer and the info modal). One row per source:
+**"About and data sources" dialog** (`AboutDialog`; opened from the ⋯ menu of the brand bar, the info button on a
+phone, and the "Data sources" link in the map line; a modal on desktop, a sheet on a phone). One row per source:
 publisher, dataset, year or update date, licence with a link, and "modified by time2map" where we transform it.
 
 - Buildings: © Dirección General del Catastro, INSPIRE Buildings and Addresses, update `<date>`, CC BY 4.0.
@@ -210,10 +222,36 @@ publisher, dataset, year or update date, licence with a link, and "modified by t
 - Transit: TMB (`<terms wording>`); FGC (`<licence>`).
 - Not affiliated with or endorsed by any of these bodies.
 
-The update dates should come from the pipeline: write a `sources` block with fetch dates into
-`buildings-meta.json`, so the modal never goes stale.
+Also in the dialog: "not official, not endorsed", "not official cadastral information", the ODbL notice, a note that
+street flooding has no licence, what leaves the browser (ICGC, OpenFreeMap, the terrain service and Geoapify see the
+IP), and the contact (Alexander Semenov, info@time2map.com).
+
+**In context:** building card (Catastro credit and "not official"; noise source), locals' opinion (Barcelona City
+Council, CC BY 4.0, small samples marked), sale price (INCASOL), address results (Geoapify and OSM).
+
+**Dates.** `build_building_tiles.py` writes a `sources` block (date of each input file) into `buildings-meta.json`.
+The dialog uses it; the current deployed file was built before this change, so for now sources baked into the
+building files show the build date, and the next data rebuild fills the real dates. Sources with a fixed edition
+(noise 2022, survey 2022–2026, wildfire 2024) show the edition.
 
 ## 7. Action plan
+
+**Done in TODO-066:** items 1, 2, 7 (credit in the Geoapify results) and 8, plus the `VITE_COMMERCIAL_USE` switch
+(street flooding layer and penalty, TMB and FGC off). **Still open** (all need a third party, or a lawyer): 3, 4, 5, 6.
+
+**Before a commercial launch** (everything marked here needs special terms, none of it is needed while the product is
+non-commercial):
+
+| What | Why |
+|---|---|
+| Written confirmation from Catastro that the buildings data is CC BY 4.0 | the 2016 licence PDF allows commercial use of transformed data only, and the card shows facts almost verbatim |
+| Permission from the Ajuntament / BCASA / Aquatec for the RESCCUE layer (or keep it off) | no licence at all |
+| TMB: read the developer-portal terms; commercial or per-use conditions | per-application licence, terms unread |
+| FGC: confirm the GTFS licence, or draw the lines from OSM | licence not stated |
+| Geoapify: paid plan | the Free plan limits commercial production use |
+| Catastro DNPRC and Mapterhorn: ask for terms at scale, or self-host | no stated terms for volume |
+| Legal notice (LSSI-CE art. 10: owner, contact) and a privacy policy | a site with economic activity needs them; show to a lawyer |
+| Set `VITE_COMMERCIAL_USE=true` until the above are settled | switches off the unlicensed layers |
 
 1. **Attribution.** Section 6: map control, "Data sources" modal, update dates from the pipeline,
    "not official cadastral information" in the card. Covers items 1, 3 (attribution part) and the Catastro and
@@ -225,9 +263,11 @@ The update dates should come from the pipeline: write a `sources` block with fet
 6. **`areas.geojson`:** take the municipalities from ICGC instead of Opendatasoft.
 7. **Geoapify:** add "Powered by Geoapify" before the search key reaches production; check the Free-plan
    production limits.
-8. Delete `landmark-geometries.json`; keep the Idealista scrape out of git and production.
+8. Delete `landmark-geometries.json` (done, TODO-066); keep the Idealista scrape out of git and production.
 
 ## 8. Not verified
+
+(Links in the registry were re-checked on 2026-11-14; three were broken and are fixed: Open Data BCN noise dataset, INCASOL statistics page, ACA.)
 
 - Licence of the SICA 4th-round downloads (the 3rd-round metadata says CC BY 4.0).
 - Per-layer licence of the ACA WFS (the service declares no constraints).

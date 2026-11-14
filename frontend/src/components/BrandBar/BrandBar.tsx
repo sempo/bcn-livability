@@ -1,8 +1,8 @@
-import { IconSearch, IconShare } from '@tabler/icons-react'
+import { IconSearch } from '@tabler/icons-react'
 import { useSearchStore } from '../../store/searchStore'
 import { useTranslation } from 'react-i18next'
 import { useShare } from '../../hooks/useShare'
-import { LanguageSwitcher } from '../LanguageSwitcher/LanguageSwitcher'
+import { BrandMenu } from './BrandMenu'
 
 /**
  * Top-left brand mini-panel: the time2map agency mark (coral, links to time2map.com) + the page
@@ -32,10 +32,6 @@ export function BrandBar() {
         />
       </a>
       <h1 className="app-title" title={t('brand.title')}>{t('brand.short')}</h1>
-      <LanguageSwitcher />
-      <button type="button" className="brand-share" aria-label={t('brand.share')} title={t('brand.share')} onClick={share}>
-        <IconShare size={18} stroke={2} />
-      </button>
       <button
         type="button"
         className="brand-search"
@@ -46,6 +42,7 @@ export function BrandBar() {
       >
         <IconSearch size={18} stroke={2} />
       </button>
+      <BrandMenu onShare={share} />
       {message && <div className="share-toast" role="status">{message}</div>}
     </div>
   )

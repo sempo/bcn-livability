@@ -545,10 +545,17 @@ See `docs/ROADMAP.md`.
 ## Known leftovers (code still to clean up)
 
 - `layerOrder.ts` still lists `barrio-boundaries-*` layers, but no component adds them.
-- `frontend/public/data/landmark-geometries.json` and `SHAPE_LANDMARK_IDS` (`services/cityCore/landmarks.ts`)
-  are not used by the app. City Core shapes now live in `scripts/building_access.py`.
+- `SHAPE_LANDMARK_IDS` (`services/cityCore/landmarks.ts`) and `scripts/prepare-landmark-geometries.py` are not used by
+  the app (the `landmark-geometries.json` they wrote was removed in TODO-066: it was OSM data served without an ODbL notice). City Core shapes now live in `scripts/building_access.py`.
 - `BuildingsMeta.categories` in `buildingData.ts` says the columns are `walk_<id>`; the frontend actually reads
   `min_<id>`.
 - The info modal of the commute zone (`FilterPanel.tsx`) hardcodes the pin weights instead of reading the ENV.
 - The docstring of `scripts/fetch_climate_risk.py` says "Nothing here feeds the frontend yet". It now feeds
   `building_exposure.py` and `climate_risk.py`.
+
+## Data sources and credits (TODO-066)
+
+- `services/dataSources.ts` is the one registry of sources (publisher, licence, link, edition, `commercial` flag). The map credit (`components/About/MapCredit.tsx`), the dialog (`About/AboutDialog.tsx`, state in `store/aboutStore.ts`) and the cards read from it. Add a source there when the code adds one; `dataSources.test.ts` fails when a `*Layer.tsx` with an `attribution` has no entry.
+- Texts of the dialog and the in-context credits: `locales/<lang>/legal.json`.
+- Fetch dates: `buildings-meta.json` → `sources` (written by `build_building_tiles.py` from the dates of its input files); without it the dialog shows the build date.
+- `VITE_COMMERCIAL_USE=true` turns off street flooding (layer, penalty), TMB and FGC.

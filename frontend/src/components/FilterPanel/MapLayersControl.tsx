@@ -1,12 +1,14 @@
 import { SegmentedControl, Stack, Text } from '@mantine/core'
 import { useTranslation } from 'react-i18next'
+import { features } from '../../features'
 import { useStore, mapLayerOf, type MapLayerId } from '../../store'
 import { NoiseLegend } from '../NoiseLayer/NoiseLegend'
 import { FloodZonesLegend } from '../FloodZonesLayer/FloodZonesLegend'
 import { StreetFloodingLegend } from '../StreetFloodingLayer/StreetFloodingLegend'
 import { WildfireLegend } from '../WildfireLayer/WildfireLegend'
 
-const LAYER_IDS: MapLayerId[] = ['none', 'noise', 'river', 'street', 'wildfire']
+const LAYER_IDS: MapLayerId[] = (['none', 'noise', 'river', 'street', 'wildfire'] as MapLayerId[])
+  .filter((id) => !(features.commercialUse && id === 'street')) // no licence for the RESCCUE data (TODO-066)
 
 /** The expert layers under one control: one at a time, with the legend of the chosen one (TODO-052). */
 export function MapLayersControl() {

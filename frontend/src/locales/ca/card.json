@@ -127,7 +127,7 @@
     "kindMuni": "municipi",
     "noPrice": "Sense dades de preu de venda",
     "salePrice": "Preu de venda: {{text}}",
-    "salePriceOpen": "Preu de venda: <b>{{price}} €/m²</b> · dades oficials de la Generalitat",
+    "salePriceOpen": "Preu de venda: <b>{{price}} €/m²</b> · Generalitat de Catalunya, INCASOL",
     "localsSay": "Què diuen els veïns",
     "notBcn": "No disponible fora de la ciutat de Barcelona",
     "riskRiver": "Inundació de riu",
@@ -150,7 +150,7 @@
     "trend": "Tendència respecte del 2015–19",
     "noChange": "Sense canvis",
     "problems": "Principals problemes",
-    "source": "Enquesta de la ciutat de Barcelona (ESM) {{years}} · {{n}} entrevistes",
+    "source": "Font: Ajuntament de Barcelona, Enquesta de serveis municipals (ESM) {{years}} · {{n}} entrevistes · CC BY 4.0",
     "smallSample": "Mostra petita — la puntuació es recolza en la zona més àmplia (gran barri)",
     "p": {
       "insecurity": "Inseguretat",
