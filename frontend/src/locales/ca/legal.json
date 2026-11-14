@@ -36,7 +36,7 @@
     "pricesYear": "Font: Generalitat de Catalunya, INCASOL, {{year}}.",
     "geoapify": "Cerca de Geoapify · © OpenStreetMap contributors",
     "noiseBcn": "Font: Ajuntament de Barcelona, Mapa estratègic de soroll 2022 (CC BY 4.0). Mitjançat per edifici per time2map.",
-    "noiseSica": "Font: MITECO, mapes estratègics de soroll SICA 2022 (CC BY 4.0). Mitjançat per edifici per time2map."
+    "noiseSica": "Font: Generalitat de Catalunya, Departament de Territori, Habitatge i Transició Ecològica, mapes estratègics de soroll 2022 (publicats per SICA, MITECO). Mitjançat per edifici per time2map."
   },
   "sources": {
     "catastro": {
@@ -44,6 +44,9 @@
     },
     "noise-bcn": {
       "changed": "Nivell de soroll a cada façana pres del mapa i mitjançat per edifici."
+    },
+    "fgc": {
+      "changed": "Línies i estacions dibuixades a partir del feed GTFS."
     },
     "noise-sica": {
       "changed": "Nivell de soroll a cada façana pres del mapa i mitjançat per edifici."

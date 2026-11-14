@@ -68,10 +68,14 @@ export const DATA_SOURCES: readonly DataSource[] = [
   },
   {
     id: 'noise-sica',
-    publisher: 'MITECO, Sistema de Información sobre Contaminación Acústica (SICA)',
-    dataset: 'Strategic noise maps, 4th round (outside Barcelona)',
-    licence: CC_BY, url: 'https://sicaweb.cedex.es/',
-    edition: '2022', changed: true, layers: [], commercial: 'ok',
+    publisher: 'Generalitat de Catalunya, Departament de Territori, Habitatge i Transició Ecològica (published by MITECO, SICA)',
+    dataset: 'Strategic noise maps, 4th round: agglomerations of L\'Hospitalet, Baix Llobregat, Barcelonès and Vallès Occidental',
+    // The XML metadata of all five deliveries names the Generalitat's Direcció General de Canvi Climàtic i Qualitat
+    // Ambiental as the competent authority and lists no licence ("Otras limitaciones no listadas"). SICA's page: the
+    // files are the originals; the date shown is the delivery date to MITECO, taken as the update date. So the
+    // Generalitat default licence applies by its legal notice, as for the ACA and INCASOL data.
+    licence: GENCAT, url: 'https://sicaweb.miteco.gob.es/datos-geoespaciales/4a-fase/',
+    edition: '2022 maps, delivered to MITECO 2024-12-13 to 2025-03-28', changed: true, layers: [], commercial: 'ok',
   },
   {
     id: 'esm',
@@ -144,7 +148,7 @@ export const DATA_SOURCES: readonly DataSource[] = [
     publisher: 'Ajuntament de Barcelona (CartoBCN); ICGC',
     dataset: 'Districts, barris and municipality outlines',
     licence: CC_BY, url: 'https://opendata-ajuntament.barcelona.cat/data/en/dataset/20170706-districtes-barris',
-    layers: ['AreasLayer'], commercial: 'ok',
+    edition: 'municipalities: ICGC 1:100 000, 2026-01-20', layers: ['AreasLayer'], commercial: 'ok',
   },
   {
     id: 'tmb',
@@ -157,8 +161,10 @@ export const DATA_SOURCES: readonly DataSource[] = [
     id: 'fgc',
     publisher: 'Ferrocarrils de la Generalitat de Catalunya (FGC)',
     dataset: 'Lines and stations (GTFS)',
-    licence: { name: 'Licence not stated' },
-    url: 'https://www.fgc.cat/en/', layers: ['FgcLayer'], commercial: 'needs-terms', offInCommercial: true,
+    // FGC's open-data portal publishes this exact feed (www.fgc.cat/google/google_transit.zip) as dataset `gtfs_zip`
+    // under CC BY 4.0 (checked 2026-11-14).
+    licence: CC_BY, url: 'https://dadesobertes.fgc.cat/explore/dataset/gtfs_zip/',
+    changed: true, layers: ['FgcLayer'], commercial: 'ok',
   },
   {
     id: 'geoapify',

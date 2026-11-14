@@ -32,7 +32,7 @@ describe('data source registry', () => {
 
   it('marks the sources whose terms are open for commercial use', () => {
     expect(COMMERCIAL_REVIEW_IDS).toEqual(
-      expect.arrayContaining(['street-flooding', 'fgc', 'catastro', 'geoapify']),
+      expect.arrayContaining(['street-flooding', 'catastro', 'geoapify']),
     )
     for (const id of COMMERCIAL_REVIEW_IDS) expect(sourceById(id)?.commercial).toBe('needs-terms')
     expect(sourceById('street-flooding')?.licence.name).toMatch(/no licence/i)
@@ -56,7 +56,7 @@ describe('data source registry', () => {
     const commercial = visibleSources({ facadePhoto: false, commercialUse: true }).map((s) => s.id)
     expect(commercial).not.toContain('street-flooding')
     expect(commercial).toContain('tmb') // free licence, commercial use allowed when declared in the application
-    expect(commercial).not.toContain('fgc')
+    expect(commercial).toContain('fgc') // CC BY 4.0 on FGC's open-data portal
   })
 
   it('covers every attribution string written in the layer code', () => {
