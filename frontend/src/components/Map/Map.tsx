@@ -231,8 +231,8 @@ export function Map() {
         {features.idealistaPrices && <IdealistaPricesLayer />}
         {features.isochrone && <IsochroneLayer />}
       </Suspense>
-      {/* TMB and FGC terms are not confirmed for commercial use (TODO-066) */}
-      {transitReady && !features.commercialUse && <MetroLayer />}
+      {transitReady && <MetroLayer />}
+      {/* FGC's licence is not stated: off for commercial use (TODO-066) */}
       {transitReady && !features.commercialUse && <FgcLayer />}
       {poiEver && <PoiLayer />}
       <Suspense fallback={null}>

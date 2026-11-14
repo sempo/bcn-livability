@@ -16,7 +16,7 @@ date, don't imply endorsement, and share-alike for OSM.
 
 **Status after TODO-066 (2026-11-14).** Attribution is now shown in the app (item 1), the ODbL notice is published
 (item 3), and a single switch, `VITE_COMMERCIAL_USE`, turns off the layers that are not safe for a commercial
-launch (items 2, 4, 5). What is still open needs a third party: items 2, 4, 5, 6 and the Catastro confirmation.
+launch (items 2 and 5). What is still open needs a third party: items 2, 5, 6 and the Catastro confirmation; TMB (item 4) was reviewed and is low risk.
 The "Risk" column below is the risk **before** the work, except where the Fix column says done.
 
 **What was wrong, and what is left:**
@@ -26,7 +26,7 @@ The "Risk" column below is the risk **before** the work, except where the Fix co
 | 1 | **Attribution was missing for most sources. DONE (TODO-066).** The facts below describe the state before.  `attributionControl: false` in `Map.tsx`; the panel shows only the base-map credit. The `attribution` strings of the noise, flood, wildfire, street-flooding and POI sources are never rendered. Catastro (the buildings layer itself), OSM-derived walkability, the ESM survey, SICA noise, area boundaries, TMB, FGC and Mapterhorn terrain are not credited anywhere visible. On mobile the panel is in a drawer, so the map has no visible credit at all. | ~~High~~ fixed | Done: credit line on the map, "About and data sources" dialog, credits on the cards (section 6) |
 | 2 | **Street flooding (RESCCUE, Atles de resiliència)** has no licence. It is fetched from the Ajuntament's CARTO account with a read key taken from the public viewer. The product owner accepted the risk in 037. | **High** (open) | Ask the Ajuntament for permission, or for publication on Open Data BCN. **Commercial: `VITE_COMMERCIAL_USE=true` already turns the layer and the penalty off.** The dialog states that the layer has no licence |
 | 3 | **OSM share-alike (ODbL). Notice added in TODO-066** (`frontend/public/data/DATA_LICENSE.txt`, `THIRD_PARTY_NOTICES.md`). `barcelona_poi.pmtiles` is an OSM extract, so it is a derivative database. The `min_*` / `cc_*` columns in `buildings-scores.bin.gz` are computed from OSM and are probably one too. Both are public files, but nothing says they are under ODbL. | ~~Medium~~ done | Done: `frontend/public/data/DATA_LICENSE.txt` and `THIRD_PARTY_NOTICES.md` declare the OSM-derived files as ODbL, the dialog says so, data on request (section 5.3) |
-| 4 | **TMB metro layer.** The app calls the TMB API from the browser with keys built into the public bundle. TMB grants its data licence per application, on approval; the terms could not be read without a login. | **Medium** | Read the terms in the developer portal; confirm that public web use and a static copy (TODO-055) are allowed. Credited in the dialog; **off with `VITE_COMMERCIAL_USE=true`** |
+| 4 | **TMB metro layer.** Terms read on 2026-11-14 (5.4). The licence is free, non-exclusive, worldwide and indefinite; it covers static and real-time data, reproduction and derivative works. Conditions: cite the source **and the date of the last update**, don't alter the content, use it only for the app named in the application. | **Low** | Credit kept (done, dialog). Check that the TMB application names this app; **commercial: declare it in the application** (TMB may attach fees to some content) |
 | 5 | **FGC lines and stations** (`fgc-*.geojson`, from FGC GTFS). The licence is not stated on the portal; its "terms" link leads to the website's legal notice, which forbids commercial reuse of *web content*. The datasets on datos.gob.es point to the Generalitat licences page. | **Medium** (verify) | Confirm the GTFS licence with FGC, or draw the lines from OSM. Credited in the dialog; **off with `VITE_COMMERCIAL_USE=true`** |
 | 6 | **Municipality outlines** in `areas.geojson` come from Opendatasoft `georef-spain-municipio`. Licence not confirmed. | **Low** | Use the ICGC municipalities (CC BY 4.0) that `fetch_incasol_sale_catalonia.py` already downloads |
 | 7 | **Catastro facade photo** (flag off): hotlinked, no stated terms. | Low while off | Keep off until Catastro confirms |
@@ -87,7 +87,7 @@ come back automatically if the breach is cured within 30 days of discovery. So *
 | Mapterhorn `tiles.mapterhorn.com` (source `terrainMapZen` of the ICGC style) | terrain / hillshade | tiles from Copernicus GLO-30 and CNIG MDT ("CC-BY 4.0 scne.es"); code BSD-3; no stated terms for the endpoint | ✓ credited in the dialog (the style itself still has none) |
 | Share pictures (TODO-063) | a snapshot of the live map (ICGC / OpenStreetMap), or the barri polygons coloured by score | same terms as the sources: CC BY 4.0 (ICGC, Ajuntament), ODbL for the OSM part | ✓ the credit is drawn on every picture ("Map: ICGC, OpenStreetMap contributors" / "Boundaries: Barcelona City Council, CC BY 4.0"); the scores in a picture are derived from all the score inputs |
 | OpenFreeMap (fallback) | base map | commercial use allowed, no limits, no SLA; OSM / OpenMapTiles credit required | ✓ credit from its style |
-| TMB API `api.tmb.cat/v1/transit` | metro lines and stations | per-application licence granted by TMB on approval; secondary sources say: cite TMB, don't alter. Keys are in the public bundle | **verify** in the developer portal; credited in the dialog |
+| TMB API `api.tmb.cat/v1/transit` | metro lines and stations | **free, non-exclusive, worldwide, indefinite licence** (developer.tmb.cat/docs/terms-conditions, in Catalan); covers static GTFS and real-time data, reproduction, distribution, derivative works. Cite the source **and the date of the last update**; don't alter or distort; use only for the app named in the application; keys per application; TMB may impose other (paid) terms on some content and may end the licence on breach | ✓ credited in the dialog, with "live from the TMB API" as the date. Keys in the public bundle: not forbidden (the terms say the registration controls "how and from where" the API is used) |
 | Catastro OVC `Consulta_DNPRC` | uses of the floors below ground, one call per card | SEC conditions: no bulk or automated use, per-IP limits (blocks of ~10 days). One call per user click is interactive use | ✓ keep it per click; never prefetch or bulk-download it (TODO-055) |
 | Catastro OVC facade photo | card photo (flag off) | no stated terms | keep off |
 | Catastro Sede, Google Maps, Idealista | links only | links are fine; name Idealista only to describe the link | ✓ |
@@ -175,14 +175,25 @@ exclusion zones and settings live in the user's localStorage.
 
 ### 5.4 TMB
 
-- The licence comes with the developer account ("condicions generals de contractació"). TMB grants a
-  non-exclusive licence on approval, covering the static GTFS and the real-time services.
-- Before going further:
-  - read the conditions in the developer portal and save a copy in `local-docs/`;
-  - check that public web apps, keys in the browser bundle, and a static copy of the lines and stations
-    (TODO-055) are allowed;
-  - check the required credit wording (secondary sources: cite TMB and the update date, don't alter the data).
-- If a static copy is not allowed, draw the metro lines from OSM instead.
+Read on 2026-11-14 from https://developer.tmb.cat/docs/terms-conditions (Catalan only). Summary, not a translation:
+
+- **Who and what.** Anyone who builds an app that informs about TMB transport, or a service or product that draws on TMB
+  content. The text does not separate commercial from non-commercial use: both are services or products.
+- **Licence.** Free ("a títol gratuït"), non-exclusive, worldwide, indefinite. It covers reproduction, distribution,
+  public communication and derivative works, for the static GTFS and the real-time services. So a **static copy
+  (TODO-055) is allowed** under this text.
+- **Conditions.** Cite the source and the date of the last update in the app; don't alter or distort the content; use the
+  content only for the app or service named in the application ("únicament i exclusivament"); keys are issued per
+  application. The client is liable for damages and indemnifies TMB.
+- **What can change.** TMB may license some content under other terms with payment, may change or remove content, end
+  the licence, or change the API without a duty to warn; breach allows immediate termination. Content is as-is.
+- **Browser keys.** Not addressed. The terms say the application registration controls how and from where the API is
+  used; keys in a public bundle are not forbidden.
+- **What we do.** Credit in the dialog (publisher, licence link, "live from the TMB API" as the date). We do not change
+  the metro lines.
+- **To do.** Make sure the TMB application names this app (and, for a commercial launch, says so: the licence is tied to
+  the named use). Keep a copy of the accepted terms in `local-docs/`. If TMB ever asks for payment for a content type,
+  draw the metro lines from OSM instead.
 
 ## 6. Attribution (implemented in TODO-066)
 
@@ -219,7 +230,7 @@ publisher, dataset, year or update date, licence with a link, and "modified by t
 - Base map: © ICGC, CC BY 4.0; © OpenMapTiles © OpenStreetMap contributors. Terrain: Mapterhorn (Copernicus
   GLO-30, © CNIG "scne.es" CC BY 4.0).
 - Areas: Ajuntament de Barcelona (CartoBCN), CC BY 4.0; municipalities © ICGC, CC BY 4.0.
-- Transit: TMB (`<terms wording>`); FGC (`<licence>`).
+- Transit: TMB ("TMB open-data licence, cite source and update date", live from the API); FGC (licence not stated).
 - Not affiliated with or endorsed by any of these bodies.
 
 Also in the dialog: "not official, not endorsed", "not official cadastral information", the ODbL notice, a note that
@@ -237,7 +248,7 @@ building files show the build date, and the next data rebuild fills the real dat
 ## 7. Action plan
 
 **Done in TODO-066:** items 1, 2, 7 (credit in the Geoapify results) and 8, plus the `VITE_COMMERCIAL_USE` switch
-(street flooding layer and penalty, TMB and FGC off). **Still open** (all need a third party, or a lawyer): 3, 4, 5, 6.
+(street flooding layer and penalty, FGC off). **Still open** (need a third party, or a lawyer): 3, 5, 6. Item 4 (TMB) was reviewed on 2026-11-14 and is low risk.
 
 **Before a commercial launch** (everything marked here needs special terms, none of it is needed while the product is
 non-commercial):
@@ -246,7 +257,7 @@ non-commercial):
 |---|---|
 | Written confirmation from Catastro that the buildings data is CC BY 4.0 | the 2016 licence PDF allows commercial use of transformed data only, and the card shows facts almost verbatim |
 | Permission from the Ajuntament / BCASA / Aquatec for the RESCCUE layer (or keep it off) | no licence at all |
-| TMB: read the developer-portal terms; commercial or per-use conditions | per-application licence, terms unread |
+| TMB: declare the commercial use in the TMB application | the licence is free but tied to the use named in the application; TMB may attach fees to some content |
 | FGC: confirm the GTFS licence, or draw the lines from OSM | licence not stated |
 | Geoapify: paid plan | the Free plan limits commercial production use |
 | Catastro DNPRC and Mapterhorn: ask for terms at scale, or self-host | no stated terms for volume |
@@ -258,7 +269,7 @@ non-commercial):
    Generalitat conditions. A small feature (TODO).
 2. **ODbL notice** for `barcelona_poi.pmtiles` and the OSM-derived columns (5.3).
 3. **RESCCUE:** send the request to the Ajuntament; decide what to do with the layer for commercial use.
-4. **TMB:** read and archive the portal terms; decide on the static copy in TODO-055.
+4. **TMB:** terms read (5.4); a static copy (TODO-055) is allowed. Remaining: check that the application names this app, keep a copy of the accepted terms.
 5. **FGC:** confirm the GTFS licence, or switch to OSM.
 6. **`areas.geojson`:** take the municipalities from ICGC instead of Opendatasoft.
 7. **Geoapify:** add "Powered by Geoapify" before the search key reaches production; check the Free-plan
@@ -273,7 +284,6 @@ non-commercial):
 - Per-layer licence of the ACA WFS (the service declares no constraints).
 - Legal notice of `habitatge.gencat.cat` (INCASOL statistics).
 - FGC GTFS licence; Renfe / Rodalies GTFS terms.
-- TMB developer-portal conditions (they need a login).
 - Opendatasoft `georef-spain-municipio` licence and source.
 - Whether the Catastro 2016 licence PDF is still meant to apply next to the CC BY 4.0 metadata.
 

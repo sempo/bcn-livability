@@ -24,12 +24,15 @@ describe('data source registry', () => {
     expect(credit).toContain('ICGC')
     expect(credit).toContain('OpenStreetMap contributors')
     expect(credit).toContain('Dirección General del Catastro')
-    for (const c of MAP_CREDIT) expect(sourceById(c.source)).toBeDefined()
+    for (const c of MAP_CREDIT) {
+      expect(sourceById(c.source)).toBeDefined()
+      expect(c.url).toMatch(/^https:\/\//)
+    }
   })
 
   it('marks the sources whose terms are open for commercial use', () => {
     expect(COMMERCIAL_REVIEW_IDS).toEqual(
-      expect.arrayContaining(['street-flooding', 'tmb', 'fgc', 'catastro', 'geoapify']),
+      expect.arrayContaining(['street-flooding', 'fgc', 'catastro', 'geoapify']),
     )
     for (const id of COMMERCIAL_REVIEW_IDS) expect(sourceById(id)?.commercial).toBe('needs-terms')
     expect(sourceById('street-flooding')?.licence.name).toMatch(/no licence/i)
@@ -41,7 +44,7 @@ describe('data source registry', () => {
     expect(sourceDate(catastro, { generated: '2026-11-04' })).toBe('2026-11-04')
     expect(sourceDate(catastro, undefined)).toBeUndefined()
     // Live services have no build date.
-    expect(sourceDate(sourceById('tmb')!, { generated: '2026-11-04' })).toBeUndefined()
+    expect(sourceDate(sourceById('fgc')!, { generated: '2026-11-04' })).toBeUndefined()
     // A source with a fixed edition (noise map 2022) keeps it.
     expect(sourceDate(sourceById('noise-bcn')!, { generated: '2026-11-04' })).toBe('2022')
   })
@@ -52,7 +55,7 @@ describe('data source registry', () => {
     expect(on).toContain('osm')
     const commercial = visibleSources({ facadePhoto: false, commercialUse: true }).map((s) => s.id)
     expect(commercial).not.toContain('street-flooding')
-    expect(commercial).not.toContain('tmb')
+    expect(commercial).toContain('tmb') // free licence, commercial use allowed when declared in the application
     expect(commercial).not.toContain('fgc')
   })
 
