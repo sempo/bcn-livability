@@ -8,7 +8,7 @@ import { firstVisitSettings } from '../buildings/firstVisit'
 import { profileToPatch, type Profile } from '../conditionOptions'
 import type { BarriVibeData } from '../localsOpinion/localsOpinion'
 import type { ConditionId } from '../match/matchSummary'
-import { PRESETS } from '../presets'
+import { PRESETS, profileName } from '../presets'
 import { areaSlug } from './shareImageModel'
 
 export { areaSlug }
@@ -98,7 +98,7 @@ const AS_WORDS: Record<string, string> = {
 /** Title and description of a barri page. */
 export function pageTexts(page: SharePage): { title: string; description: string } {
   const pct = Math.round(page.rank.shareGood)
-  const who = AS_WORDS[page.profile.id] ?? page.profile.name
+  const who = AS_WORDS[page.profile.id] ?? profileName(page.profile)
   return {
     title: `${page.rank.name}: ${pct}% of homes fit ${who} · Barcelona livability map`,
     description:

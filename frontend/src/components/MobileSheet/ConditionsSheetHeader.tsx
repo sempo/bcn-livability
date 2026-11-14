@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useStore } from '../../store'
 import { useSheetStore } from '../../store/sheetStore'
 import { conditionNames } from '../../services/match/conditionNames'
@@ -8,6 +9,7 @@ import { conditionNames } from '../../services/match/conditionNames'
  * area was picked from the list, that area with a way back to the list.
  */
 export function ConditionsSheetHeader() {
+  const { t } = useTranslation('editor')
   const weights = useStore((s) => s.compositeWeights)
   const risks = useStore((s) => s.compositeRiskStrengths)
   const position = useSheetStore((s) => s.position)
@@ -22,9 +24,9 @@ export function ConditionsSheetHeader() {
       <div className="sheet-header sheet-header--row">
         <div className="sheet-header__text">
           <div className="sheet-header__title">{picked.name}</div>
-          <div className="sheet-header__sub">{picked.share}% of homes are a good match</div>
+          <div className="sheet-header__sub">{t('sheet.pickedSub', { share: picked.share })}</div>
         </div>
-        <button type="button" className="sheet-header__action" onClick={backToList}>Back to the list</button>
+        <button type="button" className="sheet-header__action" onClick={backToList}>{t('sheet.backToList')}</button>
       </div>
     )
   }
@@ -32,18 +34,18 @@ export function ConditionsSheetHeader() {
   if (tab === 'areas') {
     return (
       <div className="sheet-header">
-        <div className="sheet-header__title">Your areas</div>
-        <div className="sheet-header__sub">{peek ? 'Swipe up for the ranked list' : 'Ranked by the share of homes that fit'}</div>
+        <div className="sheet-header__title">{t('sheet.areasTitle')}</div>
+        <div className="sheet-header__sub">{peek ? t('sheet.swipeList') : t('sheet.rankedBy')}</div>
       </div>
     )
   }
 
-  const list = names.length > 0 ? names.join(' · ') : 'No conditions yet'
+  const list = names.length > 0 ? names.join(' · ') : t('sheet.none')
   return (
     <div className="sheet-header">
-      <div className="sheet-header__title">{peek ? list : 'Your conditions'}</div>
+      <div className="sheet-header__title">{peek ? list : t('sheet.conditionsTitle')}</div>
       <div className="sheet-header__sub">
-        {peek ? (names.length > 0 ? 'Swipe up to change them' : 'Swipe up to add one') : list}
+        {peek ? (names.length > 0 ? t('sheet.swipeChange') : t('sheet.swipeAdd')) : list}
       </div>
     </div>
   )

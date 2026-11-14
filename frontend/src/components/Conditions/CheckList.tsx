@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Checkbox, Text } from '@mantine/core'
 
 export interface CheckItem {
@@ -18,6 +19,7 @@ export function CheckList({ items, selected, onChange, allLabel }: {
   onChange: (ids: string[]) => void
   allLabel: string
 }) {
+  const { t } = useTranslation('editor')
   // null = follow the saved selection; [] = the person cleared everything and has not ticked anything yet.
   const [draft, setDraft] = useState<string[] | null>(null)
   const current = draft ?? selected
@@ -55,7 +57,7 @@ export function CheckList({ items, selected, onChange, allLabel }: {
         />
       ))}
       {current.length === 0 && (
-        <Text size="xs" c="dimmed">Tick at least one. The map keeps your last choice until you do.</Text>
+        <Text size="xs" c="dimmed">{t('picker.tickOne')}</Text>
       )}
     </div>
   )

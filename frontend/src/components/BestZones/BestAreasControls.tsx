@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { ActionIcon, Button, Checkbox, Group, Popover, Stack, Text } from '@mantine/core'
 import { IconSettings } from '@tabler/icons-react'
 import { useStore } from '../../store'
@@ -12,6 +13,7 @@ import { features } from '../../features'
  * More / Fewer areas instead of a "top X %" slider. The zones themselves are drawn by BestZones on the map.
  */
 export function BestAreasControls() {
+  const { t } = useTranslation('panel')
   const map = useMapStore((s) => s.map)
   const visible = useStore((s) => s.compositeVisible)
   const bounds = useStore((s) => s.bestZonesBounds)
@@ -23,13 +25,13 @@ export function BestAreasControls() {
   const setRestrict = useStore((s) => s.setBestZonesRestrict)
 
   const heading = (
-    <Text size="xs" c="dimmed" fw={600} tt="uppercase" style={{ letterSpacing: '0.06em' }}>Best areas</Text>
+    <Text size="xs" c="dimmed" fw={600} tt="uppercase" style={{ letterSpacing: '0.06em' }}>{t('best.title')}</Text>
   )
   if (!visible) {
     return (
       <Stack gap={8}>
         {heading}
-        <Text size="xs" c="dimmed">Turn on the match colours to see your best areas.</Text>
+        <Text size="xs" c="dimmed">{t('best.needColours')}</Text>
       </Stack>
     )
   }
@@ -38,7 +40,7 @@ export function BestAreasControls() {
       <Stack gap={8}>
         {heading}
         <Button fullWidth variant="default" disabled={!map} onClick={() => map && setBounds(visibleBounds(map))}>
-          Show my best areas
+          {t('best.show')}
         </Button>
       </Stack>
     )
@@ -51,40 +53,40 @@ export function BestAreasControls() {
         {heading}
         <Popover width={300} position="bottom-end" withArrow transitionProps={{ duration: 0 }}>
           <Popover.Target>
-            <ActionIcon variant="subtle" color="gray" size="md" aria-label="Search filters" title="Search filters">
+            <ActionIcon variant="subtle" color="gray" size="md" aria-label={t('best.filters')} title={t('best.filters')}>
               <IconSettings size={16} />
             </ActionIcon>
           </Popover.Target>
           <Popover.Dropdown>
-            <Text size="xs" c="dimmed" mb={6}>Zone links reuse the filters from this Idealista search:</Text>
+            <Text size="xs" c="dimmed" mb={6}>{t('best.filtersHint')}</Text>
             <BaseUrlInput />
           </Popover.Dropdown>
         </Popover>
       </Group>
       <Text size="sm" fw={600}>
-        {count === null ? 'Looking for your best areas…' : count === 1 ? '1 best area in view' : `${count} best areas in view`}
+        {count === null ? t('best.looking') : t('best.count', { count })}
       </Text>
       {count === 0 ? (
-        <Text size="xs" c="dimmed">No area fits this view. Zoom out or ask for more areas.</Text>
+        <Text size="xs" c="dimmed">{t('best.none')}</Text>
       ) : (
-        <Text size="xs" c="dimmed">Top {topPct}% of homes, numbered on the map.</Text>
+        <Text size="xs" c="dimmed">{t('best.top', { pct: topPct })}</Text>
       )}
       <Group gap={8} wrap="nowrap">
         <Button variant="default" size="sm" style={{ flex: 1 }} disabled={i === TOP_PCT_STEPS.length - 1}
           onClick={() => setTopPct(TOP_PCT_STEPS[i + 1])}>
-          Fewer areas
+          {t('best.fewer')}
         </Button>
         <Button variant="default" size="sm" style={{ flex: 1 }} disabled={i === 0}
           onClick={() => setTopPct(TOP_PCT_STEPS[i - 1])}>
-          More areas
+          {t('best.more')}
         </Button>
-        <Button variant="subtle" color="gray" size="sm" onClick={() => setBounds(null)} title="Esc">Hide</Button>
+        <Button variant="subtle" color="gray" size="sm" onClick={() => setBounds(null)} title="Esc">{t('best.hide')}</Button>
       </Group>
       {(features.isochrone || features.exclusions) && (
         <Checkbox
           size="xs"
           color="#F06965"
-          label="Inside commute zone, outside exclusion zones"
+          label={t('best.restrict')}
           checked={restrict}
           onChange={(e) => setRestrict(e.currentTarget.checked)}
         />

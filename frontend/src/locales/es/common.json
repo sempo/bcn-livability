@@ -1,0 +1,23 @@
+{
+  "brand": {
+    "title": "Mapa de habitabilidad de Barcelona",
+    "visit": "Visitar time2map.com",
+    "share": "Compartir este mapa",
+    "search": "Buscar una zona o dirección",
+    "short": "Mapa de habitabilidad"
+  },
+  "share": {
+    "copied": "Enlace copiado. Abre tu mapa con tus condiciones.",
+    "copyFailed": "No se pudo copiar. Copia el enlace de la barra de direcciones."
+  },
+  "language": {
+    "label": "Idioma",
+    "switch": "Cambiar de idioma"
+  },
+  "about": {
+    "title": "Acerca de",
+    "what": "Todas las viviendas de Barcelona y su área metropolitana, coloreadas según cuánto se ajustan a tus condiciones: ruido, distancia a pie a los servicios cotidianos, acceso al centro, precio y riesgos climáticos.",
+    "madeBy": "Creado por <link>time2map</link>. No hace falta cuenta; tus ajustes se quedan en este navegador.",
+    "data": "Datos: Dirección General del Catastro, Ajuntament de Barcelona (Open Data BCN), Generalitat de Catalunya, ICGC, © colaboradores de OpenStreetMap."
+  }
+}

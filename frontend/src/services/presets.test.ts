@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { PRESETS, applyOverride } from './presets'
+import { PRESETS, applyOverride, profileName, profileBlurb } from './presets'
 import { profileToPatch, CONDITION_KEYS, type Profile } from './conditionOptions'
 import { SERVICE_CATEGORIES } from './walkability/serviceCategories'
 import { LANDMARKS } from './cityCore/landmarks'
@@ -7,15 +7,15 @@ import { CONDITION_RANGES } from './buildings/conditions'
 
 describe('PRESETS', () => {
   it('has the four profiles in the agreed order', () => {
-    expect(PRESETS.map((p) => p.name)).toEqual(['Family', 'Remote worker', 'City life', 'Investor'])
+    expect(PRESETS.map((p) => profileName(p))).toEqual(['Family', 'Remote worker', 'City life', 'Investor'])
   })
 
   it('ids and names are unique', () => {
     expect(new Set(PRESETS.map((p) => p.id)).size).toBe(PRESETS.length)
-    expect(new Set(PRESETS.map((p) => p.name)).size).toBe(PRESETS.length)
+    expect(new Set(PRESETS.map((p) => profileName(p))).size).toBe(PRESETS.length)
   })
 
-  it.each(PRESETS.map((p) => [p.name, p] as const))('%s: rows are known, unique and inside the slider ranges', (_n, p) => {
+  it.each(PRESETS.map((p) => [profileName(p), p] as const))('%s: rows are known, unique and inside the slider ranges', (_n, p) => {
     expect(p.order.length).toBeGreaterThan(0)
     expect(new Set(p.order).size).toBe(p.order.length)
     for (const k of p.order) expect(CONDITION_KEYS).toContain(k)
@@ -24,17 +24,17 @@ describe('PRESETS', () => {
       expect(v).toBeGreaterThanOrEqual(range.min)
       expect(v).toBeLessThanOrEqual(range.max)
     }
-    expect(p.blurb.length).toBeGreaterThan(10)
+    expect(profileBlurb(p).length).toBeGreaterThan(10)
   })
 
-  it.each(PRESETS.map((p) => [p.name, p] as const))('%s: services and places exist', (_n, p) => {
+  it.each(PRESETS.map((p) => [profileName(p), p] as const))('%s: services and places exist', (_n, p) => {
     const services = SERVICE_CATEGORIES.map((c) => c.id)
     for (const id of p.walkCategories ?? []) expect(services).toContain(id)
     const places = LANDMARKS.map((l) => l.id)
     for (const id of p.landmarkIds ?? []) expect(places).toContain(id)
   })
 
-  it.each(PRESETS.map((p) => [p.name, p] as const))('%s: conditions that are not listed are off', (_n, p) => {
+  it.each(PRESETS.map((p) => [profileName(p), p] as const))('%s: conditions that are not listed are off', (_n, p) => {
     const patch = profileToPatch(p)
     const on = Object.entries(patch.weights!).filter(([, v]) => v === 1).map(([k]) => k)
     for (const k of on) expect(p.order).toContain(k)
@@ -81,12 +81,12 @@ describe('profile budgets (a flat, not a price per m²)', () => {
   it('Family and Investor say what they spend on a flat, and the limit is that budget ÷ the flat size', () => {
     for (const id of ['family', 'investor']) {
       const p = PRESETS.find((x) => x.id === id)!
-      expect(p.blurb).toMatch(/70 m² flat up to €250,000/i)
+      expect(profileBlurb(p)).toMatch(/70 m² flat up to €250,000/i)
       expect(p.conditions?.priceMaxEurM2).toBe(3571.43)
     }
   })
 
   it('the others do not mention a budget', () => {
-    for (const id of ['remote', 'city']) expect(PRESETS.find((x) => x.id === id)!.blurb).not.toMatch(/€/)
+    for (const id of ['remote', 'city']) expect(profileBlurb(PRESETS.find((x) => x.id === id)!)).not.toMatch(/€/)
   })
 })

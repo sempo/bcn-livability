@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Slider, Text } from '@mantine/core'
 
 export interface Choice<T extends string | number> {
@@ -22,6 +23,7 @@ export function OptionList<T extends string | number>({ options, value, onChange
   onChange: (v: T) => void
   custom?: CustomSlider
 }) {
+  const { t } = useTranslation('editor')
   const isCustom = custom !== undefined && !options.some((o) => o.value === value)
   const [showSlider, setShowSlider] = useState(isCustom)
   return (
@@ -48,7 +50,7 @@ export function OptionList<T extends string | number>({ options, value, onChange
             className="option-list__item"
             onClick={() => setShowSlider(true)}
           >
-            <span>Custom…</span>
+            <span>{t('picker.custom')}</span>
             {isCustom && <small>{custom.format(Number(value))}</small>}
           </button>
           {showSlider && (
@@ -60,7 +62,7 @@ export function OptionList<T extends string | number>({ options, value, onChange
                 value={Number(value)}
                 onChange={custom.onChange}
                 label={custom.format}
-                aria-label="Custom value"
+                aria-label={t('picker.customValue')}
                 style={{ '--slider-color': '#F06965' } as React.CSSProperties}
               />
               <Text size="xs" c="dimmed" mt={6}>{custom.format(Number(value))}</Text>

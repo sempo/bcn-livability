@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Button, Text } from '@mantine/core'
 import { IconPhoto } from '@tabler/icons-react'
+import { useTranslation } from 'react-i18next'
 import { settingsOf, URL_DEFAULTS, useStore } from '../../store'
 import { useMapStore } from '../../store/mapStore'
 import { encodeConfig, shareUrl } from '../../services/urlConfig'
@@ -8,9 +9,6 @@ import { profileOf, type ShareModel } from '../../services/shareImage/shareImage
 
 type Status = 'idle' | 'busy' | 'done' | 'failed'
 
-const NOTE: Record<Status, string | null> = {
-  idle: null, busy: null, done: 'Image saved.', failed: 'Could not make the image. Try again.',
-}
 
 /**
  * "Save image" (TODO-063): the picture of this building's result, for a message or a post. `build` makes the model
@@ -24,6 +22,7 @@ export function SaveImageButton({ lngLat, build, link, extra }: {
   /** Sits next to the button in the same row (the card's Share button). */
   extra?: ReactNode
 }) {
+  const { t } = useTranslation('card')
   const [status, setStatus] = useState<Status>('idle')
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   useEffect(() => () => clearTimeout(timer.current), [])
@@ -49,14 +48,14 @@ export function SaveImageButton({ lngLat, build, link, extra }: {
     timer.current = setTimeout(() => setStatus('idle'), 4000)
   }
 
-  const note = NOTE[status]
+  const note = status === 'done' ? t('save.done') : status === 'failed' ? t('save.failed') : null
   return (
     <div className="save-image">
       <Button
         variant="light" color="gray" size="xs" className="save-image__button" loading={status === 'busy'}
         leftSection={<IconPhoto size={16} stroke={1.8} />} onClick={save}
       >
-        Save image
+        {t('save.button')}
       </Button>
       {extra}
       {note && <Text size="xs" c={status === 'failed' ? 'red.7' : 'dimmed'} role="status">{note}</Text>}
