@@ -36,7 +36,7 @@ const BestZones = lazyNamed(() => import('../BestZones/BestZones'), 'BestZones')
 const IdealistaPricesLayer = lazyNamed(() => import('../IdealistaPricesLayer/IdealistaPricesLayer'), 'IdealistaPricesLayer')
 import { features } from '../../features'
 import { PHONE_QUERY } from '../../services/phoneConfig'
-import { loadMapStyle, styleAttribution, type MapStyle } from '../../services/mapStyle'
+import { loadMapStyle, type MapStyle } from '../../services/mapStyle'
 import { registerPmtilesProtocol } from '../../services/noise/pmtilesProtocol'
 
 // MapLibre v6 is ESM-only: bundlers must hand it the worker URL explicitly.
@@ -69,7 +69,7 @@ export function Map() {
     return () => { live = false }
   }, [])
 
-  const { workplace, zoom, mapCenter, setWorkplace, setZoom, setMapCenter, setMapAttribution } = useStore()
+  const { workplace, zoom, mapCenter, setWorkplace, setZoom, setMapCenter } = useStore()
   // With the new panel, Best zones is loaded when the zones are asked for (it brings h3-js and turf).
   const zonesOn = useStore((s) => s.bestZonesBounds !== null)
   // Layers that are off at start are set up when they are first shown, not with the page (TODO-058): each one asks
@@ -135,9 +135,6 @@ export function Map() {
       mapRef.current = map
       setMapInstance(map)
       useMapStore.getState().setMap(map)
-      // The fallback style is known only to the map; reading it back copies the whole style, so ours is read directly.
-      const attribution = styleAttribution(typeof mapStyle.style === 'string' ? map.getStyle() : mapStyle.style)
-      if (attribution) setMapAttribution(attribution)
     })
     return () => {
       setMapInstance(null)
@@ -223,7 +220,7 @@ export function Map() {
       {noiseEver && <NoiseLayer />}
       {floodEver && <FloodZonesLayer />}
       {wildfireEver && <WildfireLayer />}
-      {streetFloodingEver && <StreetFloodingLayer />}
+      {streetFloodingEver && !features.commercialUse && <StreetFloodingLayer />}
       <Suspense fallback={null}>
         {features.exclusions && <ExclusionLayer />}
         {features.exclusions && <ExclusionDraw />}
@@ -234,8 +231,9 @@ export function Map() {
         {features.idealistaPrices && <IdealistaPricesLayer />}
         {features.isochrone && <IsochroneLayer />}
       </Suspense>
-      {transitReady && <MetroLayer />}
-      {transitReady && <FgcLayer />}
+      {/* TMB and FGC terms are not confirmed for commercial use (TODO-066) */}
+      {transitReady && !features.commercialUse && <MetroLayer />}
+      {transitReady && !features.commercialUse && <FgcLayer />}
       {poiEver && <PoiLayer />}
       <Suspense fallback={null}>
         {features.pins && <PinAccuracyLayer />}

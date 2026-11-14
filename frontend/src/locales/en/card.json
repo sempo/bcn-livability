@@ -124,7 +124,7 @@
     "kindMuni": "municipality",
     "noPrice": "No sale price data",
     "salePrice": "Sale price: {{text}}",
-    "salePriceOpen": "Sale price: <b>{{price}} €/m²</b> · Generalitat official data",
+    "salePriceOpen": "Sale price: <b>{{price}} €/m²</b> · Generalitat de Catalunya, INCASOL",
     "localsSay": "What locals say",
     "notBcn": "Not available outside Barcelona city",
     "riskRiver": "River flooding",
@@ -147,7 +147,7 @@
     "trend": "Trend vs 2015–19",
     "noChange": "No change",
     "problems": "Main problems",
-    "source": "Barcelona city survey (ESM) {{years}} · {{n}} interviews",
+    "source": "Source: Barcelona City Council, city survey (ESM) {{years}} · {{n}} interviews · CC BY 4.0",
     "smallSample": "Small sample — the score leans on the wider area (gran barri)",
     "p": {
       "insecurity": "Insecurity",

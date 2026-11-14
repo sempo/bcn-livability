@@ -24,6 +24,7 @@ export function SearchBox({ pill = false, leftSlot, rightSlot }: {
   rightSlot?: ReactNode
 }) {
   const { t } = useTranslation('panel')
+  const { t: tl } = useTranslation('legal')
   const inputRef = useRef<HTMLInputElement>(null)
   const [areas, setAreas] = useState<AreaFeature[]>([])
   const [text, setText] = useState('')
@@ -156,6 +157,10 @@ export function SearchBox({ pill = false, leftSlot, rightSlot }: {
                 <Combobox.Option key={`${a.label}${i}`} value={`addr:${i}`}>{a.label}</Combobox.Option>
               ))}
             </Combobox.Group>
+          )}
+          {addresses.length > 0 && (
+            // Geoapify's Free plan requires its credit next to the results, plus OpenStreetMap (TODO-066)
+            <div style={{ fontSize: 10, opacity: 0.6, padding: '4px 8px' }}>{tl('context.geoapify')}</div>
           )}
           {showEmpty && <Combobox.Empty>{t('search.empty')}</Combobox.Empty>}
         </Combobox.Options>

@@ -47,6 +47,8 @@ export type ColumnBuffers = Partial<Record<ColumnFile, ArrayBuffer>> | ArrayBuff
 export interface BuildingsMeta {
   /** Date the data was built (YYYY-MM-DD). */
   generated?: string
+  /** Date each source was fetched, by registry id (TODO-066); written by the fetch scripts. */
+  sources?: Record<string, string>
   count: number
   columns: Column[]
   areas: BuildingArea[]

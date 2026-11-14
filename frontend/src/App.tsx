@@ -13,7 +13,8 @@ import { BuildingCard } from './components/BuildingCard/BuildingCard'
 import { MobileSheet } from './components/MobileSheet/MobileSheet'
 import { ConditionsSheetHeader } from './components/MobileSheet/ConditionsSheetHeader'
 import { MobileTopBar } from './components/MobileTop/MobileTopBar'
-import { AboutSheet } from './components/MobileTop/AboutSheet'
+import { AboutDialog } from './components/About/AboutDialog'
+import { MapCredit } from './components/About/MapCredit'
 import { MapOverlay } from './components/MobileMap/MapOverlay'
 import { useLinkedArea } from './hooks/useLinkedArea'
 import { useLinkedBuilding } from './hooks/useLinkedBuilding'
@@ -58,7 +59,6 @@ export function App() {
   usePinAnalytics()
   // Read at once, not after the first render: a phone must never start with the desktop layout.
   const isMobile = useMediaQuery(PHONE_QUERY, false, { getInitialValueInEffect: false })
-  const [aboutOpen, setAboutOpen] = useState(false)
   const buildingOpen = useStore((s) => s.selectedBuilding !== null || s.selectedArea !== null)
   const [mobileView, setMobileView] = useState<'map' | 'compare'>('map')
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
@@ -106,8 +106,10 @@ export function App() {
           {onboardingOpen ? <OnboardingPanel /> : <FilterPanel />}
         </div>
       )}
+      {!isMobile && <MapCredit className="map-credit--desktop" />}
       {!isMobile && <BuildingCard />}
       {!isMobile && <Suspense fallback={null}><AreaCard /></Suspense>}
+      <AboutDialog />
     </div>
   )
 
@@ -122,7 +124,7 @@ export function App() {
             <SearchBox />
           </div>
         ) : (
-          <MobileTopBar onAbout={() => setAboutOpen(true)} />
+          <MobileTopBar />
         )}
 
         {features.pins && mobileView === 'compare' && pinCount > 0 && (
@@ -134,6 +136,7 @@ export function App() {
         {onboardingOpen && (
           <div className="onboarding-sheet">
             <OnboardingPanel />
+            <MapCredit className="map-credit--sheet" />
           </div>
         )}
 
@@ -142,13 +145,12 @@ export function App() {
             view={buildingOpen ? 'building' : 'main'}
             header={<ConditionsSheetHeader />}
             main={<FilterPanel embedded />}
-            floating={<MapOverlay onAbout={() => setAboutOpen(true)} />}
+            floating={<MapOverlay />}
           >
             <BuildingCard embedded />
             <Suspense fallback={null}><AreaCard embedded /></Suspense>
           </MobileSheet>
         )}
-        <AboutSheet opened={aboutOpen} onClose={() => setAboutOpen(false)} />
 
         {features.pins && pinCount > 0 && (
           <SegmentedControl

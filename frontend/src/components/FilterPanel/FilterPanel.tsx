@@ -90,7 +90,6 @@ export function FilterPanel({ embedded = false }: { embedded?: boolean }) {
   const {
     minutes, setMinutes,
     noiseLayerVisible, setNoiseLayerVisible,
-    mapAttribution,
   } = useStore()
   const { t } = useTranslation('panel')
   const [isoModalOpen, setIsoModalOpen] = useState(false)
@@ -196,16 +195,6 @@ export function FilterPanel({ embedded = false }: { embedded?: boolean }) {
             </>
           )}
 
-          {mapAttribution && (
-            <>
-              <Divider />
-              <div
-                className="panel-attribution"
-                // HTML attribution from trusted ICGC style URL
-                dangerouslySetInnerHTML={{ __html: mapAttribution }}
-              />
-            </>
-          )}
       </Stack>
       )}
       </div>

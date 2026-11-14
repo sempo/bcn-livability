@@ -7,6 +7,7 @@ Run (the venv has x86_64 wheels):
 import os
 import sys
 import unittest
+from pathlib import Path
 
 import geopandas as gpd
 import numpy as np
@@ -73,6 +74,17 @@ class TestColumns(unittest.TestCase):
     def test_height_from_floors(self):
         self.assertEqual(bt.height_m(pd.Series([5, None])).tolist()[0], 15.0)
         self.assertTrue(pd.isna(bt.height_m(pd.Series([5, None])).tolist()[1]))
+
+
+class TestSourceDates(unittest.TestCase):
+    def test_dates_of_existing_files_only(self):
+        import tempfile
+        from datetime import date
+        with tempfile.TemporaryDirectory() as d:
+            f = Path(d) / "a.gpkg"
+            f.write_text("x")
+            got = bt.source_dates({"catastro": f, "osm": Path(d) / "missing.gpkg"})
+        self.assertEqual(got, {"catastro": date.today().isoformat()})
 
 
 @unittest.skipUnless((bt.PUBLIC / "buildings-meta.json").exists(), "map data not built")

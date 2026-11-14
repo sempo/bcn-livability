@@ -56,6 +56,7 @@ function Row({ label, value }: { label: string; value: string }) {
 /** Catastro facts (stage 5 attributes, shown only). */
 function BuildingFacts({ d }: { d: BuildingDetail }) {
   const { t } = useTranslation('card')
+  const { t: tl } = useTranslation('legal')
   const other = (d.units ?? 0) - (d.dwellings ?? 0)
   const [below, setBelow] = useState<{ ref: string; uses: string[] } | null>(null)
 
@@ -91,12 +92,15 @@ function BuildingFacts({ d }: { d: BuildingDetail }) {
       {other > 0 && (
         <Text size="xs" c="dimmed" style={DIM}>{t('facts.otherPremises')}</Text>
       )}
+      {/* Credit and "not official" (Catastro licence, TODO-066) */}
+      <Text size="xs" c="dimmed" style={{ fontSize: 10, opacity: 0.8 }} mt={2}>{tl('context.catastro')}</Text>
     </Stack>
   )
 }
 
 function NoiseDetails({ d, facades }: { d: BuildingDetail; facades: BuildingDetailResult['facades'] }) {
   const { t } = useTranslation('card')
+  const { t: tl } = useTranslation('legal')
   if (d.lden_avg === undefined) return <Text size="xs" c="dimmed">{t('noise.noMap')}</Text>
   const sica = d.noise_src === 'sica_2022'
   const approx = sica ? '≈ ' : ''
@@ -143,6 +147,7 @@ function NoiseDetails({ d, facades }: { d: BuildingDetail; facades: BuildingDeta
         </Text>
       )}
       <Text size="xs" c="dimmed" style={DIM}>{t('noise.who')}</Text>
+      <Text size="xs" c="dimmed" style={DIM}>{sica ? tl('context.noiseSica') : tl('context.noiseBcn')}</Text>
     </Stack>
   )
 }

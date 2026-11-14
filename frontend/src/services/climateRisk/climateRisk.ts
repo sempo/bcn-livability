@@ -48,7 +48,8 @@ export const FLOOD_ZONE_PENALTIES: FloodZonePenalties = {
 export const DEFAULT_RISK_STRENGTHS: RiskStrengths = {
   flood: Number(import.meta.env.VITE_RISK_STRENGTH_FLOOD ?? 5),
   fire: Number(import.meta.env.VITE_RISK_STRENGTH_FIRE ?? 5),
-  street: Number(import.meta.env.VITE_RISK_STRENGTH_STREET ?? 5),
+  // Commercial use (TODO-066): the RESCCUE data has no licence, so it costs no points (docs/DATA_LICENSES.md).
+  street: import.meta.env.VITE_COMMERCIAL_USE === 'true' ? 0 : Number(import.meta.env.VITE_RISK_STRENGTH_STREET ?? 5),
 }
 
 const clamp01 = (v: number) => Math.max(0, Math.min(1, v))
@@ -71,6 +72,7 @@ export function fireRisk(p: ClimateRiskProps): number {
  * weighting as river zones (T10 fully, extra T100 part less).
  */
 export function streetFloodRisk(p: ClimateRiskProps, penalties: FloodZonePenalties = FLOOD_ZONE_PENALTIES): number {
+  if (import.meta.env.VITE_COMMERCIAL_USE === 'true') return 0
   const r10 = clamp01(p.street_t10 ?? 0)
   const r100 = Math.max(clamp01(p.street_t100 ?? 0), r10)
   return clamp01(r10 * penalties.t10 + (r100 - r10) * penalties.t100)

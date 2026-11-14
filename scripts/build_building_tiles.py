@@ -106,6 +106,20 @@ def assign_areas(points, barris, munis):
     return np.where(idx >= 0, remap[np.maximum(idx, 0)], -1), table
 
 
+def source_dates(files: dict) -> dict:
+    """Date each input file was written (YYYY-MM-DD), by data-source id of the app registry (TODO-066).
+
+    The input files are the downloads the fetch scripts produced, so their date is the date the source was fetched.
+    A missing file is left out: the app then shows the build date.
+    """
+    out = {}
+    for source_id, path in files.items():
+        path = Path(path)
+        if path.exists():
+            out[source_id] = date.fromtimestamp(path.stat().st_mtime).isoformat()
+    return out
+
+
 def height_m(floors):
     return (pd.to_numeric(floors) * FLOOR_HEIGHT_M).round(1)
 
@@ -201,6 +215,8 @@ def main():
     PUBLIC.mkdir(parents=True, exist_ok=True)
     meta = write_files(PUBLIC, [(name, kind, scale, encode(values, kind, scale)) for name, kind, scale, values in columns], {
         "generated": date.today().isoformat(), "count": len(x),
+        "sources": source_dates({"catastro": BUILDINGS_GPKG, "osm": ACCESS_GPKG, "flood-aca": EXPOSURE_GPKG,
+                                 "wildfire": EXPOSURE_GPKG, "street-flooding": EXPOSURE_GPKG, "prices": PRICES_GPKG}),
         "areas": [{k: clean(v) for k, v in r.items()} for r in areas.to_dict("records")],
         "price_bounds": bounds, "categories": cats, "landmarks": landmarks,
         "river_zone": "10 / 100 / 500 = ACA return period; sentinel = outside every zone"})
