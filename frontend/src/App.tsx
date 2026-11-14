@@ -13,7 +13,7 @@ import { BuildingCard } from './components/BuildingCard/BuildingCard'
 import { MobileSheet } from './components/MobileSheet/MobileSheet'
 import { ConditionsSheetHeader } from './components/MobileSheet/ConditionsSheetHeader'
 import { MobileTopBar } from './components/MobileTop/MobileTopBar'
-import { AboutDialog } from './components/About/AboutDialog'
+import { useAboutStore } from './store/aboutStore'
 import { MapCredit } from './components/About/MapCredit'
 import { MapOverlay } from './components/MobileMap/MapOverlay'
 import { useLinkedArea } from './hooks/useLinkedArea'
@@ -52,6 +52,9 @@ function Map() {
   return <Suspense fallback={mapPlaceholder}><LazyMap /></Suspense>
 }
 
+// The dialog is only needed after a click: it stays out of the first download (bundle budget, TODO-058).
+const AboutDialog = lazy(() => import('./components/About/AboutDialog').then((m) => ({ default: m.AboutDialog })))
+
 export function App() {
   useLinkedArea()
   useLinkedBuilding() // before useUrlState rewrites the address and drops `b`
@@ -59,6 +62,9 @@ export function App() {
   usePinAnalytics()
   // Read at once, not after the first render: a phone must never start with the desktop layout.
   const isMobile = useMediaQuery(PHONE_QUERY, false, { getInitialValueInEffect: false })
+  const aboutOpen = useAboutStore((s) => s.open)
+  const [aboutEver, setAboutEver] = useState(false)
+  useEffect(() => { if (aboutOpen) setAboutEver(true) }, [aboutOpen])
   const buildingOpen = useStore((s) => s.selectedBuilding !== null || s.selectedArea !== null)
   const [mobileView, setMobileView] = useState<'map' | 'compare'>('map')
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
@@ -109,7 +115,7 @@ export function App() {
       {!isMobile && <MapCredit className="map-credit--desktop" />}
       {!isMobile && <BuildingCard />}
       {!isMobile && <Suspense fallback={null}><AreaCard /></Suspense>}
-      <AboutDialog />
+      {aboutEver && <Suspense fallback={null}><AboutDialog /></Suspense>}
     </div>
   )
 

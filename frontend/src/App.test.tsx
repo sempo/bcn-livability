@@ -202,10 +202,10 @@ describe('App (integration) - mobile', () => {
     expect(container.querySelector('.mobile-sheet')).toHaveAttribute('data-view', 'main')
   })
 
-  it('opens About from the map button', () => {
+  it('opens About from the map button', async () => {
     renderApp()
     fireEvent.click(screen.getByRole('button', { name: 'About this map' }))
-    const dialog = screen.getByRole('dialog', { name: 'About and data sources' })
+    const dialog = await screen.findByRole('dialog', { name: 'About and data sources' })
     expect(dialog).toBeInTheDocument()
     expect(dialog).toHaveTextContent('Dirección General del Catastro')
   })
