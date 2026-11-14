@@ -38,7 +38,6 @@ export interface AppState {
   mapCenter: [number, number]
   resultPolygon: Polygon | MultiPolygon | null
   noiseLayerVisible: boolean
-  mapAttribution: string
   // Best zones — feature 038. Viewport captured by "Draw best zones"; null = no zones.
   bestZonesBounds: Bounds | null
   bestZonesTopPct: number
@@ -97,7 +96,6 @@ export interface AppState {
   setNoiseLayerVisible: (visible: boolean) => void
   /** Exactly one of the layers (or none), saved with one update. */
   setMapLayer: (layer: MapLayerId) => void
-  setMapAttribution: (attribution: string) => void
   setBestZonesBounds: (bounds: Bounds | null) => void
   setBestZonesTopPct: (topPct: number) => void
   setBestZonesRestrict: (restrict: boolean) => void
@@ -416,8 +414,6 @@ export const useStore = create<AppState>((set, get) => {
       } catch { /* ignore */ }
       set(next)
     },
-    mapAttribution: '',
-    setMapAttribution: (mapAttribution) => set({ mapAttribution }),
     bestZonesBounds: null,
     setBestZonesBounds: (bestZonesBounds) => set({ bestZonesBounds }),
     bestZonesTopPct: (() => {

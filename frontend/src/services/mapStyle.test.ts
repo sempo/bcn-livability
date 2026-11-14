@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { FALLBACK_STYLE, loadMapStyle, resetMapStyleCache, styleAttribution } from './mapStyle'
+import { FALLBACK_STYLE, loadMapStyle, resetMapStyleCache } from './mapStyle'
 
 const STYLE = { version: 8, sources: { a: { type: 'vector', attribution: 'ICGC' } }, layers: [] }
 
@@ -54,16 +54,5 @@ describe('loadMapStyle', () => {
     const fetchMock = mockFetch(() => ok(STYLE), () => ok())
     await Promise.all([loadMapStyle(), loadMapStyle()])
     expect(fetchMock).toHaveBeenCalledTimes(2)
-  })
-})
-
-describe('styleAttribution', () => {
-  it('joins the attributions of the sources', () => {
-    expect(styleAttribution({ sources: {
-      a: { type: 'vector', attribution: 'A' }, b: { type: 'raster' }, c: { type: 'vector', attribution: 'C' },
-    } })).toBe('A | C')
-  })
-  it('is null when no source has one', () => {
-    expect(styleAttribution({ sources: { b: { type: 'raster' } } })).toBeNull()
   })
 })

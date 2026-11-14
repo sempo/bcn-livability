@@ -205,7 +205,16 @@ describe('App (integration) - mobile', () => {
   it('opens About from the map button', () => {
     renderApp()
     fireEvent.click(screen.getByRole('button', { name: 'About this map' }))
-    expect(screen.getByRole('dialog', { name: 'About' })).toBeInTheDocument()
+    const dialog = screen.getByRole('dialog', { name: 'About and data sources' })
+    expect(dialog).toBeInTheDocument()
+    expect(dialog).toHaveTextContent('Dirección General del Catastro')
+  })
+
+  it('shows the credit line on the map on a phone, and in the first-visit sheet', () => {
+    renderApp()
+    expect(screen.getByRole('link', { name: '© OpenStreetMap contributors' })).toBeInTheDocument()
+    act(() => useStore.setState({ onboardingOpen: true, onboarded: false }))
+    expect(screen.getByRole('button', { name: 'Data sources' })).toBeInTheDocument()
   })
 
   it('first visit: the onboarding is a sheet over the map, with the full name on top', () => {

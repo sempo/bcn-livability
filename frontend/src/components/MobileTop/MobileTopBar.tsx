@@ -1,3 +1,4 @@
+import { useAboutStore } from '../../store/aboutStore'
 import { IconShare } from '@tabler/icons-react'
 import { useTranslation } from 'react-i18next'
 import { SearchBox } from '../SearchBox/SearchBox'
@@ -8,7 +9,8 @@ import { useShare } from '../../hooks/useShare'
  * it stays in front of the person until they type; the mark opens "About", and Share sits on the right.
  * The page heading stays for screen readers and search engines.
  */
-export function MobileTopBar({ onAbout }: { onAbout: () => void }) {
+export function MobileTopBar() {
+  const setAboutOpen = useAboutStore((s) => s.setOpen)
   const { t } = useTranslation(['common', 'panel'])
   const { share, message } = useShare()
   return (
@@ -17,7 +19,7 @@ export function MobileTopBar({ onAbout }: { onAbout: () => void }) {
       <SearchBox
         pill
         leftSlot={
-          <button type="button" className="pill-button pill-mark" aria-label={t('panel:mobile.aboutMap')} onClick={onAbout}>
+          <button type="button" className="pill-button pill-mark" aria-label={t('panel:mobile.aboutMap')} onClick={() => setAboutOpen(true)}>
             <img src={`${import.meta.env.BASE_URL}time2map-mark.svg`} alt="" />
           </button>
         }

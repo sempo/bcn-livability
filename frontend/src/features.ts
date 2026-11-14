@@ -12,4 +12,6 @@ export const features = {
   onboarding: import.meta.env.VITE_FEATURE_ONBOARDING === 'true',
   /** TODO-051: ranked list of areas ("Your areas") and the area view below z13. */
   areas: import.meta.env.VITE_FEATURE_AREAS === 'true',
+  /** TODO-066: commercial launch. Switches off the layers whose licences are not confirmed (docs/DATA_LICENSES.md). */
+  commercialUse: import.meta.env.VITE_COMMERCIAL_USE === 'true',
 } as const

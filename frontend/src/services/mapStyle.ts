@@ -58,11 +58,3 @@ export function loadMapStyle(): Promise<MapStyle> {
 export function resetMapStyleCache(): void {
   cache = null
 }
-
-/** Attribution texts of the sources of a style, joined as the map footer shows them. */
-export function styleAttribution(style: Pick<StyleSpecification, 'sources'>): string | null {
-  const texts = Object.values(style.sources)
-    .map((s) => (s as { attribution?: string }).attribution)
-    .filter((t): t is string => !!t)
-  return texts.length ? texts.join(' | ') : null
-}
