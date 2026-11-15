@@ -94,3 +94,9 @@ with all conditions at 100 and no risk is `#1a9850` anywhere on the map.
 - Header rows are compact single lines (`matchText.ts`); the full sentences stay in the per-condition blocks.
 - The "before risk penalties" line is replaced by the risk line in the header.
 - No condition on (061): the map is neutral — no fill, no hatch, no tooltip or card — and the editor says "No conditions yet. Add one below and the map will colour in."; see `061-no-conditions-neutral-map.md`.
+
+## Follow-up: 070 (2026-11-15)
+
+The score line now reads "83 of 100 · Good match" under the label "Match with your conditions", and an award line
+("better than N% of homes in the barri / the city") follows the risk line where the building stands out. See
+`070-building-rank-in-barri-and-city.md`.

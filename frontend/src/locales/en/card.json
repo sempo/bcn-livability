@@ -132,12 +132,18 @@
     "riskWildfire": "Wildfire",
     "penalty": "−{{n}} pts",
     "peekMeets": "Meets {{met}} of {{total}}",
-    "peekNone": "No conditions are on"
+    "peekNone": "No conditions are on",
+    "details": "Details about this building",
+    "moreAddresses_one": "+{{count}} more address",
+    "moreAddresses_other": "+{{count}} more addresses",
+    "fewerAddresses": "Show fewer"
   },
   "match": {
     "incomplete": "Incomplete data: some of your conditions have no data here. The score is a range, from the worst case (missing counts 0) to the best (missing ignored).",
     "meets": "Meets {{met}} of {{total}} of your conditions",
-    "noneOn": "No conditions are on"
+    "noneOn": "No conditions are on",
+    "label": "Match with your conditions",
+    "score": "{{score}} of 100"
   },
   "locals": {
     "satisfaction": "Satisfaction",
@@ -201,5 +207,15 @@
     "tooFew": "Too few homes to rank: {{names}}.",
     "rowAria": "{{pos}}. {{name}}, {{pct}}% of homes are a good match",
     "rowText": "{{pct}}% of homes are a good match"
+  },
+  "rank": {
+    "heading": "For your conditions",
+    "better": "This home is better than {{pct}}% of homes {{place}}",
+    "tied": "This home is among the best: {{pct}}% of homes {{place}} fit as well",
+    "incomplete": "No rank: some of your conditions have no data for this building.",
+    "in": "in {{name}}",
+    "inEl": "in el {{name}}",
+    "inEls": "in els {{name}}",
+    "inMetro": "in the Barcelona area"
   }
 }

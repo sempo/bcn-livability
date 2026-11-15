@@ -38,7 +38,7 @@ export function expand(b: Bounds, factor: number): Bounds {
 }
 
 /** The part of the picture the panel leaves free. */
-const FREE = { og: { w: 620, h: 630 }, post: { w: 1080, h: 610 } } as const
+const FREE = { og: { w: 620, h: 630 }, post: { w: 1008, h: 500 } } as const
 
 /** A canvas of the size of `format`, from the caller's factory. */
 type MakeCanvas = (width: number, height: number) => { getContext(type: '2d'): Ctx }
