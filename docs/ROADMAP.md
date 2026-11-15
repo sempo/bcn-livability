@@ -31,7 +31,7 @@ Design briefs for track B: `local-docs/design/` (not in git). Architecture notes
 
 ## Later (unchanged)
 
-TODO-029 CTA, TODO-030 landing page, TODO-033 multi-city, TODO-040 green index,
+TODO-030 landing page, TODO-033 multi-city, TODO-040 green index,
 TODO-041 market activity, TODO-043 noise outside Barcelona, TODO-048 energy certificates.
 
 ## Launch strategy: functionality vs. reach (2026-11-13)

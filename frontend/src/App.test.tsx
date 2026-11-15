@@ -209,13 +209,10 @@ describe('App (integration) - mobile', () => {
     expect(dialog).toHaveTextContent('Dirección General del Catastro')
   })
 
-  it('folds the credit line on the map on a phone into a © button, in the sheet and in the first-visit sheet', () => {
+  it('shows the credit line on the map on a phone, and in the first-visit sheet (it folds into © later)', () => {
     renderApp()
-    expect(screen.queryByRole('link', { name: '© OpenStreetMap contributors' })).not.toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: 'Map credits' }))
     expect(screen.getByRole('link', { name: '© OpenStreetMap contributors' })).toBeInTheDocument()
     act(() => useStore.setState({ onboardingOpen: true, onboarded: false }))
-    fireEvent.click(screen.getByRole('button', { name: 'Map credits' }))
     expect(screen.getByRole('button', { name: 'Data sources' })).toBeInTheDocument()
   })
 

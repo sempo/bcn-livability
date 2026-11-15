@@ -1,7 +1,8 @@
-import { Anchor, Drawer, Modal, Stack, Text } from '@mantine/core'
+import { Anchor, Button, Drawer, Modal, Stack, Text } from '@mantine/core'
 import { useMediaQuery } from '@mantine/hooks'
 import { Trans, useTranslation } from 'react-i18next'
 import { features } from '../../features'
+import { buildCtaUrl } from '../../services/ctaLink'
 import { PHONE_QUERY } from '../../services/phoneConfig'
 import { useAboutStore } from '../../store/aboutStore'
 import { SourcesTable } from './SourcesTable'
@@ -30,8 +31,14 @@ export function AboutDialog() {
       <Text size="sm">{t('about.what')}</Text>
       <Text size="sm">
         <Trans i18nKey="about.madeBy"
-          components={{ link: <Anchor href="https://time2map.com" target="_blank" rel="noopener noreferrer" /> }} />
+          components={{ brand: <Anchor href={buildCtaUrl('about-credit')} target="_blank" rel="noopener noreferrer" /> }} />
       </Text>
+      <Stack gap="xs" align="flex-start">
+        <Text size="sm">{t('about.cta.text')}</Text>
+        <Button component="a" href={buildCtaUrl('about')} target="_blank" rel="noopener noreferrer" size="xs" variant="light">
+          {t('about.cta.button')}
+        </Button>
+      </Stack>
 
       <section aria-labelledby="about-sources">
         <Text id="about-sources" fw={700} size="md" mb={4}>{tl('dialog.sources')}</Text>

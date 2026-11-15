@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { render, screen, fireEvent, within } from '@testing-library/react'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { render, screen, fireEvent, within, act } from '@testing-library/react'
 import { MantineProvider } from '@mantine/core'
-import { MapCredit } from './MapCredit'
+import { MapCredit, CREDIT_FOLD_MS } from './MapCredit'
 import { AboutDialog, CONTACT } from './AboutDialog'
 import { BrandBar } from '../BrandBar/BrandBar'
 import { useAboutStore } from '../../store/aboutStore'
@@ -32,13 +32,30 @@ describe('MapCredit', () => {
 })
 
 describe('MapCredit compact (phone)', () => {
-  it('is a small © button that opens the credit line, and folds back', () => {
+  afterEach(() => vi.useRealTimers())
+
+  it('shows the line first, folds into a © button after a few seconds, and opens again on a tap', () => {
+    vi.useFakeTimers()
     render(<MapCredit compact />)
+    expect(screen.getByRole('link', { name: '© OpenStreetMap contributors' })).toBeInTheDocument()
+    act(() => { vi.advanceTimersByTime(CREDIT_FOLD_MS + 10) })
     expect(screen.queryByRole('link', { name: '© ICGC' })).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Map credits' }))
-    expect(screen.getByRole('link', { name: '© OpenStreetMap contributors' })).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: 'Close' }))
+    expect(screen.getByRole('link', { name: '© ICGC' })).toBeInTheDocument()
+  })
+
+  it('folds at the first touch of the map, not at a touch elsewhere', () => {
+    render(<div><div className="maplibregl-map"><i data-testid="map" /></div><b data-testid="else" /><MapCredit compact /></div>)
+    fireEvent.pointerDown(screen.getByTestId('else'))
+    expect(screen.getByRole('link', { name: '© ICGC' })).toBeInTheDocument()
+    fireEvent.pointerDown(screen.getByTestId('map'))
     expect(screen.queryByRole('link', { name: '© ICGC' })).not.toBeInTheDocument()
+  })
+
+  it('can be folded by hand with ×', () => {
+    render(<MapCredit compact />)
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }))
+    expect(screen.getByRole('button', { name: 'Map credits' })).toBeInTheDocument()
   })
 })
 
@@ -56,6 +73,20 @@ describe('AboutDialog', () => {
     }
     expect(within(dialog).getByRole('link', { name: CONTACT.email })).toHaveAttribute('href', `mailto:${CONTACT.email}`)
     expect(dialog).toHaveTextContent(CONTACT.name)
+  })
+
+  it('invites a map request and links to time2map with the place as the medium (TODO-029)', async () => {
+    wrap(<AboutDialog />)
+    const dialog = await screen.findByRole('dialog')
+    const cta = within(dialog).getByRole('link', { name: "Let's talk" })
+    const url = new URL(cta.getAttribute('href')!)
+    expect(url.searchParams.get('utm_medium')).toBe('about')
+    expect(url.searchParams.get('utm_source')).toBe('livability')
+    expect(cta).toHaveAttribute('target', '_blank')
+    expect(cta).toHaveAttribute('rel', expect.stringContaining('noopener'))
+    expect(dialog).toHaveTextContent('Want a map like this')
+    const credit = within(dialog).getByRole('link', { name: 'time2map' })
+    expect(new URL(credit.getAttribute('href')!).searchParams.get('utm_medium')).toBe('about-credit')
   })
 
   it('shows the fetch date of a source, and says the data is not official or endorsed', async () => {
