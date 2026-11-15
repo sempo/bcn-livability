@@ -1,16 +1,16 @@
-import { IconX } from '@tabler/icons-react'
+import { IconChevronDown, IconChevronRight, IconX } from '@tabler/icons-react'
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Trans, useTranslation } from 'react-i18next'
 import i18n from '../../i18n'
 import { formatNumber } from '../../i18n/format'
-import { ActionIcon, Anchor, Divider, Group, Paper, Stack, Text } from '@mantine/core'
+import { ActionIcon, Anchor, Divider, Group, Paper, Stack, Text, UnstyledButton } from '@mantine/core'
 import { settingsOf, URL_DEFAULTS, useStore } from '../../store'
 import { valueOf } from '../../services/buildings/buildingData'
 import { useBuildingData } from '../../hooks/useBuildingData'
 import { buildingArea, scoreBuilding } from '../../services/buildings/buildingScore'
 import { loadBuildingDetail, type BuildingDetail, type BuildingDetailResult } from '../../services/buildings/buildingDetail'
-import { catastroUrl, facadePhotoUrl, prettyAddress } from '../../services/buildings/address'
+import { catastroUrl, facadePhotoUrl, prettyAddress, prettyAddresses } from '../../services/buildings/address'
 import { UNCERTAIN_YEAR, eraOf } from '../../services/buildings/buildingAge'
 import { belowGroundUses, loadCatastroUnits } from '../../services/buildings/catastroUnits'
 import { LANDMARKS } from '../../services/cityCore/landmarks'
@@ -27,6 +27,8 @@ import { features } from '../../features'
 import { BAND_LABEL, matchBand, matchSummary, riskLine } from '../../services/match/matchSummary'
 import { ageText, cityCoreText, localsText, noiseText, poiText, priceText } from '../../services/match/matchText'
 import { MatchHeader } from './MatchHeader'
+import { buildingRanks } from '../../services/buildings/buildingRank'
+import { useScoreHistograms } from '../../hooks/useScoreHistograms'
 import { SaveImageButton } from './SaveImageButton'
 import { ShareLinkButton } from './ShareLinkButton'
 import { buildingLinkUrl } from '../../services/buildingLink'
@@ -43,6 +45,50 @@ function ageMatch(score: number): string {
   return i18n.t('card:ageMatch.edge')
 }
 const fmt = (n: number) => formatNumber(n, { maximumFractionDigits: 0 })
+
+/**
+ * The title of the card: the first address, and the others behind "+N more addresses". A block of flats can have
+ * dozens of addresses (one per entrance and street); the list opens in place and scrolls past a few lines.
+ */
+function AddressTitle({ addresses, fallback, size }: { addresses: string[]; fallback: string; size: 'sm' | 'md' }) {
+  const { t } = useTranslation('card')
+  const [open, setOpen] = useState(false)
+  if (addresses.length === 0) return <Text size={size} fw={700}>{fallback}</Text>
+  const more = addresses.length - 1
+  return (
+    <Stack gap={2} data-testid="address-title">
+      <Text size={size} fw={700}>{addresses[0]}</Text>
+      {more > 0 && !open && (
+        <UnstyledButton onClick={() => setOpen(true)} data-testid="address-more" aria-expanded={false}>
+          <Text size="xs" c="blue.7" fw={500}>{t('ui.moreAddresses', { count: more })}</Text>
+        </UnstyledButton>
+      )}
+      {more > 0 && open && (
+        <>
+          <Stack gap={1} data-testid="address-list" style={{ maxHeight: 96, overflowY: 'auto' }}>
+            {addresses.slice(1).map((a) => <Text key={a} size="xs" c="dimmed">{a}</Text>)}
+          </Stack>
+          <UnstyledButton onClick={() => setOpen(false)} aria-expanded>
+            <Text size="xs" c="blue.7" fw={500}>{t('ui.fewerAddresses')}</Text>
+          </UnstyledButton>
+        </>
+      )}
+    </Stack>
+  )
+}
+
+/** The button that folds the technical sections of the card (TODO-070). */
+function DetailsToggle({ open, onToggle }: { open: boolean; onToggle: () => void }) {
+  const { t } = useTranslation('card')
+  const Chevron = open ? IconChevronDown : IconChevronRight
+  return (
+    <UnstyledButton onClick={onToggle} aria-expanded={open} data-testid="details-toggle"
+      style={{ display: 'flex', alignItems: 'center', gap: 6, minHeight: 36, borderTop: '1px solid #e9ecef', paddingTop: 4 }}>
+      <Chevron size={16} stroke={2} />
+      <Text size="sm" fw={600}>{t('ui.details')}</Text>
+    </UnstyledButton>
+  )
+}
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
@@ -170,6 +216,9 @@ export function BuildingCard({ embedded = false }: { embedded?: boolean }) {
   const conditions = useStore((s) => s.conditions)
   const [sMin, sMax] = useStore((s) => s.compositeColorRange)
   const [loaded, setLoaded] = useState<{ i: number; result: BuildingDetailResult } | null>(null)
+  const detailsOpen = useStore((s) => s.cardDetailsOpen)
+  const setDetailsOpen = useStore((s) => s.setCardDetailsOpen)
+  const histograms = useScoreHistograms()
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') setSelected(null) }
@@ -225,6 +274,8 @@ export function BuildingCard({ embedded = false }: { embedded?: boolean }) {
     localsOpinion: barri ? localsText(barri.satisfAdj, conditions.localsMin) : undefined,
     age: ageText(yearBuilt !== null ? eraOf(yearBuilt).name : null),
   })
+  const ranks = histograms && !composite.hasGap && summary.total > 0
+    ? buildingRanks(histograms, data.meta.areas, valueOf(data, 'area', selected), score) : null
   const riskText = riskLine(penalties, { flood: d?.river_zone ? t('river.zoneYear', { year: d.river_zone }) : undefined })
   const landmarks = enabledLandmarkIds
     .map((id) => ({ id, name: LANDMARKS.find((l) => l.id === id)?.name ?? id, minutes: valueOf(data, `cc_${id}`, selected) }))
@@ -249,20 +300,22 @@ export function BuildingCard({ embedded = false }: { embedded?: boolean }) {
 
           <MatchHeader
             score={score} scoreMin={composite.scoreMin} incomplete={composite.hasGap}
-            summary={summary} riskText={riskText} color={color} compact={embedded}
+            summary={summary} riskText={riskText} color={color} compact={embedded} ranks={ranks}
           />
 
           {d && (
             <SaveImageButton
               lngLat={buildingPos}
               build={(profile) => buildingShareModel({
-                address: prettyAddress(d.address), area, score, summary, riskText, profile,
+                address: prettyAddress(d.address), area, score, summary, riskText, profile, ranks,
               })}
               link={buildingLink}
               extra={<ShareLinkButton getUrl={buildingLink} copied={t('shareCopied.building')} />}
             />
           )}
 
+          <DetailsToggle open={detailsOpen} onToggle={() => setDetailsOpen(!detailsOpen)} />
+          {detailsOpen && <>
           {d && (
             <>
               <Divider />
@@ -400,17 +453,22 @@ export function BuildingCard({ embedded = false }: { embedded?: boolean }) {
               </Stack>
             </>
           )}
+          </>}
         </Stack>
   )
 
   if (embedded) {
     if (!slots.header || !slots.body) return null
+    const peekAddresses = prettyAddresses(d?.address)
     const peek = (
       <Group justify="space-between" align="flex-start" wrap="nowrap" className="building-peek">
         <Stack gap={2} style={{ minWidth: 0 }}>
-          <Text fw={700} size="md" truncate>{address}</Text>
+          <Text fw={700} size="md" truncate>
+            {peekAddresses[0] ?? address}
+            {peekAddresses.length > 1 && <Text span size="sm" fw={500} c="dimmed">{` +${peekAddresses.length - 1}`}</Text>}
+          </Text>
           <Text size="sm" fw={700} style={{ color }} data-testid="peek-match">
-            {BAND_LABEL[matchBand(score)]} · {shownScore}
+            {t('match.score', { score: shownScore })} · {BAND_LABEL[matchBand(score)]}
             <Text span size="sm" fw={500} c="dimmed">
               {' · '}{summary.total > 0 ? t('ui.peekMeets', { met: summary.met, total: summary.total }) : t('ui.peekNone')}
             </Text>
@@ -436,7 +494,7 @@ export function BuildingCard({ embedded = false }: { embedded?: boolean }) {
         {/* The header stays in view while the details scroll under it. */}
         <Group justify="space-between" align="flex-start" wrap="nowrap" className="building-card__header">
           <Stack gap={0}>
-            <Text size="sm" fw={700}>{address}</Text>
+            <AddressTitle key={d?.id} addresses={prettyAddresses(d?.address)} fallback={address} size="sm" />
             {d && (
               <Text size="xs" c="dimmed">
                 {d.student ? t('ui.studentResidence') : USE_LABEL[d.use ?? ''] ?? t('use.other')}

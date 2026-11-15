@@ -59,9 +59,15 @@ interface Metrics {
   footer: number
   pin: number
   attribution: number
-  /** Round all corners (a card over the map) or only the top ones (a sheet from the bottom). */
+  /** Stacked on white (the map in a rectangle on top, brand line above it) instead of a card over the whole map. */
   sheet: boolean
 }
+
+/**
+ * The tall picture (1080×1350) is stacked on white: the brand line on top, the map in a rounded rectangle under it,
+ * the result under the map. The brand is not at the bottom, where it mixed with the rows of the result.
+ */
+export const POST_MAP = { x: 36, y: 112, w: 1008, h: 500, r: 32 } as const
 
 const METRICS: Record<ShareFormat, Metrics> = {
   og: {
@@ -72,11 +78,11 @@ const METRICS: Record<ShareFormat, Metrics> = {
     footer: 20, pin: 80, attribution: 15, sheet: false,
   },
   post: {
-    panel: { x: 0, y: 560, w: 1080, h: 790, r: 44, padTop: 48, padBottom: 44, padX: 60 },
+    panel: { x: 0, y: POST_MAP.y + POST_MAP.h, w: 1080, h: 1350 - POST_MAP.y - POST_MAP.h, r: 0, padTop: 40, padBottom: 48, padX: 60 },
     forWhom: 28, place: 72, subtitle: 36,
     plaque: { number: 150, label: 54, small: 28, padX: 36, padY: 16, r: 28, gap: 32 },
     row: { size: 34, icon: 38, gap: 18, between: 14 },
-    footer: 28, pin: 120, attribution: 20, sheet: true,
+    footer: 30, pin: 110, attribution: 20, sheet: true,
   },
 }
 
@@ -84,10 +90,8 @@ const METRICS: Record<ShareFormat, Metrics> = {
 export function mapSlot(format: ShareFormat): MapSlot {
   const { width, height } = FORMAT_SIZE[format]
   const m = METRICS[format].panel
-  return {
-    width, height,
-    focus: format === 'og' ? { x: m.x / 2, y: height / 2 } : { x: width / 2, y: m.y / 2 },
-  }
+  if (format === 'post') return { width: POST_MAP.w, height: POST_MAP.h, focus: { x: POST_MAP.w / 2, y: POST_MAP.h / 2 } }
+  return { width, height, focus: { x: m.x / 2, y: height / 2 } }
 }
 
 function roundRect(ctx: Ctx, x: number, y: number, w: number, h: number, r: number, topOnly = false) {
@@ -213,6 +217,54 @@ function layoutRows(
   return { items, between, height: items.reduce((sum, r, i) => sum + r.height + (i > 0 ? between : 0), 0) }
 }
 
+interface RanksLayout {
+  heading: string | null
+  lines: string[][]
+  lh: number
+  height: number
+}
+
+/** The rank lines (TODO-070) at a font size: each wrapped to at most two lines, with the heading when there is one. */
+function layoutRanks(
+  model: ShareModel, size: number, width: number, measure: (weight: number, size: number) => (s: string) => number,
+): RanksLayout {
+  const lines = model.ranks.map((r) => wrapLines(r, width, measure(600, size), 2))
+  const lh = size * 1.3
+  const heading = lines.length > 0 ? model.ranksHeading : null
+  const height = lines.length === 0 ? 0
+    : (heading ? lh : 0) + lines.reduce((sum, l, i) => sum + l.length * lh + (i > 0 ? size * 0.35 : 0), 0)
+  return { heading, lines, lh, height }
+}
+
+/** The mark, the brand and the address on one line centred on `cy`. The brand drops out when both do not fit. */
+function drawBrandLine(
+  ctx: Ctx, left: number, cy: number, width: number, size: number, domain: string,
+  measure: (weight: number, size: number) => (s: string) => number,
+) {
+  const markH = size * 1.4
+  drawMark(ctx, left, cy - markH / 2, markH, BRAND)
+  const x = left + markH * 0.7 + 10
+  ctx.textBaseline = 'middle'
+  const brand = 'Barcelona livability map'
+  if (x - left + measure(600, size)(brand) + 24 + measure(400, size)(domain) <= width) {
+    ctx.font = font(600, size)
+    ctx.fillStyle = INK
+    ctx.textAlign = 'left'
+    ctx.fillText(brand, x, cy)
+    ctx.font = font(400, size)
+    ctx.fillStyle = MUTED
+    ctx.textAlign = 'right'
+    ctx.fillText(domain, left + width, cy)
+    ctx.textAlign = 'left'
+  } else {
+    ctx.font = font(600, size)
+    ctx.fillStyle = INK
+    ctx.textAlign = 'left'
+    ctx.fillText(domain, x, cy)
+  }
+  ctx.textBaseline = 'alphabetic'
+}
+
 /** The picture: the map, the pin, and the panel with the result. */
 export async function drawShareImage(ctx: Ctx, model: ShareModel, opts: DrawOptions): Promise<void> {
   const { format } = opts
@@ -220,17 +272,28 @@ export async function drawShareImage(ctx: Ctx, model: ShareModel, opts: DrawOpti
   const { width, height } = FORMAT_SIZE[format]
   const slot = mapSlot(format)
 
+  const stacked = m.sheet
+  const p = m.panel
   ctx.save()
-  ctx.fillStyle = '#e9ece7'
+  ctx.fillStyle = stacked ? '#ffffff' : '#e9ece7'
   ctx.fillRect(0, 0, width, height)
-  const placeAt = await opts.drawMap(ctx, slot)
+  // The map: the whole picture (card over it) or a rounded rectangle under the brand line.
+  const at = stacked ? { x: POST_MAP.x, y: POST_MAP.y } : { x: 0, y: 0 }
+  ctx.save()
+  if (stacked) {
+    roundRect(ctx, at.x, at.y, POST_MAP.w, POST_MAP.h, POST_MAP.r)
+    ctx.clip()
+  }
+  ctx.translate(at.x, at.y)
+  const drawn = await opts.drawMap(ctx, slot)
+  const placeAt = drawn ? { x: drawn.x, y: drawn.y } : null
 
   // Attribution on the map, bottom left.
   ctx.font = font(400, m.attribution)
   ctx.textBaseline = 'alphabetic'
   const aw = ctx.measureText(opts.attribution).width
   const ah = m.attribution + 10
-  const ay = format === 'og' ? height - 14 - ah : m.panel.y - 14 - ah
+  const ay = (stacked ? POST_MAP.h : height) - 14 - ah
   ctx.fillStyle = 'rgba(255,255,255,0.88)'
   roundRect(ctx, 16, ay, aw + 20, ah, 8)
   ctx.fill()
@@ -238,17 +301,19 @@ export async function drawShareImage(ctx: Ctx, model: ShareModel, opts: DrawOpti
   ctx.fillText(opts.attribution, 26, ay + m.attribution + 1)
 
   if (placeAt) drawPin(ctx, placeAt, m.pin)
-
-  // The panel.
-  const p = m.panel
-  ctx.save()
-  ctx.shadowColor = 'rgba(0,0,0,0.18)'
-  ctx.shadowBlur = 28
-  ctx.shadowOffsetY = m.sheet ? -8 : 8
-  ctx.fillStyle = '#ffffff'
-  roundRect(ctx, p.x, p.y, p.w, p.h, p.r, m.sheet)
-  ctx.fill()
   ctx.restore()
+
+  // The panel: a card over the map, or just the white under the map.
+  if (!stacked) {
+    ctx.save()
+    ctx.shadowColor = 'rgba(0,0,0,0.18)'
+    ctx.shadowBlur = 28
+    ctx.shadowOffsetY = 8
+    ctx.fillStyle = '#ffffff'
+    roundRect(ctx, p.x, p.y, p.w, p.h, p.r)
+    ctx.fill()
+    ctx.restore()
+  }
 
   const left = p.x + p.padX
   const inner = p.w - 2 * p.padX
@@ -266,7 +331,7 @@ export async function drawShareImage(ctx: Ctx, model: ShareModel, opts: DrawOpti
   const plaqueH = pl.number + pl.padY * 2 + 2
   const rowW = (size: number) => inner - Math.round(size * 1.15) - m.row.gap
 
-  const footH = m.footer * 1.4
+  const footH = stacked ? 0 : m.footer * 1.4
   const top = p.y + p.padTop
   const bottom = p.y + p.h - p.padBottom
   const MIN_GAP = 12
@@ -274,15 +339,17 @@ export async function drawShareImage(ctx: Ctx, model: ShareModel, opts: DrawOpti
   // The rows start at their full size and shrink until the panel holds everything.
   let rowSize = m.row.size
   let rows = layoutRows(model, rowSize, rowW(rowSize), measure)
+  let ranks = layoutRanks(model, rowSize, inner, measure)
   while (rowSize > 18) {
-    const free = bottom - top - (headH + plaqueH + rows.height + footH)
-    if (free >= MIN_GAP * 3) break
+    const free = bottom - top - (headH + plaqueH + ranks.height + rows.height + footH)
+    if (free >= MIN_GAP * (ranks.height > 0 ? 4 : 3)) break
     rowSize -= 2
     rows = layoutRows(model, rowSize, rowW(rowSize), measure)
+    ranks = layoutRanks(model, rowSize, inner, measure)
   }
   const rowIcon = Math.round(rowSize * 1.15)
   const rowLH = rowSize * 1.25
-  const blocks = [headH, plaqueH, rows.height, footH].filter((h) => h > 0)
+  const blocks = [headH, plaqueH, ranks.height, rows.height, footH].filter((h) => h > 0)
   const gap = Math.max(MIN_GAP, (bottom - top - blocks.reduce((a, b) => a + b, 0)) / (blocks.length - 1))
   let y = top
 
@@ -332,6 +399,27 @@ export async function drawShareImage(ctx: Ctx, model: ShareModel, opts: DrawOpti
   }
   y += plaqueH + gap
 
+  // Where the building stands in its barri and the city, for the conditions on the picture.
+  if (ranks.height > 0) {
+    ctx.fillStyle = INK
+    if (ranks.heading) {
+      ctx.font = font(600, rowSize * 0.8)
+      ctx.fillStyle = MUTED
+      ctx.fillText(ranks.heading.toUpperCase(), left, y + rowSize * 0.8)
+      y += ranks.lh
+    }
+    ctx.font = font(600, rowSize)
+    ctx.fillStyle = INK
+    ranks.lines.forEach((lines, i) => {
+      if (i > 0) y += rowSize * 0.35
+      for (const l of lines) {
+        ctx.fillText(l, left, y + rowSize)
+        y += ranks.lh
+      }
+    })
+    y += gap
+  }
+
   // Rows.
   if (rows.items.length > 0) {
     for (const r of rows.items) {
@@ -344,28 +432,9 @@ export async function drawShareImage(ctx: Ctx, model: ShareModel, opts: DrawOpti
     }
   }
 
-  // Footer: the mark, the brand and the address. The brand drops out when both do not fit on one line.
-  const fy = bottom - footH / 2
-  const markH = m.footer * 1.4
-  drawMark(ctx, left, fy - markH / 2, markH, BRAND)
-  const footX = left + markH * 0.7 + 10
-  ctx.textBaseline = 'middle'
-  const brand = 'Barcelona livability map'
-  const brandW = measure(600, m.footer)(brand)
-  const domainW = measure(400, m.footer)(opts.domain)
-  if (footX - left + brandW + 24 + domainW <= inner) {
-    ctx.font = font(600, m.footer)
-    ctx.fillStyle = INK
-    ctx.fillText(brand, footX, fy)
-    ctx.font = font(400, m.footer)
-    ctx.fillStyle = MUTED
-    ctx.textAlign = 'right'
-    ctx.fillText(opts.domain, left + inner, fy)
-  } else {
-    ctx.font = font(600, m.footer)
-    ctx.fillStyle = INK
-    ctx.fillText(opts.domain, footX, fy)
-  }
+  // The brand line: on top of the stacked picture, at the foot of the card otherwise.
+  if (stacked) drawBrandLine(ctx, POST_MAP.x + 24, POST_MAP.y / 2, POST_MAP.w - 48, m.footer, opts.domain, measure)
+  else drawBrandLine(ctx, left, bottom - footH / 2, inner, m.footer, opts.domain, measure)
   ctx.restore()
 }
 

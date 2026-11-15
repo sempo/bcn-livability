@@ -3,6 +3,7 @@ import {
   BAND_COLOR, BAND_LABEL, CONDITION_LABEL, matchBand, type ConditionId, type ConditionStatus, type MatchBandId,
   type MatchSummary,
 } from '../match/matchSummary'
+import type { BuildingRanks, Rank } from '../buildings/buildingRank'
 import { PRESETS, profileName } from '../presets'
 import { decodeConfig, encodeConfig, type UrlSettings } from '../urlConfig'
 
@@ -37,6 +38,10 @@ export interface ShareModel {
   bandColor: string
   /** Under the number, for an area ("of homes are a good match"). */
   caption: string | null
+  /** "Barri: la Vila de Gràcia — better than 80% of homes" (TODO-070); empty for an area or without a rank. */
+  ranks: string[]
+  /** "For your conditions" over the rank lines when no profile says for whom; null otherwise. */
+  ranksHeading: string | null
   rows: ShareRow[]
 }
 
@@ -65,6 +70,15 @@ export function profileOf(settings: UrlSettings, defaults: UrlSettings, presets:
   }) ?? null
 }
 
+const rankSentence = (r: Rank, place: string) =>
+  r.tied ? `This home is among the best: ${r.samePct}% of homes ${place} fit as well` : `This home is better than ${r.pct}% of homes ${place}`
+
+/** The rank lines of a building picture: only the scopes where the building stands out. English like the rest. */
+export function rankTexts(r: BuildingRanks): string[] {
+  const wide = r.wide?.scope === 'barcelona' ? 'in Barcelona' : 'in the Barcelona area'
+  return [...(r.local ? [rankSentence(r.local.rank, `in ${r.local.name}`)] : []), ...(r.wide ? [rankSentence(r.wide.rank, wide)] : [])]
+}
+
 interface AreaRef { name: string; kind: 'barri' | 'muni' }
 
 const subtitleOf = (area: AreaRef | null) =>
@@ -78,8 +92,11 @@ export function buildingShareModel(input: {
   summary: MatchSummary
   riskText: string | null
   profile: Pick<Profile, 'id' | 'name'> | null
+  /** Where the building stands in its barri and the city (TODO-070). */
+  ranks?: BuildingRanks | null
 }): ShareModel {
   const band = matchBand(input.score)
+  const ranks = input.ranks ? rankTexts(input.ranks) : []
   const rows: ShareRow[] = input.summary.rows.map((r) => ({ status: r.status, text: `${r.label}: ${r.text}` }))
   const risk: ShareRow[] = input.riskText ? [{ status: 'risk', text: input.riskText }] : []
   return {
@@ -92,6 +109,8 @@ export function buildingShareModel(input: {
     band,
     bandColor: BAND_COLOR[band],
     caption: null,
+    ranks,
+    ranksHeading: ranks.length > 0 && !input.profile ? 'For your conditions' : null,
     rows: [...rows.slice(0, MAX_ROWS - risk.length), ...risk],
   }
 }
@@ -112,6 +131,8 @@ export function areaShareModel(input: {
     band,
     bandColor: BAND_COLOR[band],
     caption: 'of homes are a good match',
+    ranks: [],
+    ranksHeading: null,
     rows: rank.strongest.slice(0, MAX_ROWS).map((id) => ({ status: 'met' as const, text: `Strong on: ${CONDITION_LABEL[id]}` })),
   }
 }

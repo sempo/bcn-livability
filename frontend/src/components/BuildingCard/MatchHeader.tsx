@@ -1,6 +1,8 @@
 import { Stack, Text } from '@mantine/core'
 import { useTranslation } from 'react-i18next'
 import { BAND_LABEL, matchBand, type ConditionStatus, type MatchSummary } from '../../services/match/matchSummary'
+import type { BuildingRanks } from '../../services/buildings/buildingRank'
+import { RankLines } from './RankLines'
 
 const MARK: Record<ConditionStatus, string> = { met: '✓', partly: '◐', missed: '✗', nodata: '–' }
 const MARK_COLOR: Record<ConditionStatus, string> = { met: 'green.8', partly: 'yellow.9', missed: 'red.7', nodata: 'dimmed' }
@@ -18,18 +20,23 @@ interface Props {
   incomplete?: boolean
   /** Without the band and the "Meets n of m" lines: the phone sheet shows them in its header (TODO-062). */
   compact?: boolean
+  /** Where the building stands in its barri and the city (TODO-070); null = no rank lines. */
+  ranks?: BuildingRanks | null
 }
 
 /** Top of the building card (TODO-050): is this a match, and how it meets each of the user's conditions. */
-export function MatchHeader({ score, summary, riskText, color, scoreMin, incomplete = false, compact = false }: Props) {
+export function MatchHeader({ score, summary, riskText, color, scoreMin, incomplete = false, compact = false, ranks = null }: Props) {
   const { t } = useTranslation('card')
   const range = incomplete && scoreMin !== undefined && scoreMin < score ? `${scoreMin}–${score}` : String(score)
   return (
     <Stack gap={4} data-testid="match-header">
       {!compact && (
-        <Text fw={800} lh={1.1} style={{ fontSize: 20, color }} data-testid="match-band">
-          {BAND_LABEL[matchBand(score)]} · {range}
-        </Text>
+        <>
+          <Text size="xs" c="dimmed" fw={600} data-testid="match-label">{t('match.label')}</Text>
+          <Text fw={800} lh={1.1} style={{ fontSize: 20, color }} data-testid="match-band">
+            {t('match.score', { score: range })} · {BAND_LABEL[matchBand(score)]}
+          </Text>
+        </>
       )}
       {incomplete && (
         <Text size="xs" c="dimmed" data-testid="incomplete-note">
@@ -47,6 +54,10 @@ export function MatchHeader({ score, summary, riskText, color, scoreMin, incompl
         </Text>
       ))}
       {riskText && <Text size="xs" c="red.7">{`▼ ${riskText}`}</Text>}
+      {ranks && <RankLines ranks={ranks} />}
+      {incomplete && !ranks && (
+        <Text size="xs" c="dimmed" data-testid="rank-incomplete">{t('rank.incomplete')}</Text>
+      )}
     </Stack>
   )
 }

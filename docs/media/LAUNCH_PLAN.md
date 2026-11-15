@@ -49,9 +49,9 @@ Rule rather than date: D-day is about three weeks after everything in the checkl
 
 ### The product
 
-- [ ] [TODO-070](../features/TODO-070-building-rank-in-barri-and-city.md): the score is named as the match with the
-      person's conditions; the two ranks ("for your conditions, better than N% of homes in the barri / in the
-      city") with their scale; the technical details are folded; the ranks are on the share picture
+- [x] [070](../features/070-building-rank-in-barri-and-city.md): the score is named as the match with the
+      person's conditions; an award ("better than N% of homes in the barri / in the city") where the building
+      stands out; the technical details are folded; the awards are on the share picture
 - [ ] [TODO-069](../features/TODO-069-retiree-profile-replaces-investor.md): retiree profile instead of investor
 - [ ] "Beach" fixed: inland barris (Porta, Sant Andreu, la Prosperitat) must not come out as near a beach (found
       2026-11-14; the pipeline counts every OpenStreetMap `natural=beach` polygon)

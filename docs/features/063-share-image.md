@@ -130,3 +130,9 @@ paste the site link into WhatsApp, Telegram and X and check the preview.
 
 
 Follow-up: the area card with Save image / Share and the share link of a building are in `064-area-card-and-share-links.md`.
+
+## Follow-up: 070 (2026-11-15)
+
+The building picture carries the award lines ("This home is better than N% of homes in …") when the building stands
+out. The 1080×1350 picture is stacked on white: brand line on top, the map in a rounded rectangle, the result below.
+The 1200×630 preview is unchanged. See `070-building-rank-in-barri-and-city.md`.
