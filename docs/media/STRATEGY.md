@@ -48,7 +48,7 @@ The software is not rebuilt. The right tools are made more visible.
 | Item | What | File |
 |---|---|---|
 | The card | the score named as the match with the person's conditions; the two awards (barri, city) when the building stands out, on the card and on the share picture; technical details folded | [070](../features/070-building-rank-in-barri-and-city.md) |
-| Retiree profile | replaces the investor profile on the first screen | [TODO-069](../features/TODO-069-retiree-profile-replaces-investor.md) |
+| Retiree profile | replaces the investor profile on the first screen | [069](../features/069-retiree-profile-replaces-investor.md) |
 | Contacts for time2map | credit, a way to ask for a map, case-study page, "I want my city" | checklist in [LAUNCH_PLAN.md](LAUNCH_PLAN.md) |
 | Infrastructure | A1 hosting, A2 observability before any press link | ROADMAP.md |
 | Data | the inland "beach" problem (below) fixed | checklist in LAUNCH_PLAN.md |

@@ -17,7 +17,7 @@ quiz) start with a few choices and show a result; the settings panel comes after
 
 ## Decision
 
-- The first screen offers **four profiles** (Family, Remote worker, City life, Investor) and "Build your own".
+- The first screen offers **four profiles** (Family, Remote worker, City life, Retiree; Investor replaced in 069) and "Build your own".
 - Both paths lead to **one sentence** made of tappable words ("mad-libs"): *"No louder than [a calm street] outside my
   window"*, *"[Everyday services] within [10 min] on foot"*. The sentence **is** the control for each
   condition; the same component later becomes the conditions panel (052). One component, two places.
@@ -86,7 +86,7 @@ Order of the rows = order listed.
   nearby, 30 min to the centre*
 - **City life** — centre 15, on foot 5 min with café + restaurant + metro, noise 65. *15 min to the centre,
   bars and metro at the door*
-- **Investor** — budget €250,000 for 70 m², centre 30, locals 7.5. *A 70 m² flat up to €250,000, happy residents*
+- **Retiree** (069, replaced Investor) — on foot 5 min with clinic + pharmacy + supermarket + park, quiet 58, risks avoided, no price. *Clinic, pharmacy and shops within 5 min, a calm street*
 
 A profile is just the sentence pre-filled; the user can edit every word.
 

@@ -27,6 +27,6 @@ describe('translated UI', () => {
 
   it('names the profiles in the page language', async () => {
     await act(async () => { await setLanguage('es') })
-    expect(PRESETS.map(profileName)).toEqual(['Familia', 'Teletrabajo', 'Vida urbana', 'Inversor'])
+    expect(PRESETS.map(profileName)).toEqual(['Familia', 'Teletrabajo', 'Vida urbana', 'Persona jubilada'])
   })
 })
