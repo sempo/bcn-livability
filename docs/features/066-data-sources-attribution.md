@@ -19,7 +19,7 @@ our own app and repo: no requests to third parties.
    collapse on desktop (ODbL: visible without interaction). **On a phone** (changed after the first real-device check)
    the line covered a strip of a small map, so it is shown first and folds into a small «©» button after 5 s or at
    the first touch of the map (the collapse the OSMF attribution guidelines allow: shown first, findable afterwards,
-   here also in «About»). A tap on «©» opens it again, «×» folds it back. Replaces the raw-HTML credit in the filter panel and in the about
+   here also in «About»). A tap on «©» opens it again, «×» folds it back. The fold/unfold is animated (~0.18 s, the line slides out of the «©»; none with reduced motion). On the phone the credit sits above the colour legend. Replaces the raw-HTML credit in the filter panel and in the about
    sheet (no `dangerouslySetInnerHTML`).
 3. **About / Data sources always reachable** — an info button in `BrandBar` (desktop); the mobile button stays.
    One component: Modal on desktop, Drawer on mobile. Sections: About, Data sources (table), Licences and

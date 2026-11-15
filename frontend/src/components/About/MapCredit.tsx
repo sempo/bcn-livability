@@ -30,14 +30,8 @@ export function MapCredit({ className = '', compact = false }: { className?: str
       document.removeEventListener('wheel', onPointer)
     }
   }, [compact, shown])
-  if (compact && !shown) {
-    return (
-      <button type="button" className={`map-credit map-credit--toggle ${className}`.trim()} aria-expanded={false}
-        aria-label={t('credit.label')} title={t('credit.label')} onClick={() => setShown(true)}>©</button>
-    )
-  }
-  return (
-    <p className={`map-credit ${className}`.trim()} aria-label={t('credit.label')}>
+  const parts = (
+    <>
       {MAP_CREDIT.map((part) => (
         <span key={part.source}>
           <a href={part.url} target="_blank" rel="noopener noreferrer">{part.text}</a>
@@ -47,9 +41,24 @@ export function MapCredit({ className = '', compact = false }: { className?: str
       <button type="button" className="map-credit__more" title={t('credit.open')} onClick={() => setOpen(true)}>
         {t('credit.sources')}
       </button>
-      {compact && (
-        <button type="button" className="map-credit__more map-credit__hide" aria-label={t('dialog.close')} onClick={() => setShown(false)}>×</button>
-      )}
-    </p>
+    </>
+  )
+  if (!compact) {
+    return <p className={`map-credit ${className}`.trim()} aria-label={t('credit.label')}>{parts}</p>
+  }
+  // Phone: one element that grows and folds (the line slides out of the "©"), so the change is animated.
+  return (
+    <div className={`map-credit map-credit--compact ${shown ? 'is-open' : ''} ${className}`.trim()}>
+      <button type="button" className="map-credit__toggle" aria-expanded={shown} aria-label={t('credit.label')}
+        title={t('credit.label')} aria-hidden={shown || undefined} tabIndex={shown ? -1 : 0} onClick={() => setShown(true)}>©</button>
+      <div className="map-credit__reveal" aria-hidden={!shown} inert={!shown}>
+        <p className="map-credit__line" aria-label={t('credit.label')}>
+          <span className="map-credit__text">
+            {parts}
+            <button type="button" className="map-credit__more map-credit__hide" aria-label={t('dialog.close')} onClick={() => setShown(false)}>×</button>
+          </span>
+        </p>
+      </div>
+    </div>
   )
 }

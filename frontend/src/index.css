@@ -869,6 +869,19 @@ body {
   display: inline-flex; align-items: center; justify-content: center; min-width: 28px; height: 28px; padding: 0;
   border: 0; font-size: 14px; cursor: pointer; pointer-events: auto;
 }
+.map-credit--compact { display: flex; align-items: center; padding: 0; overflow: hidden; }
+.map-credit__toggle {
+  flex: none; width: 28px; height: 28px; padding: 0; border: 0; background: none; font: inherit; font-size: 14px;
+  color: inherit; cursor: pointer;
+  transition: width 0.18s ease-out, height 0.18s ease-out, opacity 0.12s ease-out;
+}
+.map-credit--compact.is-open .map-credit__toggle { width: 0; height: 0; opacity: 0; pointer-events: none; overflow: hidden; }
+/* Width and height grow together; the text keeps a fixed layout width inside, so it never re-wraps during the move. */
+.map-credit__reveal { display: grid; grid-template: 0fr / 0fr; opacity: 0; transition: grid-template 0.18s ease-out, opacity 0.15s ease-out; }
+.map-credit--compact.is-open .map-credit__reveal { grid-template: 1fr / 1fr; opacity: 1; }
+.map-credit__line { margin: 0; min-width: 0; min-height: 0; overflow: hidden; }
+.map-credit__text { display: block; box-sizing: border-box; width: max-content; max-width: calc(100vw - 88px); padding: 2px 8px; }
+@media (prefers-reduced-motion: reduce) { .map-credit__reveal, .map-credit__toggle { transition: none; } }
 .map-credit__hide { margin-left: 8px; padding: 0 4px; font-size: 14px; text-decoration: none; color: inherit; }
 .map-credit--desktop { position: absolute; right: 8px; bottom: 6px; z-index: 5; }
 .map-credit--sheet { position: absolute; left: 8px; bottom: 100%; margin-bottom: 4px; max-width: calc(100% - 16px); }
