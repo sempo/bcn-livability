@@ -54,9 +54,9 @@
       "name": "Vida urbana",
       "blurb": "15 min al centro, bares y metro en la puerta"
     },
-    "investor": {
-      "name": "Inversor",
-      "blurb": "{{budget}}, vecinos contentos"
+    "retiree": {
+      "name": "Persona jubilada",
+      "blurb": "Centro de salud, farmacia y tiendas a 5 min, una calle tranquila"
     }
   },
   "services": {

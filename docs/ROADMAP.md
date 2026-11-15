@@ -43,7 +43,7 @@ is switched on for the launch.
 The media side of this decision (the idea, stories, channels, week-by-week plan) is in
 [`docs/media/`](media/README.md), agreed 2026-11-15. The launch story: say what matters to you, tap any building,
 see how well it fits you and how it ranks, for your conditions, in its barri and in the city. Product work it asks
-for: TODO-070 (building card) and TODO-069 (retiree profile instead of investor). The traffic is for client
+for: TODO-070 (building card) and 069 (retiree profile instead of investor). The traffic is for client
 contacts for time2map. It answers the open audience question below: first wave is residents, in a light tone.
 
 ### Why (what made similar products go viral)

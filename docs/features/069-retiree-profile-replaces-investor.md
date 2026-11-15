@@ -1,7 +1,7 @@
-# TODO-069 — "Retiree" profile replaces "Investor"
+# 069 — "Retiree" profile replaces "Investor"
 
-**Status:** Planned, not started. Decided by the owner on 2026-11-14 (media strategy, `docs/media/STRATEGY.md`).
-The conditions below were confirmed by the owner on 2026-11-15 ("ок"); the texts still go through the native read-through; no code yet. Changes 031 (profiles) and 063 (barri × profile pages).
+**Status:** Implemented (2026-11-15). Decided by the owner on 2026-11-14 (media strategy, `docs/media/STRATEGY.md`).
+The conditions below were confirmed by the owner on 2026-11-15 ("ок"); the ES and CA texts still go through the native read-through (065). Changes 031 (profiles) and 063 (barri × profile pages).
 
 ## Problem
 

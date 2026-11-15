@@ -6,9 +6,8 @@ import {
 /** What the budget profiles can spend on a flat of the default size. */
 const BUDGET_EUR = 250_000
 const budgetText = () => i18n.t('conditions:profile.budget', { area: DEFAULT_FLAT_AREA_M2, price: formatEuro(BUDGET_EUR) })
-const upperFirst = (s: string) => `${s.charAt(0).toLocaleUpperCase(i18n.language)}${s.slice(1)}`
 
-type ProfileId = 'family' | 'remote' | 'city' | 'investor'
+type ProfileId = 'family' | 'remote' | 'city' | 'retiree'
 
 /** Name of a profile in the page language (an ENV override with its own `name` wins). Read on each call. */
 export function profileName(p: Pick<Profile, 'id' | 'name'>): string {
@@ -18,8 +17,7 @@ export function profileName(p: Pick<Profile, 'id' | 'name'>): string {
 /** One-line description of a profile in the page language (an ENV override with its own `blurb` wins). */
 export function profileBlurb(p: Pick<Profile, 'id' | 'blurb'>): string {
   if (p.blurb) return p.blurb
-  const budget = p.id === 'investor' ? upperFirst(budgetText()) : budgetText()
-  return i18n.t(`conditions:profile.${p.id as ProfileId}.blurb`, { budget })
+  return i18n.t(`conditions:profile.${p.id as ProfileId}.blurb`, { budget: budgetText() })
 }
 
 // Profiles of the first onboarding screen (TODO-031). A profile is a sentence that is already filled in; the
@@ -46,9 +44,11 @@ const BASE: Profile[] = [
     walkCategories: ['cafe', 'restaurant', 'metro'],
   },
   {
-    id: 'investor',
-    order: ['openPrice', 'cityCore', 'localsOpinion'],
-    conditions: { priceMaxEurM2: priceForBudget(BUDGET_EUR, DEFAULT_FLAT_AREA_M2), cityCoreMaxMin: 30, localsMin: 7.5 },
+    id: 'retiree',
+    order: ['poiAccess', 'noise', 'risk'],
+    conditions: { walkMaxMin: 5, noiseMaxDb: 58 },
+    walkCategories: ['clinic', 'pharmacy', 'supermarket', 'park'],
+    risk: 'avoid',
   },
 ]
 
@@ -72,7 +72,7 @@ const OVERRIDES: Record<string, string | undefined> = {
   family: import.meta.env.VITE_PRESET_FAMILY,
   remote: import.meta.env.VITE_PRESET_REMOTE,
   city: import.meta.env.VITE_PRESET_CITY,
-  investor: import.meta.env.VITE_PRESET_INVESTOR,
+  retiree: import.meta.env.VITE_PRESET_RETIREE,
 }
 
 export const PRESETS: Profile[] = BASE.map((p) => applyOverride(p, OVERRIDES[p.id]))

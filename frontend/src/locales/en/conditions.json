@@ -54,9 +54,9 @@
       "name": "City life",
       "blurb": "15 min to the centre, bars and metro at the door"
     },
-    "investor": {
-      "name": "Investor",
-      "blurb": "{{budget}}, happy residents"
+    "retiree": {
+      "name": "Retiree",
+      "blurb": "Clinic, pharmacy and shops within 5 min, a calm street"
     }
   },
   "services": {
