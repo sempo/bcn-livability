@@ -308,6 +308,22 @@ def load_services(tmp):
     return out
 
 
+# Barris far from the sea: no building there may be within walking range of a beach (found 2026-11-14,
+# when a paved pool deck tagged natural=beach put them next to one).
+INLAND_BARRI_IDS = {"barri-0845": "Porta", "barri-0960": "Sant Andreu", "barri-0852": "la Prosperitat"}
+AREAS_GEOJSON = ROOT / "frontend" / "public" / "data" / "areas.geojson"
+
+
+def inland_beach_violations(origins, walk_beach, areas):
+    """{barri name: buildings with walk_beach > 0} for the inland control barris (areas: GeoDataFrame, CRS of origins)."""
+    bad = {}
+    for _, a in areas[areas["id"].isin(INLAND_BARRI_IDS)].iterrows():
+        n = int(((walk_beach > 0) & inside(a.geometry, origins)).sum())
+        if n:
+            bad[INLAND_BARRI_IDS[a["id"]]] = n
+    return bad
+
+
 def landmark_geometry(lm):
     to = lambda pts: gpd.GeoSeries(gpd.points_from_xy(*zip(*pts)), crs=4326).to_crs(CRS)  # noqa: E731
     if lm["type"] == "point":
@@ -387,6 +403,11 @@ def main():
         if lm["type"] == "polygon":
             minutes[inside(geom, origins)] = 0
         out[f"cc_{lm['id']}"] = minutes
+
+    if AREAS_GEOJSON.exists():
+        bad = inland_beach_violations(origins, out["walk_beach"].to_numpy(), gpd.read_file(AREAS_GEOJSON).to_crs(CRS))
+        if bad:
+            raise SystemExit(f"Inland barris score as near a beach (check natural=beach data): {bad}")
 
     OUT_GPKG.unlink(missing_ok=True)
     pyogrio.write_dataframe(out.reset_index(), OUT_GPKG, layer="access", driver="GPKG")
