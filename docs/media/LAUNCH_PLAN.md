@@ -64,8 +64,9 @@ The traffic is for the company: the result that counts is contacts of people who
 exists yet.
 
 - [ ] **"Made by time2map" credit** in the product, on every share picture and in any embed, linking to the company
-- [ ] **A way to ask for a map**: "Want a map like this for your city or company?" leading to a short form or an
-      email address that someone reads daily (extends [TODO-029](../features/TODO-029-cta-subscribe-contact.md))
+- [x] **A way to ask for a map**: "Want a map like this for your city or company?" in the About dialog, leading to
+      time2map.com with the place in `utm_medium` ([029](../features/029-cta-subscribe-contact.md)). Still to do: point
+      `VITE_CTA_URL` at the case-study page when it exists
 - [ ] **Case-study page** on the company site (M6): what was built, from which data, what it can be adapted to
 - [ ] **"How it was made" write-up** ready for LinkedIn and for talks
 - [ ] **"I want my city" button** with a tick box "I represent a company or an organisation" and a contact field
