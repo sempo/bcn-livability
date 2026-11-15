@@ -18,42 +18,41 @@ describe('OnboardingPanel', () => {
     expect(screen.getByRole('button', { name: 'Just show me the map' })).toBeTruthy()
   })
 
-  it('a profile fills the sentence and applies its settings once', () => {
+  it('a profile applies its settings once and goes straight to the main panel', () => {
     renderWithMantine(<OnboardingPanel />)
     let updates = 0
-    const unsub = useStore.subscribe(() => { updates++ })
+    const unsub = useStore.subscribe((st, prev) => { if (st.conditions !== prev.conditions) updates++ })
     fireEvent.click(screen.getByRole('button', { name: /^Family/ }))
     unsub()
     expect(updates).toBe(1)
     const st = useStore.getState()
+    expect(st.onboardingOpen).toBe(false)
+    expect(localStorage.getItem('bcn_onboarded')).toBe('true')
     expect(st.conditions.noiseMaxDb).toBe(58)
     expect(st.conditions.priceMaxEurM2).toBe(3571.43) // a 70 m² flat up to €250,000
-    expect(screen.getByRole('button', { name: '€250,000' })).toBeTruthy()
-    expect(screen.getByRole('button', { name: '70 m²' })).toBeTruthy()
     expect(st.compositeWeights.cityCore).toBe(0)
     expect(st.conditionOrder).toEqual(['noise', 'poiAccess', 'openPrice', 'risk'])
-    expect(screen.getByText('Family profile')).toBeTruthy()
-    expect(screen.getByText(/outside my window/)).toBeTruthy()
-    expect(screen.queryByRole('heading', { name: /Where in Barcelona/ })).toBeNull()
   })
 
   it('build your own starts with quiet, on foot and budget at the defaults', () => {
     renderWithMantine(<OnboardingPanel />)
     fireEvent.click(screen.getByRole('button', { name: 'Build your own' }))
     const st = useStore.getState()
+    expect(st.onboardingOpen).toBe(true)
+    expect(screen.getByText(/outside my window/)).toBeTruthy()
     expect(st.conditionOrder).toEqual(['noise', 'poiAccess', 'openPrice'])
     expect(st.compositeWeights).toMatchObject({ noise: 1, poiAccess: 1, openPrice: 1, cityCore: 0 })
     expect(st.compositeRiskStrengths).toEqual({ flood: 0, fire: 0, street: 0 })
     expect(screen.queryByText(/ profile$/)).toBeNull()
   })
 
-  it('"Show me the map" finishes the onboarding and keeps the settings', () => {
+  it('"Show me the map" on the build screen finishes the onboarding and keeps the settings', () => {
     renderWithMantine(<OnboardingPanel />)
-    fireEvent.click(screen.getByRole('button', { name: /^City life/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Build your own' }))
     fireEvent.click(screen.getByRole('button', { name: 'Show me the map' }))
     expect(useStore.getState().onboardingOpen).toBe(false)
     expect(localStorage.getItem('bcn_onboarded')).toBe('true')
-    expect(useStore.getState().conditions.cityCoreMaxMin).toBe(15)
+    expect(useStore.getState().conditionOrder).toEqual(['noise', 'poiAccess', 'openPrice'])
   })
 
   it('"Just show me the map" keeps the defaults and finishes', () => {
@@ -65,17 +64,16 @@ describe('OnboardingPanel', () => {
     expect(localStorage.getItem('bcn_onboarded')).toBe('true')
   })
 
-  it('Back returns to the profiles', () => {
+  it('Back on the build screen returns to the profiles', () => {
     renderWithMantine(<OnboardingPanel />)
-    fireEvent.click(screen.getByRole('button', { name: /^Investor/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Build your own' }))
     fireEvent.click(screen.getByRole('button', { name: '‹ Back' }))
     expect(screen.getByRole('heading', { name: /Where in Barcelona/ })).toBeTruthy()
   })
 
-  it('two taps reach the map from a profile', () => {
+  it('one tap on a profile reaches the map', () => {
     renderWithMantine(<OnboardingPanel />)
     fireEvent.click(screen.getByRole('button', { name: /^Remote worker/ }))
-    fireEvent.click(screen.getByRole('button', { name: 'Show me the map' }))
     expect(useStore.getState().onboardingOpen).toBe(false)
   })
 
@@ -83,7 +81,7 @@ describe('OnboardingPanel', () => {
     renderWithMantine(<OnboardingPanel />)
     fireEvent.click(screen.getByRole('button', { name: /^Family/ }))
     const family = useStore.getState().compositeWeights
-    fireEvent.click(screen.getByRole('button', { name: '‹ Back' }))
+    useStore.getState().openOnboarding()
     fireEvent.click(screen.getByRole('button', { name: /^City life/ }))
     expect(useStore.getState().compositeWeights).not.toEqual(family)
   })

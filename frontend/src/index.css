@@ -1064,10 +1064,6 @@ body {
 .onboarding-panel__skip { align-self: center; text-decoration: underline; text-underline-offset: 3px; }
 .onboarding-panel__top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .onboarding-panel__back { padding: 0; font-size: 13px; }
-.onboarding-panel__tag {
-  padding: 2px 10px; border-radius: 6px; white-space: nowrap;
-  background: #fdeceb; color: #B8322F; font-size: 12px; font-weight: 500;
-}
 
 .preset-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .preset-card {
