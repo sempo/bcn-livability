@@ -13,7 +13,7 @@ export function MapOverlay() {
     <div className="mobile-map-overlay">
       <div className="mobile-map-overlay__left">
         <MobileLegend />
-        <MapCredit />
+        <MapCredit compact />
       </div>
       <div className="mobile-map-buttons">
         <button type="button" className="round-button" aria-label={t('mobile.aboutThis')} onClick={() => setAboutOpen(true)}>

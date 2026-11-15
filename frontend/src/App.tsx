@@ -142,7 +142,7 @@ export function App() {
         {onboardingOpen && (
           <div className="onboarding-sheet">
             <OnboardingPanel />
-            <MapCredit className="map-credit--sheet" />
+            <MapCredit compact className="map-credit--sheet" />
           </div>
         )}
 

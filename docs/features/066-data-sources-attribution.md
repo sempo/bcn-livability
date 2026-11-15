@@ -16,7 +16,9 @@ our own app and repo: no requests to third parties.
    visible (map credit, modal, legends, cards) reads from it.
 2. **Map credit** — own component, always visible on desktop and mobile (also during onboarding and with the panel
    collapsed): `© ICGC · © OpenStreetMap contributors · © Dirección General del Catastro · Data sources`. It does not
-   collapse (ODbL: visible without interaction). Replaces the raw-HTML credit in the filter panel and in the about
+   collapse on desktop (ODbL: visible without interaction). **On a phone** (changed after the first real-device check)
+   the line covered a strip of a small map, so it folds into a small «©» button (as MapLibre's and Mapbox's compact
+   credit; OSM's guidelines accept it on small screens): one tap opens the line, «×» folds it back. Replaces the raw-HTML credit in the filter panel and in the about
    sheet (no `dangerouslySetInnerHTML`).
 3. **About / Data sources always reachable** — an info button in `BrandBar` (desktop); the mobile button stays.
    One component: Modal on desktop, Drawer on mobile. Sections: About, Data sources (table), Licences and

@@ -118,7 +118,7 @@ export function FilterPanel({ embedded = false }: { embedded?: boolean }) {
       <div className="filter-panel__body">
       {features.areas && tab === 'areas' ? <AreasList /> : (
       <Stack gap="md">
-          <YourConditionsRow />
+          {!embedded && <YourConditionsRow />}
           {features.isochrone && (
             <>
               <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
