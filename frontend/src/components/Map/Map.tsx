@@ -38,6 +38,7 @@ import { features } from '../../features'
 import { PHONE_QUERY } from '../../services/phoneConfig'
 import { loadMapStyle, type MapStyle } from '../../services/mapStyle'
 import { registerPmtilesProtocol } from '../../services/noise/pmtilesProtocol'
+import { constrainToBounds, MAP_MIN_ZOOM } from './mapBounds'
 
 // MapLibre v6 is ESM-only: bundlers must hand it the worker URL explicitly.
 maplibregl.setWorkerUrl(workerUrl)
@@ -114,6 +115,9 @@ export function Map() {
       validateStyle: import.meta.env.DEV || !mapStyle.trusted,
       center: mapCenterRef.current,
       zoom: zoomRef.current,
+      minZoom: MAP_MIN_ZOOM,
+      // Keep the centre inside the data zone (TODO map-bounds): its edge can be centred, the world cannot be scrolled.
+      transformConstrain: constrainToBounds,
       attributionControl: false,
     })
     map.on('click', (e) => {
