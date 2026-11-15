@@ -92,7 +92,7 @@ const escapeHtml = (s: string) =>
 
 /** The profile in words for a sentence: "a family", "a remote worker". */
 const AS_WORDS: Record<string, string> = {
-  family: 'a family', remote: 'a remote worker', city: 'city life', investor: 'an investor',
+  family: 'a family', remote: 'a remote worker', city: 'city life', retiree: 'a retiree',
 }
 
 /** Title and description of a barri page. */

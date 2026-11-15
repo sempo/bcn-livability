@@ -54,9 +54,9 @@
       "name": "Vida urbana",
       "blurb": "15 min al centre, bars i metro a la porta"
     },
-    "investor": {
-      "name": "Inversor",
-      "blurb": "{{budget}}, veïns contents"
+    "retiree": {
+      "name": "Persona jubilada",
+      "blurb": "CAP, farmàcia i botigues a 5 min, un carrer tranquil"
     }
   },
   "services": {

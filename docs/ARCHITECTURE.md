@@ -179,7 +179,7 @@ src/
 │   │                          download), shareImageAreaMap.ts + shareImageRender.ts + shareImageBuild.ts (build-time pictures and pages)
 │   ├── buildingLink.ts        the link to one building (`b=lng,lat`, TODO-064); areas/areaLink.ts: the link of an area card;
 │   │                          areas/areaDescriptions.ts: loads the barri texts of `locales/<lang>/areas.json`; areas/areaCardText.ts: the numbers line
-│   ├── presets.ts             the four profiles (Family, Remote worker, City life, Investor) + JSON overrides from ENV
+│   ├── presets.ts             the four profiles (Family, Remote worker, City life, Retiree) + JSON overrides from ENV
 │   ├── buildings/
 │   │   ├── buildingData.ts    loads buildings-meta.json, the scores file, then the positions file → decoded Float32 columns
 │   │   ├── firstVisit.ts      the settings of a first visit (store defaults, area-start.json) and settingsKey()
@@ -484,7 +484,7 @@ build, committed) and `frontend/.env.test` (all flags on). Every default below i
 | `VITE_RISK_PRESET_AVOID` / `_STRONG` | 5 / 8 | strength of each risk for "Avoid" / "Strongly avoid" |
 | `VITE_AREA_MIN_BUILDINGS` | 50 | areas with fewer homes are listed after the ranked ones (051) |
 | `VITE_AREA_VIEW_MAX_ZOOM` | 13 | below this zoom the map shows areas, from it the buildings (051) |
-| `VITE_PRESET_FAMILY` / `_REMOTE` / `_CITY` / `_INVESTOR` | (in code) | optional JSON overriding a profile's fields |
+| `VITE_PRESET_FAMILY` / `_REMOTE` / `_CITY` / `_RETIREE` | (in code) | optional JSON overriding a profile's fields |
 | `VITE_SCORE_SCALE_TRIM_PCT` | 2 | Boost contrast: scale ignores this % at each end |
 | `VITE_SCORE_SCALE_MIN_SPAN` | 20 | Boost contrast: scale minimum span, points |
 | `VITE_BEST_ZONES_TOP_PCT` | 15 | default strictness |

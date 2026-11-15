@@ -42,7 +42,7 @@ export interface ShareModel {
 
 /** "For a family": the profile in words. Profiles from an override or a new one fall back to the name. */
 const FOR_PHRASE: Record<string, string> = {
-  family: 'For a family', remote: 'For a remote worker', city: 'For city life', investor: 'For an investor',
+  family: 'For a family', remote: 'For a remote worker', city: 'For city life', retiree: 'For a retiree',
 }
 const forWhom = (profile: Pick<Profile, 'id' | 'name'> | null) =>
   profile ? FOR_PHRASE[profile.id] ?? `For ${profileName(profile)}` : null
