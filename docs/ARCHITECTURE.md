@@ -537,8 +537,8 @@ More constants are documented in each script's docstring.
 
 ## Planned changes that touch this file
 
-Mass-market UX track: 050, 031, 051, 052 and 053 are done and on in production.
-Scale track: TODO-054 (hosting), 055 (basemap, metro, Catastro offline), 056 (observability), 057 (CI,
+Mass-market UX (050, 031, 051, 052, 053) is done and on in production.
+Infrastructure for the launch: TODO-054 (hosting), 055 (basemap, metro, Catastro offline), 056 (observability), 057 (CI,
 data out of git), 058 (worker scoring, bundle budget), 059 (API for the personal mode, design only).
 See `docs/ROADMAP.md`.
 

@@ -333,6 +333,9 @@ arch -x86_64 .venv-livability/bin/python -m unittest scripts/test_building_expos
     same OSM filters (`extract_poi.py`).
   - Parks and beaches are reached at their **edge**: boundary points every `WALK_BOUNDARY_STEP_M`, deduplicated
     per park so one park counts once. Before, the centroid was used.
+  - Beaches skip paved `surface` values (asphalt, concrete, paving_stones …; `BEACH_WHERE` in `extract_poi.py`).
+    OSM tags a pool deck in Nou Barris (way 1202318704) `natural=beach`; unfiltered, Porta, Sant Andreu and la
+    Prosperitat came out as a few minutes from a beach. Rerun `extract_poi.py` and `building_access.py` to apply.
   - K = `WALK_K_NEAREST` (30). Slowly saturating categories (S ≥ 3: cafe, restaurant) use `WALK_K_DENSE` (120).
 - **City Core.** The 13 landmarks of `prepare-city-core-access.py`; minutes = network metres / `WALK_SPEED_M_MIN`,
   null beyond `CITY_CORE_MAX_MIN`.
