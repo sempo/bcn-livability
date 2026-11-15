@@ -124,10 +124,9 @@ describe('App (integration) - first visit (TODO-031)', () => {
     expect(screen.getByRole('button', { name: 'Search an area or address' })).toBeInTheDocument()
   })
 
-  it('a profile and "Show me the map" lead to the filter panel with "Your conditions"', () => {
+  it('a profile leads straight to the filter panel with "Your conditions"', () => {
     renderApp()
     fireEvent.click(screen.getByRole('button', { name: /^Family/ }))
-    fireEvent.click(screen.getByRole('button', { name: 'Show me the map' }))
     expect(screen.queryByRole('heading', { name: /Where in Barcelona/ })).not.toBeInTheDocument()
     expect(screen.getByText('Commute from work')).toBeInTheDocument()
     expect(screen.getByText('Your conditions')).toBeInTheDocument()

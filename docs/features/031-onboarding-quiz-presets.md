@@ -35,6 +35,10 @@ live, without learning what Lden or €/m² of a barri means.*
 
 ## Flow (three screens, same component)
 
+> **Changed 2026-11-14 (068):** a profile card applies the profile and goes straight to screen 3 (the main panel);
+> only "Build your own" opens screen 2. The "Family profile" tag on screen 2 is gone because screen 2 is no longer
+> shown for a profile.
+
 1. **Start** — headline *Where in Barcelona would you like to live?*, sub *Pick a profile or build your own.
    We'll colour every home on the map by how well it fits.*, four profile cards (each with a thumbnail of its
    own map), "Build your own", link "Just show me the map" (keeps the app defaults).

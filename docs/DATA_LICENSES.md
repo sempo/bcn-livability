@@ -176,10 +176,15 @@ exclusion zones and settings live in the user's localStorage.
     layer that was not released.
   - *Another possible holder*: the toolkit.resccue.eu legal notice reserves all content and databases of that website
     to CETAQUA (written consent needed to copy or modify). It concerns the website, not necessarily the Barcelona data.
-  - *Not checked*: RESCCUE Maps (csis.myclimateservice.eu/study/53, certificate error), the bcnroc record of
-    PDISBA'19 (hdl.handle.net/11703/119275, certificate error), INSPIRE catalogues.
+  - *BCNROC record of PDISBA* (hdl.handle.net/11703/119275, read from a saved copy of the page): author Barcelona
+    Cicle de l'Aigua, S.A., published 2020-07, terms of use **CC BY-NC-ND**. It covers the plan's documents (report,
+    diagnosis, 5 volumes of maps), not explicitly the Atles layer. It is the only explicit licence found from the
+    author of the model, and it is the restrictive one: no derivatives (our tiles and per-building penalty are
+    derivatives) and no commercial use. So BCASA is the likely rights holder, and the letter must ask for
+    transformation explicitly.
+  - *Not checked*: RESCCUE Maps (csis.myclimateservice.eu/study/53, certificate error), INSPIRE catalogues.
 - **Recommendation.** Write to the Ajuntament (Oficina Municipal de Dades / Open Data BCN, or the Resiliència
-  Urbana department), copy BCASA and CETAQUA, quote the Avís legal and the DMP, and ask for the T10 / T100 depth layers on Open Data BCN under CC BY 4.0, or
+  Urbana department) and to BCASA as the likely rights holder, copy CETAQUA, quote the Avís legal and the DMP, and ask for the T10 / T100 depth layers on Open Data BCN under CC BY 4.0, or
   for written permission. Until then, the product owner's acceptance in 037 stands. For a paid or B2B product, switch off the
   street-flooding layer and its penalty.
 

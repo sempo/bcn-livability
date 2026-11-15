@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@mantine/core'
 import { useStore } from '../../store'
-import { PRESETS, profileName } from '../../services/presets'
+import { PRESETS } from '../../services/presets'
 import { profileToPatch, type Profile } from '../../services/conditionOptions'
 import { ConditionsEditor } from '../Conditions/ConditionsEditor'
 import { PresetCards } from './PresetCards'
@@ -21,11 +21,14 @@ export function OnboardingPanel() {
   const applySettings = useStore((s) => s.applySettings)
   const completeOnboarding = useStore((s) => s.completeOnboarding)
   const [screen, setScreen] = useState<'start' | 'build'>('start')
-  const [from, setFrom] = useState<string | null>(null)
 
-  const start = (p: Profile) => {
+  // A ready-made profile goes straight to the main panel (068); only "Build your own" shows the sentence screen.
+  const pickProfile = (p: Profile) => {
     applySettings(profileToPatch(p))
-    setFrom(p.id === BUILD_YOUR_OWN.id ? null : profileName(p))
+    completeOnboarding()
+  }
+  const buildOwn = () => {
+    applySettings(profileToPatch(BUILD_YOUR_OWN))
     setScreen('build')
   }
 
@@ -36,9 +39,9 @@ export function OnboardingPanel() {
         <p className="onboarding-panel__sub">
           {t('onboarding.sub')}
         </p>
-        <PresetCards presets={PRESETS} onPick={start} />
+        <PresetCards presets={PRESETS} onPick={pickProfile} />
         <div className="onboarding-panel__or">{t('onboarding.or')}</div>
-        <Button variant="default" fullWidth size="md" onClick={() => start(BUILD_YOUR_OWN)}>{t('onboarding.buildOwn')}</Button>
+        <Button variant="default" fullWidth size="md" onClick={buildOwn}>{t('onboarding.buildOwn')}</Button>
         <button type="button" className="onboarding-panel__skip" onClick={completeOnboarding}>
           {t('onboarding.skip')}
         </button>
@@ -50,7 +53,6 @@ export function OnboardingPanel() {
     <section className="onboarding-panel glass-panel" aria-label={t('onboarding.ariaConditions')}>
       <div className="onboarding-panel__top">
         <button type="button" className="onboarding-panel__back" onClick={() => setScreen('start')}>{t('onboarding.back')}</button>
-        {from && <span className="onboarding-panel__tag">{t('onboarding.tag', { name: from })}</span>}
       </div>
       <h2>{t('onboarding.heading')}</h2>
       <p className="onboarding-panel__sub">{t('onboarding.tapHint')}</p>
