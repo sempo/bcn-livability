@@ -65,6 +65,7 @@ in the feature files; the order and dependencies of the planned work are in [ROA
 | 061 | No conditions: neutral map with a hint |
 | 062 | Mobile web: one bottom sheet (peek / half / full) over a live map, search pill, "Where am I", touch-sized controls |
 | 063 | Share image of the result: "Save image" on the building card (4:5), link-preview pictures and pages for the home page and every barri × profile |
+| 029 | "Want a map like this?" in the About dialog: a link to time2map.com with the place in `utm_medium` (no email subscription) |
 | 064 | Area card (click on a barri or a row of "Your areas"): description, how many homes fit, Save image and Share; Share on the building card opens that exact building |
 
 ### Branding and sharing
@@ -108,7 +109,6 @@ before a launch post (B1 is already done).
 | Feature | Idea |
 |---|---|
 | 065 i18n | EN / ES / CA, any number of languages, `?lang=` in the URL, texts in `frontend/src/locales/` |
-| TODO-029 CTA subscribe / contact | One unobtrusive CTA: email updates or time2map attribution |
 | TODO-030 Landing / about page | "What is this?" page for cold visitors |
 | TODO-033 Multi-city | Madrid, Valencia, Málaga, Palma; needs a non-Barcelona name and a city-agnostic pipeline |
 | TODO-040 Green index | Tree canopy within 300 m as a new component |

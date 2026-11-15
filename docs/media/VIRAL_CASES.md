@@ -170,6 +170,26 @@ Researched 2026-11-14 (second round), because the purpose of our traffic is clie
 4. It is rarely one hit: The Pudding is a publication, Datawheel made several games. Plan a second showcase in
    another field (environment, tourism) to show the range.
 
+### How the companies put themselves next to the free product (checked 2026-11-15)
+
+Pages opened by hand; where a page did not give its footer, it says "not seen", which is not the same as "absent".
+
+| Who | In the free product | Where the invitation to work together sits |
+|---|---|---|
+| Datawheel (Tradle on oec.world) | No credit to Datawheel, no contact on the game page | A separate service page, [datawheel.us/data-gamification](https://datawheel.us/data-gamification): the numbers (4M+ sessions, 500k players a month), then "Let's Talk" near the end; Contact in the header and footer |
+| The Pudding / Polygraph | Editorial work carries no brand or client; "the only time a brand finds its way on The Pudding" is a labelled sponsorship | A "Content Studio" section on [pudding.cool/about](https://pudding.cool/about/): white-labelled custom work through Polygraph, with an email. [polygraph.cool](https://polygraph.cool) has "Project Inquiries" with an email in its footer; no "hire us" wording. A section on the About page explains that Polygraph pays for The Pudding |
+| Hoodmaps | No author, About or credit seen on the main page (footer not seen) | not seen |
+| Radio Garden | No studio credit seen on the main page (About page not checked) | not seen |
+
+What to take from it:
+
+1. **Quiet in the product, loud on a separate page.** The free product carries at most a small credit; the selling
+   happens on a page the credit links to.
+2. **Soft wording:** "Let's Talk", "Project Inquiries", a plain email. Nobody writes "Hire us".
+3. **An honest About works.** The Pudding says openly who pays for what and that clients do not steer the editorial
+   work. For us: one About section saying that time2map built the map and builds maps to order.
+4. **No pitch inside the map** in any case found. Matches the rule in [CHANNELS.md](CHANNELS.md).
+
 ## The pattern
 
 | # | What the cases share | Where we stand |

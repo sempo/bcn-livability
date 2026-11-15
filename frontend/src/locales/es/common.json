@@ -18,7 +18,8 @@
   "about": {
     "title": "Acerca de",
     "what": "Todas las viviendas de Barcelona y su área metropolitana, coloreadas según cuánto se ajustan a tus condiciones: ruido, distancia a pie a los servicios cotidianos, acceso al centro, precio y riesgos climáticos.",
-    "madeBy": "Creado por <link>time2map</link>. No hace falta cuenta; tus ajustes se quedan en este navegador.",
+    "madeBy": "Creado por <brand>time2map</brand>. No hace falta cuenta; tus ajustes se quedan en este navegador.",
+    "cta": { "text": "time2map crea mapas y proyectos de datos geográficos a medida. ¿Quieres un mapa como este para tu ciudad o tu empresa?", "button": "Hablemos" },
     "data": "Datos: Dirección General del Catastro, Ajuntament de Barcelona (Open Data BCN), Generalitat de Catalunya, ICGC, © colaboradores de OpenStreetMap."
   }
 }

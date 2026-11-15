@@ -75,6 +75,20 @@ describe('AboutDialog', () => {
     expect(dialog).toHaveTextContent(CONTACT.name)
   })
 
+  it('invites a map request and links to time2map with the place as the medium (TODO-029)', async () => {
+    wrap(<AboutDialog />)
+    const dialog = await screen.findByRole('dialog')
+    const cta = within(dialog).getByRole('link', { name: "Let's talk" })
+    const url = new URL(cta.getAttribute('href')!)
+    expect(url.searchParams.get('utm_medium')).toBe('about')
+    expect(url.searchParams.get('utm_source')).toBe('livability')
+    expect(cta).toHaveAttribute('target', '_blank')
+    expect(cta).toHaveAttribute('rel', expect.stringContaining('noopener'))
+    expect(dialog).toHaveTextContent('Want a map like this')
+    const credit = within(dialog).getByRole('link', { name: 'time2map' })
+    expect(new URL(credit.getAttribute('href')!).searchParams.get('utm_medium')).toBe('about-credit')
+  })
+
   it('shows the fetch date of a source, and says the data is not official or endorsed', async () => {
     wrap(<AboutDialog />)
     const dialog = await screen.findByRole('dialog')
