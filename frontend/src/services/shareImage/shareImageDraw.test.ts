@@ -36,6 +36,47 @@ const flatMap = (color: string) => (ctx: Ctx, slot: { width: number; height: num
   return slot.focus
 }
 
+describe('drawShareImage with rank lines (TODO-070)', () => {
+  const ranked: ShareModel = {
+    ...building,
+    ranks: ['This home is better than 80% of homes in la Vila de Gràcia', 'This home is better than 74% of homes in Barcelona'],
+    ranksHeading: 'For your conditions',
+  }
+  const draw = async (model: ShareModel, format: 'og' | 'post') => {
+    const { width, height } = FORMAT_SIZE[format]
+    const canvas = createCanvas(width, height)
+    const ctx = canvas.getContext('2d') as unknown as Ctx
+    const texts: string[] = []
+    const fill = ctx.fillText.bind(ctx)
+    ctx.fillText = (t: string, ...rest: [number, number]) => { texts.push(t); fill(t, ...rest) }
+    await drawShareImage(ctx, model, { format, attribution: 'x', domain: 'd', drawMap: flatMap('#336699') })
+    return { canvas, texts }
+  }
+
+  it.each(['og', 'post'] as const)('writes both lines and the heading on the %s picture', async (format) => {
+    const { texts } = await draw(ranked, format)
+    expect(texts).toContain('FOR YOUR CONDITIONS')
+    expect(texts.join(' ')).toMatch(/in la Vila de Gràcia/)
+    expect(texts.join(' ')).toMatch(/in Barcelona/)
+  })
+
+  it('leaves the heading out when a profile says for whom', async () => {
+    const { texts } = await draw({ ...ranked, ranksHeading: null }, 'post')
+    expect(texts).not.toContain('FOR YOUR CONDITIONS')
+    expect(texts.join(' ')).toMatch(/in Barcelona/)
+  })
+
+  it('still fits with long lines and four rows by shrinking the text', async () => {
+    const long = {
+      ...ranked,
+      ranks: ranked.ranks.map((r) => `${r} and then some words that make the line wrap onto a second row`),
+      rows: Array.from({ length: 4 }, () => ({ status: 'partly' as const, text: 'Everyday services: 4 of 5 within 10 min on foot, and a bit more' })),
+    }
+    const { canvas } = await draw(long, 'og')
+    expect(canvas.toBuffer('image/png').length).toBeGreaterThan(5000)
+  })
+})
+
 describe('drawShareImage', () => {
   it.each(['og', 'post'] as const)('paints a %s picture of the right size', async (format) => {
     const { width, height } = FORMAT_SIZE[format]
@@ -57,13 +98,30 @@ describe('drawShareImage', () => {
     expect(pixel(canvas, 1150, 300)).toEqual([255, 255, 255, 255])
   })
 
-  it('puts the map on top and the panel at the bottom of the 4:5 picture', async () => {
+  it('stacks the 4:5 picture on white: brand line, the map in a rounded rectangle, then the result', async () => {
     const canvas = createCanvas(1080, 1350)
     await drawShareImage(canvas.getContext('2d') as unknown as Ctx, building, {
       format: 'post', attribution: 'x', domain: 'd', drawMap: flatMap('#336699'),
     })
-    expect(pixel(canvas, 40, 40)).toEqual([0x33, 0x66, 0x99, 255])
+    expect(pixel(canvas, 300, 300)).toEqual([0x33, 0x66, 0x99, 255]) // inside the map
+    expect(pixel(canvas, 10, 360)).toEqual([255, 255, 255, 255]) // white margin beside it
+    expect(pixel(canvas, 1070, 40)).toEqual([255, 255, 255, 255]) // brand strip above it
+    expect(pixel(canvas, 38, 114)).toEqual([255, 255, 255, 255]) // the corner is rounded
     expect(pixel(canvas, 1040, 1330)).toEqual([255, 255, 255, 255])
+  })
+
+  it('has the brand line above the map, not among the rows', async () => {
+    const canvas = createCanvas(1080, 1350)
+    const ctx = canvas.getContext('2d') as unknown as Ctx
+    const drawn: { t: string; y: number }[] = []
+    const fill = ctx.fillText.bind(ctx)
+    ctx.fillText = (t: string, x: number, y: number) => { drawn.push({ t, y }); fill(t, x, y) }
+    await drawShareImage(ctx, building, { format: 'post', attribution: 'x', domain: 'livability.time2map.com', drawMap: flatMap('#336699') })
+    const brand = drawn.find((d) => d.t === 'Barcelona livability map')!
+    const domain = drawn.find((d) => d.t === 'livability.time2map.com')!
+    expect(brand.y).toBeLessThan(112)
+    expect(domain.y).toBeLessThan(112)
+    expect(drawn.find((d) => d.t === 'Quiet: 52 dB, under your 58')!.y).toBeGreaterThan(612)
   })
 
   it('colours the plaque with the band of the score', async () => {
@@ -109,7 +167,7 @@ describe('drawShareImage', () => {
 describe('mapSlot', () => {
   it('centres on the free part beside the panel, or above it', () => {
     expect(mapSlot('og').focus).toEqual({ x: 328, y: 315 })
-    expect(mapSlot('post').focus).toEqual({ x: 540, y: 280 })
+    expect(mapSlot('post').focus).toEqual({ x: 504, y: 250 })
   })
 })
 

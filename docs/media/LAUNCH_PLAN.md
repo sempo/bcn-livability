@@ -8,7 +8,7 @@ first outlet publishes**. The owner sets D-day.
 **A quiet run in December and early January, D-day in the second half of January 2027, the couple story for
 Valentine's Day.**
 
-- The product work (TODO-070, TODO-069), the hosting (A1), the analytics (A2) and the contact route are not started.
+- The product work (TODO-070, 069), the hosting (A1), the analytics (A2) and the contact route are not started.
 - From the long weekend of 6–8 December to 6 January newsrooms are thin: bad for agreeing a date with an outlet,
   fine for a quiet run with real people.
 - The quiet run is the only way to learn, before the press sees it, whether people pass the card on and where the
@@ -23,7 +23,7 @@ Rule rather than date: D-day is about three weeks after everything in the checkl
 
 | When | What |
 |---|---|
-| D−8 to D−5 weeks | A1 hosting, A2 analytics. TODO-070 (card: explicit match, two ranks, details folded), TODO-069 (retiree profile). The "beach" data fix |
+| D−8 to D−5 weeks | A1 hosting, A2 analytics. TODO-070 (card: explicit match, two ranks, details folded), 069 (retiree profile). The "beach" data fix |
 | D−5 to D−3 weeks | Contact route for time2map: credit, "Want a map like this?", "I want my city", case-study page. Native read-through of CA and ES. Method page |
 | D−4 weeks | **Quiet run:** friends, two or three local groups, one post in a small community. Watch: do people reach a card, do they save or share it, what do they say is wrong |
 | D−3 weeks | Fix what the quiet run showed. Recompute the numbers for M3 and M4 with the app's scoring. First look offered to one outlet. Submit the app to the Open Data BCN and datos.gob.es reuse catalogues |
@@ -49,10 +49,10 @@ Rule rather than date: D-day is about three weeks after everything in the checkl
 
 ### The product
 
-- [ ] [TODO-070](../features/TODO-070-building-rank-in-barri-and-city.md): the score is named as the match with the
-      person's conditions; the two ranks ("for your conditions, better than N% of homes in the barri / in the
-      city") with their scale; the technical details are folded; the ranks are on the share picture
-- [ ] [TODO-069](../features/TODO-069-retiree-profile-replaces-investor.md): retiree profile instead of investor
+- [x] [070](../features/070-building-rank-in-barri-and-city.md): the score is named as the match with the
+      person's conditions; an award ("better than N% of homes in the barri / in the city") where the building
+      stands out; the technical details are folded; the awards are on the share picture
+- [ ] [069](../features/069-retiree-profile-replaces-investor.md): retiree profile instead of investor
 - [ ] "Beach" fixed: inland barris (Porta, Sant Andreu, la Prosperitat) must not come out as near a beach (found
       2026-11-14; the pipeline counts every OpenStreetMap `natural=beach` polygon)
 - [ ] Native read-through of ES and CA, including the new card texts

@@ -126,6 +126,9 @@ export interface AppState {
   setSelectedArea: (index: number | null) => void
   setBuildingScores: (scores: Uint8Array | null) => void
   setAreaRanks: (ranks: AreaRank[] | null) => void
+  /** "Details about this building" on the card is open (TODO-070); kept while the person moves between buildings. */
+  cardDetailsOpen: boolean
+  setCardDetailsOpen: (open: boolean) => void
 }
 
 function isValidMinutes(n: number): boolean {
@@ -540,5 +543,7 @@ export const useStore = create<AppState>((set, get) => {
     setBuildingScores: (buildingScores) => set({ buildingScores }),
     areaRanks: null,
     setAreaRanks: (areaRanks) => set({ areaRanks }),
+    cardDetailsOpen: false,
+    setCardDetailsOpen: (cardDetailsOpen) => set({ cardDetailsOpen }),
   }
 })

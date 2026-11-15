@@ -28,7 +28,7 @@ The product has two modes in one codebase, separated by feature flags (`docs/FEA
    to €4,000/m²".
 3. The map recolours on a fixed 0–100 scale with four bands (Great / Good / Partial / Poor match), so green means
    "fits me" anywhere. An optional **Boost contrast** switch fits the scale to the visible area.
-4. A click on a building opens its card. It opens with the match summary ("Meets 3 of 4 of your conditions"), then shows Catastro facts, the photo (flag), noise by facade side, walking
+4. A click on a building opens its card. It opens with the match ("83 of 100 · Good match", "Meets 3 of 4 of your conditions", one row per condition) and, where the building stands out, an award ("better than N% of homes in the barri / the city"); then, under "Details about this building" (folded), it shows Catastro facts, the photo (flag), noise by facade side, walking
    times, climate risks, and a clearly labelled **Barri-level** block (price, what locals say).
 5. **Draw best zones** outlines up to 3–5 compact best areas in view. Each zone opens as an Idealista search
    with the user's saved Idealista filters.

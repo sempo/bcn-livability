@@ -135,12 +135,19 @@
     "riskWildfire": "Incendio forestal",
     "penalty": "−{{n}} pts",
     "peekMeets": "Cumple {{met}} de {{total}}",
-    "peekNone": "No hay condiciones activas"
+    "peekNone": "No hay condiciones activas",
+    "details": "Detalles de este edificio",
+    "moreAddresses_one": "+{{count}} dirección más",
+    "moreAddresses_other": "+{{count}} direcciones más",
+    "moreAddresses_many": "+{{count}} direcciones más",
+    "fewerAddresses": "Mostrar menos"
   },
   "match": {
     "incomplete": "Datos incompletos: algunas de tus condiciones no tienen datos aquí. La puntuación es un rango, del peor caso (lo que falta cuenta 0) al mejor (lo que falta se ignora).",
     "meets": "Cumple {{met}} de {{total}} de tus condiciones",
-    "noneOn": "No hay condiciones activas"
+    "noneOn": "No hay condiciones activas",
+    "label": "Encaje con tus condiciones",
+    "score": "{{score}} de 100"
   },
   "locals": {
     "satisfaction": "Satisfacción",
@@ -207,5 +214,15 @@
     "tooFew": "Muy pocas viviendas para clasificar: {{names}}.",
     "rowAria": "{{pos}}. {{name}}, el {{pct}}% de las viviendas encajan bien",
     "rowText": "El {{pct}}% de las viviendas encajan bien"
+  },
+  "rank": {
+    "heading": "Para tus condiciones",
+    "better": "Esta vivienda es mejor que el {{pct}}% de las viviendas {{place}}",
+    "tied": "Esta vivienda está entre las mejores: el {{pct}}% de las viviendas {{place}} encaja igual de bien",
+    "incomplete": "Sin clasificación: algunas de tus condiciones no tienen datos para este edificio.",
+    "in": "en {{name}}",
+    "inEl": "en el {{name}}",
+    "inEls": "en els {{name}}",
+    "inMetro": "en el área metropolitana de Barcelona"
   }
 }

@@ -76,6 +76,12 @@ vi.mock('../../services/localsOpinion/localsOpinion', async (orig) => {
   }
 })
 
+// The two test buildings are too few for a barri to be ranked in: lower the minimum to one.
+vi.mock('../../services/buildings/buildingRank', async (orig) => {
+  const m = await orig<typeof import('../../services/buildings/buildingRank')>()
+  return { ...m, buildingRanks: (h: never, a: never, i: never, s: never) => m.buildingRanks(h, a, i, s, 1) }
+})
+
 vi.mock('../../services/shareImage/shareImageBrowser', () => ({
   renderShareBlob: vi.fn(() => Promise.resolve(new Blob(['x'], { type: 'image/png' }))),
   deliverImage: vi.fn(() => Promise.resolve('saved')),
@@ -98,7 +104,7 @@ describe('BuildingCard (TODO-046)', () => {
       compositeWeights: DEFAULT_COMPOSITE_WEIGHTS, enabledWalkCategories: ['supermarket', 'park'],
       enabledLandmarkIds: ['sagrada'], compositeRiskStrengths: { flood: 5, fire: 5, street: 5 },
       compositeColorRange: [0, 100], ageEras: ['before-1900', '1900-1939', '1940-1979', '1980-2006', '2007-on'],
-      conditions: DEFAULT_CONDITIONS,
+      conditions: DEFAULT_CONDITIONS, cardDetailsOpen: true, buildingScores: null,
     })
   })
 
@@ -107,8 +113,8 @@ describe('BuildingCard (TODO-046)', () => {
     useStore.setState({ compositeWeights: { ...DEFAULT_COMPOSITE_WEIGHTS, localsOpinion: 1 } })
     await renderCard(1)
     const band = screen.getByTestId('match-band').textContent!
-    expect(band).toMatch(/^(Great|Good|Partial|Poor) match · \d+–\d+$/)
-    const [lo, hi] = band.split('· ')[1].split('–').map(Number)
+    expect(band).toMatch(/^\d+–\d+ of 100 · (Great|Good|Partial|Poor) match$/)
+    const [lo, hi] = band.split(' of')[0].split('–').map(Number)
     expect(lo).toBeLessThan(hi)
     expect(screen.getByTestId('incomplete-note').textContent).toMatch(/^Incomplete data/)
   })
@@ -126,8 +132,9 @@ describe('BuildingCard (TODO-046)', () => {
   it('opens with the match summary: band, score, conditions met, one row per condition, risk line (TODO-050)', async () => {
     await renderCard(0)
     const header = screen.getByTestId('match-header')
-    expect(header.firstElementChild).toBe(header.querySelector('[data-testid="match-band"]'))
-    expect(screen.getByTestId('match-band').textContent).toMatch(/^(Great|Good|Partial|Poor) match · \d+$/)
+    expect(header.firstElementChild).toBe(header.querySelector('[data-testid="match-label"]'))
+    expect(screen.getByTestId('match-label').textContent).toBe('Match with your conditions')
+    expect(screen.getByTestId('match-band').textContent).toMatch(/^\d+ of 100 · (Great|Good|Partial|Poor) match$/)
     expect(screen.getByText('Meets 2 of 4 of your conditions')).toBeInTheDocument()
     expect(screen.getByText('✓ Quiet — 64 dB, under your 65')).toBeInTheDocument()
     expect(screen.getByText('✓ Centre — 1 of 1 place within 30 min')).toBeInTheDocument()
@@ -157,7 +164,14 @@ describe('BuildingCard (TODO-046)', () => {
 
   it('shows the address, Catastro facts, photo and link', async () => {
     await renderCard(0)
-    expect(screen.getByText('Carrer Arago 255 · Rambla Catalunya 30')).toBeInTheDocument()
+    // The first address is the title; the others open on a click.
+    expect(screen.getByText('Carrer Arago 255')).toBeInTheDocument()
+    expect(screen.queryByText('Rambla Catalunya 30')).not.toBeInTheDocument()
+    fireEvent.click(screen.getByTestId('address-more'))
+    expect(screen.getByText('Rambla Catalunya 30')).toBeInTheDocument()
+    expect(screen.getByTestId('address-list')).toBeInTheDocument()
+    fireEvent.click(screen.getByText('Show fewer'))
+    expect(screen.queryByText('Rambla Catalunya 30')).not.toBeInTheDocument()
     expect(screen.getByText('Residential')).toBeInTheDocument()
     expect(screen.getByText('24 · 6 other premises')).toBeInTheDocument()
     expect(screen.getByText('7 + 1 below ground')).toBeInTheDocument()
@@ -226,6 +240,94 @@ describe('BuildingCard (TODO-046)', () => {
     expect(screen.getByText('1900 · Modernista & early 20th c.')).toBeInTheDocument()
     expect(screen.getByText("Catastro's date for many old buildings — the exact year is unknown")).toBeInTheDocument()
     expect(screen.getByText('Modernista & early 20th c., 1900–1939 — counts as one of your eras')).toBeInTheDocument()
+  })
+
+  describe('Details and ranks (TODO-070)', () => {
+    it('the technical details are closed by default and open on a click', async () => {
+      useStore.setState({ cardDetailsOpen: false })
+      await renderCard(0)
+      expect(screen.queryByText('Building')).not.toBeInTheDocument()
+      expect(screen.queryByText('Noise')).not.toBeInTheDocument()
+      // what stays in plain sight
+      expect(screen.getByText('Meets 2 of 4 of your conditions')).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /Save image/ })).toBeInTheDocument()
+      const toggle = screen.getByTestId('details-toggle')
+      expect(toggle).toHaveTextContent('Details about this building')
+      expect(toggle).toHaveAttribute('aria-expanded', 'false')
+      fireEvent.click(toggle)
+      expect(screen.getByText('Building')).toBeInTheDocument()
+      expect(toggle).toHaveAttribute('aria-expanded', 'true')
+      fireEvent.click(toggle)
+      expect(screen.queryByText('Building')).not.toBeInTheDocument()
+    })
+
+    it('remembers that the details were opened for the next building', async () => {
+      useStore.setState({ cardDetailsOpen: false })
+      const view = await renderCard(0)
+      fireEvent.click(screen.getByTestId('details-toggle'))
+      view.unmount()
+      await renderCard(1)
+      expect(screen.getByTestId('details-toggle')).toHaveAttribute('aria-expanded', 'true')
+    })
+
+    it('shows where the building stands out, in the barri and in Barcelona, for the conditions', async () => {
+      useStore.setState({ buildingScores: Uint8Array.from([50, 90]) })
+      await renderCard(0)
+      const lines = screen.getByTestId('rank-lines')
+      expect(lines).toHaveTextContent('For your conditions')
+      expect(screen.getByTestId('rank-local')).toHaveTextContent(/^This home is (better than \d+% of homes|among the best: \d+% of homes) in el Raval/)
+      expect(screen.getByTestId('rank-wide')).toHaveTextContent(/ in Barcelona/)
+      expect(screen.queryByTestId('rank-scale')).not.toBeInTheDocument()
+    })
+
+    it('outside Barcelona: the municipality and the metro area', async () => {
+      useStore.setState({ buildingScores: Uint8Array.from([50, 0]) })
+      await renderCard(1)
+      expect(screen.getByTestId('rank-local')).toHaveTextContent(/ in Badalona/)
+      expect(screen.getByTestId('rank-wide')).toHaveTextContent(/ in the Barcelona area/)
+    })
+
+    it('shows the lines even while the details are closed', async () => {
+      useStore.setState({ cardDetailsOpen: false, buildingScores: Uint8Array.from([50, 90]) })
+      await renderCard(0)
+      expect(screen.getByTestId('rank-lines')).toBeInTheDocument()
+    })
+
+    it('has no block at all when the building stands out nowhere', async () => {
+      // every other building scores 100: this one beats none of them
+      useStore.setState({ buildingScores: Uint8Array.from([100, 100]) })
+      await renderCard(0)
+      expect(screen.queryByTestId('rank-lines')).not.toBeInTheDocument()
+      expect(screen.queryByText('For your conditions')).not.toBeInTheDocument()
+    })
+
+    it('has no rank lines before the scores are in', async () => {
+      await renderCard(0)
+      expect(screen.queryByTestId('rank-lines')).not.toBeInTheDocument()
+    })
+
+    it('has no rank lines, and says why, when the building has incomplete data', async () => {
+      useStore.setState({ buildingScores: Uint8Array.from([50, 90]), compositeWeights: { ...DEFAULT_COMPOSITE_WEIGHTS, localsOpinion: 1 } })
+      await renderCard(1)
+      expect(screen.queryByTestId('rank-lines')).not.toBeInTheDocument()
+      expect(screen.getByTestId('rank-incomplete')).toHaveTextContent(/^No rank/)
+    })
+
+    it('puts the rank lines on the picture, with the heading when no profile says for whom', async () => {
+      useMapStore.setState({ map: { id: 'map' } as never })
+      useStore.setState({ buildingScores: Uint8Array.from([50, 90]) })
+      await renderCard(0)
+      await act(async () => { fireEvent.click(screen.getByRole('button', { name: /Save image/ })) })
+      const model = vi.mocked(renderShareBlob).mock.calls.at(-1)![2]
+      expect(model.ranks).toHaveLength(2)
+      expect(model.ranks[0]).toMatch(/in el Raval/)
+      expect(model.ranksHeading).toBe('For your conditions')
+    })
+  })
+
+  it('a building with one address has no "more" button', async () => {
+    await renderCard(1)
+    expect(screen.queryByTestId('address-more')).not.toBeInTheDocument()
   })
 
   it('closes on Escape', async () => {

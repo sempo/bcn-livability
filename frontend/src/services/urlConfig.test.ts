@@ -163,6 +163,7 @@ describe('decodeConfig', () => {
     expect(over.conditions.priceMaxEurM2).toBe(patch.conditions!.priceMaxEurM2)
   })
 
+  it('a link with the removed investor profile loads with the defaults, no error', () => expect(() => decode('preset:investor;n:58')).not.toThrow())
   it('an unknown preset is ignored', () => expect(decode('preset:nope;n:58').conditions.noiseMaxDb).toBe(58))
 })
 

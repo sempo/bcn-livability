@@ -120,6 +120,7 @@ describe('Phone: a building in the sheet (TODO-062)', () => {
       enabledLandmarkIds: ['sagrada'], compositeRiskStrengths: { flood: 5, fire: 5, street: 5 },
       compositeColorRange: [0, 100], ageEras: ['before-1900'], conditions: DEFAULT_CONDITIONS,
     })
+    useStore.setState({ cardDetailsOpen: false })
     useSheetStore.setState({ position: 'half', mapInset: 0, tab: 'settings', pickedArea: null, restore: null })
   })
 
@@ -131,8 +132,8 @@ describe('Phone: a building in the sheet (TODO-062)', () => {
     await act(async () => { useStore.getState().setSelectedBuilding(0) })
     expect(sheet()).toHaveAttribute('data-view', 'building')
     expect(sheet()).toHaveAttribute('data-position', 'peek')
-    expect(await screen.findByText('Carrer Arago 255 · Rambla Catalunya 30')).toBeVisible()
-    expect(screen.getByTestId('peek-match').textContent).toMatch(/^(Great|Good|Partial|Poor) match · \d+ · Meets \d of \d$/)
+    expect(await screen.findByText(/^Carrer Arago 255/)).toBeVisible()
+    expect(screen.getByTestId('peek-match').textContent).toMatch(/^\d+ of 100 · (Great|Good|Partial|Poor) match · Meets \d of \d$/)
 
     // The band and "Meets n of m" live in the header; the body goes straight to the condition rows.
     expect(screen.queryByTestId('match-band')).not.toBeInTheDocument()
@@ -145,6 +146,10 @@ describe('Phone: a building in the sheet (TODO-062)', () => {
     pointer(address, 'up', 150, 320)
     expect(sheet()).toHaveAttribute('data-position', 'full')
     expect(sheet().style.transform).toBe(`translateY(${H.full - H.full}px)`)
+    // The technical sections are folded under "Details about this building" (TODO-070).
+    expect(screen.queryByText('Walkability')).not.toBeInTheDocument()
+    await act(async () => { await new Promise((r) => setTimeout(r, 0)) }) // the sheet swallows the click that ends a drag
+    fireEvent.click(screen.getByTestId('details-toggle'))
     expect(screen.getByText('Walkability')).toBeInTheDocument()
 
     // Close: the conditions come back, at the position they had.
@@ -160,7 +165,7 @@ describe('Phone: a building in the sheet (TODO-062)', () => {
     expect(sheet()).toHaveAttribute('data-position', 'half')
     await act(async () => { useStore.getState().setSelectedBuilding(1) })
     expect(sheet()).toHaveAttribute('data-position', 'half')
-    await waitFor(() => expect(screen.queryByText('Carrer Arago 255 · Rambla Catalunya 30')).not.toBeInTheDocument())
+    await waitFor(() => expect(screen.queryByText(/^Carrer Arago 255/)).not.toBeInTheDocument())
     expect(screen.getByTestId('peek-match')).toBeInTheDocument()
   })
 })

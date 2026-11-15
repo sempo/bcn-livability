@@ -29,11 +29,12 @@ the rest of its barri and of the city.**
    - **The score, named for what it is:** "Match with your conditions: 83 of 100" (exists as "Good match · 83";
      the wording becomes explicit).
    - "Meets 3 of 4 of your conditions" and the row for each condition (exists, 050; stays in plain sight).
-   - **"For your conditions: barri la Vila de Gràcia, better than 80% of homes"** (new).
-   - **"For your conditions: city Barcelona, better than 64% of homes"** (new). The exact wording per language is
-     in TODO-070.
-   - Each of the two has a scale, so that 90% reads as very good and 5% as poor at a glance.
-   - Save image / Share (exists, 063); the two new lines go on the picture.
+   - **"This home is better than 80% of homes in la Vila de Gràcia"** and **"… better than 64% of homes in
+     Barcelona"** (built, 070). Each is an award with an icon, shown only from a threshold (`VITE_RANK_SHOW_MIN_PCT`,
+     70) or for the top group, and the barri and the city are judged separately. Below it the line is absent: no
+     scale, no words, nothing that reads as a verdict. The wording per language is in
+     [070](../features/070-building-rank-in-barri-and-city.md).
+   - Save image / Share (exists, 063); the award lines go on the picture.
    - Everything technical (Catastro facts, noise by facade, walking times, risks) is folded under "Details".
 
 > **Decided (owner, 2026-11-15):** no general score in the manner of Vivino. The two ranks are personal: the
@@ -46,8 +47,8 @@ The software is not rebuilt. The right tools are made more visible.
 
 | Item | What | File |
 |---|---|---|
-| The card | the score named as the match with the person's conditions; the two ranks with their scales, on the card and on the share picture; technical details folded | [TODO-070](../features/TODO-070-building-rank-in-barri-and-city.md) |
-| Retiree profile | replaces the investor profile on the first screen | [TODO-069](../features/TODO-069-retiree-profile-replaces-investor.md) |
+| The card | the score named as the match with the person's conditions; the two awards (barri, city) when the building stands out, on the card and on the share picture; technical details folded | [070](../features/070-building-rank-in-barri-and-city.md) |
+| Retiree profile | replaces the investor profile on the first screen | [069](../features/069-retiree-profile-replaces-investor.md) |
 | Contacts for time2map | credit, a way to ask for a map, case-study page, "I want my city" | checklist in [LAUNCH_PLAN.md](LAUNCH_PLAN.md) |
 | Infrastructure | A1 hosting, A2 observability before any press link | ROADMAP.md |
 | Data | the inland "beach" problem (below) fixed | checklist in LAUNCH_PLAN.md |
@@ -106,7 +107,7 @@ The software is not rebuilt. The right tools are made more visible.
 |---|---|
 | The site fails during the spike | A1 and A2 first |
 | A percentile without its conditions misleads (the same building gets different numbers for different people) | the profile or the conditions are always on the card and on the picture |
-| A perfect building reads as mediocre when many buildings are perfect | tie rule in TODO-070 |
+| A perfect building reads as mediocre when many buildings are perfect | tie rule in 070 |
 | A result contradicts what residents know (night-life noise, safety are not measured) | model limits stated in the UI and on the method page; "I don't agree" later |
 | A low result is not shared | accepted; the tone of the card stays neutral, not a verdict on the person |
 | Wrong data on a public number | outlier checks before launch (the "beach" case) |

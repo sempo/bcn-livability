@@ -7,7 +7,7 @@ import { CONDITION_RANGES } from './buildings/conditions'
 
 describe('PRESETS', () => {
   it('has the four profiles in the agreed order', () => {
-    expect(PRESETS.map((p) => profileName(p))).toEqual(['Family', 'Remote worker', 'City life', 'Investor'])
+    expect(PRESETS.map((p) => profileName(p))).toEqual(['Family', 'Remote worker', 'City life', 'Retiree'])
   })
 
   it('ids and names are unique', () => {
@@ -41,10 +41,23 @@ describe('PRESETS', () => {
     expect(patch.order).toEqual(p.order.filter((k) => k !== 'localsOpinion' || on.includes('localsOpinion')))
   })
 
-  it('Family avoids risks, Investor does not', () => {
+  it('has no investor profile', () => {
+    expect(PRESETS.some((p) => p.id === 'investor')).toBe(false)
+  })
+
+  it('Family and Retiree avoid risks, Remote worker does not', () => {
     const risk = (id: string) => profileToPatch(PRESETS.find((p) => p.id === id)!).riskStrengths!
     expect(risk('family').flood).toBeGreaterThan(0)
-    expect(risk('investor')).toEqual({ flood: 0, fire: 0, street: 0 })
+    expect(risk('retiree').flood).toBeGreaterThan(0)
+    expect(risk('remote')).toEqual({ flood: 0, fire: 0, street: 0 })
+  })
+
+  it('Retiree: errands within 5 min, a calm street, no price', () => {
+    const r = PRESETS.find((p) => p.id === 'retiree')!
+    expect(r.order).toEqual(['poiAccess', 'noise', 'risk'])
+    expect(r.conditions).toEqual({ walkMaxMin: 5, noiseMaxDb: 58 })
+    expect(r.walkCategories).toEqual(['clinic', 'pharmacy', 'supermarket', 'park'])
+    expect(profileToPatch(r).weights!.openPrice).toBe(0)
   })
 
   it('two profiles differ in what they ask for', () => {
@@ -78,8 +91,8 @@ describe('applyOverride', () => {
 })
 
 describe('profile budgets (a flat, not a price per m²)', () => {
-  it('Family and Investor say what they spend on a flat, and the limit is that budget ÷ the flat size', () => {
-    for (const id of ['family', 'investor']) {
+  it('Only Family says what they spend on a flat, and the limit is that budget ÷ the flat size', () => {
+    for (const id of ['family']) {
       const p = PRESETS.find((x) => x.id === id)!
       expect(profileBlurb(p)).toMatch(/70 m² flat up to €250,000/i)
       expect(p.conditions?.priceMaxEurM2).toBe(3571.43)
@@ -87,6 +100,6 @@ describe('profile budgets (a flat, not a price per m²)', () => {
   })
 
   it('the others do not mention a budget', () => {
-    for (const id of ['remote', 'city']) expect(profileBlurb(PRESETS.find((x) => x.id === id)!)).not.toMatch(/€/)
+    for (const id of ['remote', 'city', 'retiree']) expect(profileBlurb(PRESETS.find((x) => x.id === id)!)).not.toMatch(/€/)
   })
 })

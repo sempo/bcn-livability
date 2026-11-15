@@ -4,8 +4,56 @@ import { URL_DEFAULTS } from '../../store'
 import { decodeConfig } from '../urlConfig'
 import type { MatchSummary } from '../match/matchSummary'
 import {
-  areaShareModel, buildingShareModel, MAX_ROWS, profileOf, shareFileName, streetOnly, wrapLines,
+  areaShareModel, buildingShareModel, MAX_ROWS, profileOf, rankTexts, shareFileName, streetOnly, wrapLines,
 } from './shareImageModel'
+import type { BuildingRanks, Rank } from '../buildings/buildingRank'
+
+const rank = (o: Partial<Rank>): Rank => ({ pct: 80, n: 500, tied: false, samePct: 0, ...o })
+const RANKS: BuildingRanks = {
+  local: { name: 'la Vila de Gràcia', kind: 'barri', rank: rank({ pct: 80 }) },
+  wide: { scope: 'barcelona', rank: rank({ pct: 74 }) },
+}
+
+describe('rank lines on the building picture (TODO-070)', () => {
+  it('writes the barri and the city lines', () => {
+    expect(rankTexts(RANKS)).toEqual([
+      'This home is better than 80% of homes in la Vila de Gràcia',
+      'This home is better than 74% of homes in Barcelona',
+    ])
+  })
+  it('says "among the best" for the top group, and names a municipality and the metro area', () => {
+    expect(rankTexts({
+      local: { name: 'Badalona', kind: 'muni', rank: rank({ tied: true, samePct: 64 }) },
+      wide: { scope: 'metro', rank: rank({}) },
+    })).toEqual([
+      'This home is among the best: 64% of homes in Badalona fit as well',
+      'This home is better than 80% of homes in the Barcelona area',
+    ])
+  })
+  it('writes only the scopes where the building stands out', () => {
+    expect(rankTexts({ local: null, wide: { scope: 'barcelona', rank: rank({ pct: 90 }) } })).toEqual(['This home is better than 90% of homes in Barcelona'])
+    expect(rankTexts({ ...RANKS, wide: null })).toEqual(['This home is better than 80% of homes in la Vila de Gràcia'])
+  })
+  it('skips the barri line when it is not ranked', () => {
+    expect(rankTexts({ ...RANKS, local: null })).toEqual(['This home is better than 74% of homes in Barcelona'])
+  })
+  it('carries them on the model, with a heading only when no profile says for whom', () => {
+    const base = { address: 'Carrer Perla 20', area: null, score: 80, summary: { met: 0, total: 0, rows: [] }, riskText: null, ranks: RANKS }
+    const bare = buildingShareModel({ ...base, profile: null })
+    expect(bare.ranks).toHaveLength(2)
+    expect(bare.ranksHeading).toBe('For your conditions')
+    const family = buildingShareModel({ ...base, profile: FAMILY })
+    expect(family.ranks).toHaveLength(2)
+    expect(family.ranksHeading).toBeNull()
+    expect(family.forWhom).toBe('For a family')
+  })
+  it('has none without a rank, and none on an area picture', () => {
+    const none = buildingShareModel({ address: 'x', area: null, score: 80, summary: { met: 0, total: 0, rows: [] }, riskText: null, profile: null })
+    expect(none.ranks).toEqual([])
+    expect(none.ranksHeading).toBeNull()
+    expect(areaShareModel({ rank: { name: 'x', kind: 'barri', shareGood: 50, mean: 60, strongest: [] }, profile: null }).ranks).toEqual([])
+  })
+})
 
 const summary = (rows: MatchSummary['rows']): MatchSummary => ({
   met: rows.filter((r) => r.status === 'met').length, total: rows.length, rows,

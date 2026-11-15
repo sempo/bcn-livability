@@ -146,3 +146,17 @@ The map is always visible. Everything else lives in **one bottom sheet with thre
       "Where am I", which need HTTPS. Check them after the release, on the live site.
 - [x] No input under 16 px on the phone layout; touch targets: measured, one left under 44 px by design (word
       pills, see above) and the About sheet's mark in the pill (34 × 44, in the pill's left slot)
+
+## Follow-up: first real-device pass (2026-11-14)
+
+- **Language on the phone.** The pill's right slot is the same `BrandMenu` as on the desktop (Share, About and data
+  sources, language list) instead of a bare Share button.
+- **Map credit** folds into a «©» button on the phone (see 066).
+- **Open sheet is more compact.** At half and full the header is one row: «Your conditions» and the «Start from a
+  profile» link (moved up from the body, where its label repeated the title). On the areas tab only the one-line
+  ranking hint remains: the tabs already name the view. At peek nothing changed.
+
+## Follow-up: 070 (2026-11-15)
+
+The building sheet's peek reads "83 of 100 · Good match · Meets 3 of 4" with the first address and "+N" for more;
+the technical sections are folded under "Details about this building". See `070-building-rank-in-barri-and-city.md`.
