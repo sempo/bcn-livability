@@ -5,15 +5,15 @@ import { useTranslation } from 'react-i18next'
 import { LocateButton } from './LocateButton'
 import { MobileLegend } from './MobileLegend'
 
-/** Above the sheet, on the left the colour scale, on the right "About" and "Where am I" (TODO-062). */
+/** Above the sheet, on the left the credit and, below it, the colour scale, on the right "About" and "Where am I" (TODO-062). */
 export function MapOverlay() {
   const { t } = useTranslation('panel')
   const setAboutOpen = useAboutStore((s) => s.setOpen)
   return (
     <div className="mobile-map-overlay">
       <div className="mobile-map-overlay__left">
-        <MobileLegend />
         <MapCredit compact />
+        <MobileLegend />
       </div>
       <div className="mobile-map-buttons">
         <button type="button" className="round-button" aria-label={t('mobile.aboutThis')} onClick={() => setAboutOpen(true)}>
