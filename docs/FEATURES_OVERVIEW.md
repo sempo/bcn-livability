@@ -52,7 +52,7 @@ in the feature files; the order and dependencies of the planned work are in [ROA
 | 032 | Colour scale fitted to the visible area |
 | 044 | Address and area search |
 
-### Mass-market UX (track B)
+### Mass-market UX
 | # | Feature |
 |---|---|
 | 049 | Conditions in real units ("up to 65 dB is OK for me") |
@@ -87,15 +87,14 @@ Do not propose these again unless the feature file says when to revisit.
 
 ## 3. Roadmap (from the TODO features)
 
-Source of truth for order: [ROADMAP.md](ROADMAP.md). Tracks A and B are independent; A1 + A2 + B1 are the minimum
-before a launch post (B1 is already done).
+Source of truth for order: [ROADMAP.md](ROADMAP.md). A1 + A2 are the minimum before a launch post.
 
 ### Now
 | Feature | State |
 |---|---|
 | TODO-058 Frontend performance budget | Partly done: worker scoring, code splitting, faster start, smaller data. Open: cache headers (needs 054), Lighthouse ≥ 80, a real low-end phone, chunk tuning |
 
-### Track A — scale (before any press link)
+### Infrastructure for the launch (before any press link)
 | Order | Feature | Depends on |
 |---|---|---|
 | A1 | TODO-054 Hosting: CDN cache, own server as origin, versioned data | — |
