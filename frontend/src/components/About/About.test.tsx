@@ -31,6 +31,17 @@ describe('MapCredit', () => {
   })
 })
 
+describe('MapCredit compact (phone)', () => {
+  it('is a small © button that opens the credit line, and folds back', () => {
+    render(<MapCredit compact />)
+    expect(screen.queryByRole('link', { name: '© ICGC' })).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Map credits' }))
+    expect(screen.getByRole('link', { name: '© OpenStreetMap contributors' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }))
+    expect(screen.queryByRole('link', { name: '© ICGC' })).not.toBeInTheDocument()
+  })
+})
+
 describe('AboutDialog', () => {
   beforeEach(() => useAboutStore.setState({ open: true }))
 

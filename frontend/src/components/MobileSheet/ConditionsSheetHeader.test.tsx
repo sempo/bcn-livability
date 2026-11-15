@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen, fireEvent, act } from '@testing-library/react'
 import { ConditionsSheetHeader } from './ConditionsSheetHeader'
 import { useStore } from '../../store'
@@ -25,11 +25,22 @@ describe('ConditionsSheetHeader', () => {
     expect(screen.getByText('Swipe up to add one')).toBeInTheDocument()
   })
 
-  it('becomes a title with the conditions under it once the sheet is open', () => {
+  it('becomes one row, a title and the way back to the profiles, once the sheet is open', () => {
     useSheetStore.setState({ position: 'half' })
+    const openOnboarding = vi.fn()
+    useStore.setState({ openOnboarding })
     render(<ConditionsSheetHeader />)
     expect(screen.getByText('Your conditions')).toBeInTheDocument()
-    expect(screen.getByText('Quiet · On foot · Budget')).toBeInTheDocument()
+    expect(screen.queryByText('Quiet · On foot · Budget')).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Start from a profile' }))
+    expect(openOnboarding).toHaveBeenCalled()
+  })
+
+  it('keeps only the ranking hint on the open areas tab (the tab already names it)', () => {
+    useSheetStore.setState({ tab: 'areas', position: 'half' })
+    render(<ConditionsSheetHeader />)
+    expect(screen.queryByText('Your areas')).not.toBeInTheDocument()
+    expect(screen.getByText('Ranked by the share of homes that fit')).toBeInTheDocument()
   })
 
   it('names the areas tab', () => {
