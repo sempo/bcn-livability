@@ -8,6 +8,7 @@
 - `docs/FEATURE_FLAGS.md` — feature flags (what's gated, what's public)
 - `docs/ROADMAP.md` — order and dependencies of the planned tracks
 - `docs/DATA_LICENSES.md` — every data source, its licence, conditions and open risks (check before adding a source)
+- `docs/media/` — media and promotion: launch strategy, viral cases, stories, channels, launch plan (theses, not texts)
 ## Stack
 
 - **Frontend:** React + Vite + TypeScript, MapLibre GL JS
