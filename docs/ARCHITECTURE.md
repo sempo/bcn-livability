@@ -388,8 +388,8 @@ flag and no saved settings (`hasSavedSettings()`); "Change" in the panel reopens
   and profile, `dist/share/<profile>/<barri>/index.html` (own Open Graph tags + redirect to the map) and `.jpg`
   (`@napi-rs/canvas`, the same drawing code the browser uses). `VITE_SITE_URL` sets the public address in them. "Save image"
   on the building card draws the 4:5 picture in the browser from the live map (code loaded on the first click).
-- **Initial JavaScript is budgeted** (`bundleBudget.initialJsGzipKB` in `frontend/package.json`, 530 KB gzip, now
-  ~521; raised from 500 for i18next, TODO-065): `npm run check:bundle` runs in the deploy workflow after the build. Code that most visitors never run is
+- **Initial JavaScript is budgeted** (`bundleBudget.initialJsGzipKB` in `frontend/package.json`, 535 KB gzip, now
+  ~530.5; raised from 500 for i18next, TODO-065, and from 530 for the building card awards and the retiree profile, 070 and 069): `npm run check:bundle` runs in the deploy workflow after the build. Code that most visitors never run is
   loaded on demand: Best zones (h3-js, turf), the isochrone / exclusion / pin / Idealista layers, terra-draw.
   Keep h3-js and turf's union / difference / buffer out of modules that load at start (`bestZonesConfig.ts`,
   `exclusionsGeometry.ts`, `bestZoneGrid.ts` exist for that).
