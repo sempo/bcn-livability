@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { render, screen, fireEvent, within } from '@testing-library/react'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { render, screen, fireEvent, within, act } from '@testing-library/react'
 import { MantineProvider } from '@mantine/core'
-import { MapCredit } from './MapCredit'
+import { MapCredit, CREDIT_FOLD_MS } from './MapCredit'
 import { AboutDialog, CONTACT } from './AboutDialog'
 import { BrandBar } from '../BrandBar/BrandBar'
 import { useAboutStore } from '../../store/aboutStore'
@@ -32,13 +32,30 @@ describe('MapCredit', () => {
 })
 
 describe('MapCredit compact (phone)', () => {
-  it('is a small © button that opens the credit line, and folds back', () => {
+  afterEach(() => vi.useRealTimers())
+
+  it('shows the line first, folds into a © button after a few seconds, and opens again on a tap', () => {
+    vi.useFakeTimers()
     render(<MapCredit compact />)
+    expect(screen.getByRole('link', { name: '© OpenStreetMap contributors' })).toBeInTheDocument()
+    act(() => { vi.advanceTimersByTime(CREDIT_FOLD_MS + 10) })
     expect(screen.queryByRole('link', { name: '© ICGC' })).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Map credits' }))
-    expect(screen.getByRole('link', { name: '© OpenStreetMap contributors' })).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: 'Close' }))
+    expect(screen.getByRole('link', { name: '© ICGC' })).toBeInTheDocument()
+  })
+
+  it('folds at the first touch of the map, not at a touch elsewhere', () => {
+    render(<div><div className="maplibregl-map"><i data-testid="map" /></div><b data-testid="else" /><MapCredit compact /></div>)
+    fireEvent.pointerDown(screen.getByTestId('else'))
+    expect(screen.getByRole('link', { name: '© ICGC' })).toBeInTheDocument()
+    fireEvent.pointerDown(screen.getByTestId('map'))
     expect(screen.queryByRole('link', { name: '© ICGC' })).not.toBeInTheDocument()
+  })
+
+  it('can be folded by hand with ×', () => {
+    render(<MapCredit compact />)
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }))
+    expect(screen.getByRole('button', { name: 'Map credits' })).toBeInTheDocument()
   })
 })
 

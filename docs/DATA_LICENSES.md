@@ -236,7 +236,7 @@ What the app does now. The registry `frontend/src/services/dataSources.ts` is th
 dialog and the legends read from it, and `dataSources.test.ts` fails when a layer with an `attribution` has no entry.
 Texts: `frontend/src/locales/<lang>/legal.json`. The original proposal follows; differences are noted.
 
-**On the map** (own component `MapCredit`, not MapLibre's control: always visible on desktop, bottom right; on a phone a small «©» button that opens the line with one tap (compact credit, accepted by OSM's guidelines for small screens), above the sheet and above the first-visit sheet; the raw-HTML credit in the panel and the old About sheet
+**On the map** (own component `MapCredit`, not MapLibre's control: always visible on desktop, bottom right; on a phone the line is shown first and folds into a small «©» button after 5 s or at the first touch of the map, a tap reopens it (OSMF's attribution guidelines allow collapsing after the credit was shown; checked 2026-11-15; see 066), above the sheet and above the first-visit sheet; the raw-HTML credit in the panel and the old About sheet
 were removed):
 
 > © ICGC · © OpenStreetMap contributors · © Dirección General del Catastro · Data: Ajuntament de Barcelona,
