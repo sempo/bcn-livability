@@ -92,6 +92,12 @@
     "partial": "Encaje parcial",
     "poor": "Encaje débil"
   },
+  "bandPossibly": {
+    "great": "Posiblemente encaje excelente",
+    "good": "Posiblemente buen encaje",
+    "partial": "Posiblemente encaje parcial",
+    "poor": "Posiblemente encaje débil"
+  },
   "match": {
     "noiseUnder": "{{db}} dB, por debajo de tus {{limit}}",
     "noiseOver": "{{db}} dB, {{diff}} dB por encima de tus {{limit}}",

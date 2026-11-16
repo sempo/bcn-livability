@@ -92,6 +92,12 @@
     "partial": "Encaix parcial",
     "poor": "Encaix feble"
   },
+  "bandPossibly": {
+    "great": "Possiblement encaix excel·lent",
+    "good": "Possiblement bon encaix",
+    "partial": "Possiblement encaix parcial",
+    "poor": "Possiblement encaix feble"
+  },
   "match": {
     "noiseUnder": "{{db}} dB, per sota dels teus {{limit}}",
     "noiseOver": "{{db}} dB, {{diff}} dB per sobre dels teus {{limit}}",

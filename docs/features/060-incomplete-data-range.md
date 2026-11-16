@@ -25,7 +25,9 @@ A place with no data for an active component (weight > 0) gets a **range** `[min
   a range is **above `VITE_INCOMPLETE_AREA_MIN_SHARE`**. The area colour is computed from max values, including
   when it mixes buildings with ranges and with exact values.
 - **Hover tooltip:** `~70` — an "approximately" sign and the index only.
-- **Full card:** the real range (`52–70`) plus the text "Incomplete data".
+- **Full card:** the real range (`52–70`) plus the text "Incomplete data". The band line is hedged when the score is a
+  range: "Possibly a great match" instead of "Great match" (the band is the one of the top of the range), so a low bound
+  in a lower band does not contradict the verdict. Same on the phone peek.
 
 ## What counts as a gap
 
