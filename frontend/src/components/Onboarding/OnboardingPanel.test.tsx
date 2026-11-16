@@ -85,4 +85,14 @@ describe('OnboardingPanel', () => {
     fireEvent.click(screen.getByRole('button', { name: /^City life/ }))
     expect(useStore.getState().compositeWeights).not.toEqual(family)
   })
+
+  it('shows the profiles as one list with a name and a blurb, without icons or images (072)', () => {
+    const { container } = renderWithMantine(<OnboardingPanel />)
+    const list = container.querySelector('.preset-cards')!
+    expect(list.children.length).toBeGreaterThanOrEqual(3)
+    for (const row of Array.from(list.children)) {
+      expect(row.querySelector('b')!.textContent).not.toBe('')
+      expect(row.querySelector('img')).toBeNull()
+    }
+  })
 })

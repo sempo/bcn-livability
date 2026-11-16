@@ -40,6 +40,7 @@ export function AdvancedSettings() {
           </Stack>
           <Switch
             size="xs"
+            className="ink-control"
             label={t('advanced.boost')}
             checked={contrastBoost}
             onChange={(e) => setContrastBoost(e.currentTarget.checked)}

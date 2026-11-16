@@ -18,8 +18,12 @@ for a family"), and for that the picture must carry the result.
   2. **Link preview of a result** (1200×630): for a shared link that points at a place.
   3. **Saved image of a result, 4:5 (1080×1350)**: "Save image" / native share. 4:5 is the main format (feed and
      messengers). A 9:16 story variant is drawn but **not in scope** until 4:5 works.
-- Place name on the image: **barri, or street without number**. Never a house number (privacy; also fits the
-  "how liveable is your street" framing).
+- Place name on the image: **barri, or the building's first address with its house number** (changed
+  2026-11-16 from "street without number": a bare street name does not say which home the picture is about; the
+  number is public Catastro data, the same as on the card).
+- Language: a picture saved in the app is drawn in the page language (texts in `card:share.*`, `card:rank.*`, band and
+  condition labels, brand from `common:brand.title`). Pictures built ahead of time (site and barri link previews) stay in
+  English.
 - Domain on the image: `https://livability.time2map.com` (the final domain, decided 2026-11-13).
 - The map attribution ("Map: ICGC, OpenStreetMap contributors") is on every image.
 
@@ -82,8 +86,8 @@ on the right of the 1200×630 image and at the bottom of the 4:5 image, the map 
 
 One drawing code for both worlds, `services/shareImage/`:
 
-- `shareImageModel.ts` (pure): `buildingShareModel` / `areaShareModel` → what the picture says; `streetOnly()` (no house
-  number), `profileOf()` (the settings equal a profile exactly, else null), `wrapLines()`, `shareFileName()`.
+- `shareImageModel.ts` (pure): `buildingShareModel` / `areaShareModel` → what the picture says; `firstAddress()` (first address,
+  with number), `profileOf()` (the settings equal a profile exactly, else null), `wrapLines()`, `shareFileName()`.
 - `shareImageDraw.ts`: paints any Canvas 2D context, 1200×630 (`og`) or 1080×1350 (`post`, 4:5), plus the site
   picture (`drawSiteImage`). The map behind the panel is passed in. Rows shrink from the full size down to 18 px until
   they fit; the brand drops out of the footer when it does not fit beside the address.

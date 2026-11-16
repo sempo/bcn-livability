@@ -1,5 +1,6 @@
 import i18n from '../../i18n'
 import { lazyLabels } from '../../i18n/format'
+import type { MatchParts } from './matchText'
 import type { CompositeResult, CompositeWeights, ComponentScores } from '../composite/compositeScore'
 
 // Match score (TODO-050): how the Livability score is shown. The score keeps its definition (049); this module
@@ -61,6 +62,9 @@ export interface MatchRow {
   label: string
   status: ConditionStatus
   text: string
+  /** The value and its limit, split for the card's rows (072); `value` reads "no data" without data. */
+  value?: string
+  limit?: string
 }
 
 export interface MatchSummary {
@@ -74,12 +78,15 @@ export function matchSummary(
   result: CompositeResult,
   weights: CompositeWeights,
   texts: Partial<Record<ConditionId, string>> = {},
+  parts: Partial<Record<ConditionId, MatchParts>> = {},
 ): MatchSummary {
   const rows: MatchRow[] = []
   for (const id of ORDER) {
     if ((weights[id] ?? 0) <= 0) continue
     const status = conditionStatus(result.components[id])
-    rows.push({ id, label: CONDITION_LABEL[id], status, text: status === 'nodata' ? i18n.t('conditions:match.noData') : texts[id] ?? '' })
+    const text = status === 'nodata' ? i18n.t('conditions:match.noData') : texts[id] ?? ''
+    const p = status === 'nodata' ? { value: text } : parts[id]
+    rows.push({ id, label: CONDITION_LABEL[id], status, text, ...(p ? { value: p.value, limit: p.limit } : {}) })
   }
   return { met: rows.filter((r) => r.status === 'met').length, total: rows.length, rows }
 }

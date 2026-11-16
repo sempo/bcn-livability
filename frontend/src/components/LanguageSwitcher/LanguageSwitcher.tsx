@@ -7,9 +7,10 @@ import { setLanguage } from '../../i18n'
 /**
  * Language menu of the brand bar (TODO-065): a button with the code of the current language and a list of every
  * enabled language, each written in itself. Plain markup (no Mantine popover) so the bar stays light and works
- * without a provider. With `inline` the list is always open (the phone "About" sheet).
+ * without a provider. With `inline` the list is always open (the phone "About" sheet, the brand menu); `onChoose`
+ * lets the host close itself after a pick.
  */
-export function LanguageSwitcher({ inline = false }: { inline?: boolean }) {
+export function LanguageSwitcher({ inline = false, onChoose }: { inline?: boolean; onChoose?: () => void }) {
   const { t, i18n } = useTranslation()
   const [open, setOpen] = useState(false)
   const root = useRef<HTMLDivElement>(null)
@@ -33,6 +34,7 @@ export function LanguageSwitcher({ inline = false }: { inline?: boolean }) {
 
   function choose(code: string) {
     setOpen(false)
+    onChoose?.()
     void setLanguage(code)
   }
 

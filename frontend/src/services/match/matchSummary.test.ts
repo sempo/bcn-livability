@@ -3,7 +3,9 @@ import { computeComposite, type ComponentScores, type CompositeWeights } from '.
 import {
   BAND_COLOR, BAND_LABEL, bandShares, conditionStatus, matchBand, matchSummary, matchTooltip, parseBands, riskLine,
 } from './matchSummary'
-import { ageText, cityCoreText, localsText, noiseText, poiText, priceText } from './matchText'
+import {
+  ageParts, ageText, cityCoreParts, cityCoreText, localsParts, localsText, noiseParts, noiseText, poiParts, poiText, priceParts, priceText,
+} from './matchText'
 
 const ALL_ON: CompositeWeights = { poiAccess: 1, noise: 1, cityCore: 1, openPrice: 1, localsOpinion: 0, age: 0 }
 const comps = (c: Partial<ComponentScores>): ComponentScores => ({
@@ -128,6 +130,8 @@ describe('row texts', () => {
   it('price', () => {
     expect(priceText(3325, 4000)).toBe('€3,325/m², under your €4,000')
     expect(priceText(4600, 4000)).toBe('€4,600/m², 15% over your €4,000')
+    expect(priceText(4010, 4000)).toBe('€4,010/m², under your €4,000') // +0.25% rounds to 0%: it fits
+    expect(priceText(4080, 4000)).toBe('€4,080/m², almost fits your €4,000')
   })
   it('locals and age', () => {
     expect(localsText(7.6, 7.5)).toBe('rated 7.6, your minimum 7.5')
@@ -146,5 +150,40 @@ describe('bandShares', () => {
     const shares = bandShares(Uint8Array.from([100, 50, 0]))
     expect(shares.reduce((a, b) => a + b, 0)).toBeCloseTo(100)
     expect(bandShares(new Uint8Array())).toEqual([0, 0, 0, 0])
+  })
+})
+
+describe('match row parts (072): the value and what it is compared with, for the card rows', () => {
+  it('noise: value in dB, the limit after a slash', () => {
+    expect(noiseParts(57, 65)).toEqual({ value: '57 dB', limit: ' / 65' })
+    expect(noiseParts(72, 65)).toEqual({ value: '72 dB', limit: ' / 65' })
+  })
+  it('services and places: "5 of 5" in "10 min"', () => {
+    expect(poiParts(5, 5, 10)).toEqual({ value: '5 of 5', limit: ' in 10 min' })
+    expect(cityCoreParts(12, 13, 30)).toEqual({ value: '12 of 13', limit: ' in 30 min' })
+  })
+  it('price: the area price, the budget per m², and the gap only when over', () => {
+    expect(priceParts(3325, 4000)).toEqual({ value: '€3,325', limit: ' / €4,000 per m²' })
+    expect(priceParts(4600, 4000)).toEqual({ value: '€4,600', limit: ' / €4,000 per m² · +15%' })
+    expect(priceParts(3585, 3571)).toEqual({ value: '€3,585', limit: ' / €3,571 per m²' }) // +0.4%: no "+0%"
+    expect(priceParts(4080, 4000)).toEqual({ value: '€4,080', limit: ' / €4,000 per m² · almost fits' })
+  })
+  it('locals and age', () => {
+    expect(localsParts(7.6, 7.5)).toEqual({ value: '7.6', limit: ' / 7.5' })
+    expect(ageParts('Historic')).toEqual({ value: 'Historic' })
+    expect(ageParts(null)).toEqual({ value: 'year of construction unknown' })
+  })
+  it('matchSummary puts the parts on the rows next to the text', () => {
+    const r = matchSummary(result({ noise: 100 }), ALL_ON, { noise: 'x' }, { noise: noiseParts(57, 65) })
+    const row = r.rows.find((x) => x.id === 'noise')!
+    expect(row.text).toBe('x')
+    expect(row.value).toBe('57 dB')
+    expect(row.limit).toBe(' / 65')
+  })
+  it('a row without data has no parts', () => {
+    const r = matchSummary(result({ noise: null }), ALL_ON, {}, { noise: noiseParts(57, 65) })
+    const row = r.rows.find((x) => x.id === 'noise')!
+    expect(row.value).toBe('no data')
+    expect(row.limit).toBeUndefined()
   })
 })

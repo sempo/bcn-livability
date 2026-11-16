@@ -1,5 +1,6 @@
 import i18n from '../../i18n'
 import { formatNumber, lazyLabels } from '../../i18n/format'
+import { ALMOST_FITS_PCT, priceOverPct } from '../../services/buildings/conditions'
 
 // Plain-language texts of the building card (TODO-046, "Card texts"). The wording is in the language files (card).
 
@@ -67,10 +68,10 @@ export function noiseVsLimit(lden: number, limit: number): string {
 
 /** "€4,700/m² — 18% over your €4,000/m²" */
 export function priceVsBudget(eurM2: number, budget: number): string {
-  if (eurM2 <= budget) return i18n.t('card:vs.priceWithin', { price: eur(eurM2), budget: eur(budget) })
-  return i18n.t('card:vs.priceOver', {
-    price: eur(eurM2), pct: Math.round((100 * (eurM2 - budget)) / budget), budget: eur(budget),
-  })
+  const pct = priceOverPct(eurM2, budget)
+  if (pct === 0) return i18n.t('card:vs.priceWithin', { price: eur(eurM2), budget: eur(budget) })
+  if (pct <= ALMOST_FITS_PCT) return i18n.t('card:vs.priceAlmost', { price: eur(eurM2), budget: eur(budget) })
+  return i18n.t('card:vs.priceOver', { price: eur(eurM2), pct, budget: eur(budget) })
 }
 
 /** "7 of 10 services within 10 min"; null minutes = out of reach. */

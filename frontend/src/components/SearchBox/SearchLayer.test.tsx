@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, act } from '@testing-library/react'
 import { MapContext } from '../Map/MapContext'
 import { useSearchStore } from '../../store/searchStore'
+import { useStore } from '../../store'
 import { SearchLayer } from './SearchLayer'
 
 const marker = { setLngLat: vi.fn().mockReturnThis(), addTo: vi.fn().mockReturnThis(), remove: vi.fn() }
@@ -23,6 +24,7 @@ function fakeMap() {
     off: vi.fn(),
     getContainer: () => document.createElement('div'),
     unproject: vi.fn(),
+    queryRenderedFeatures: vi.fn().mockReturnValue([]),
   }
 }
 
@@ -73,6 +75,28 @@ describe('SearchLayer', () => {
     act(() => useSearchStore.getState().clear())
     expect(marker.remove).toHaveBeenCalled()
     expect(map.source.setData).toHaveBeenLastCalledWith({ type: 'FeatureCollection', features: [] })
+  })
+
+  it('drops the area outline when a building is picked', () => {
+    mount(fakeMap())
+    act(() => useSearchStore.getState().selectArea('El Born', [2.17, 41.38, 2.19, 41.39], outline))
+    act(() => useStore.getState().setSelectedBuilding(3))
+    expect(useSearchStore.getState().selection).toBeNull()
+    act(() => useStore.getState().setSelectedBuilding(null))
+  })
+
+  it('drops the area outline on a click on the empty map, keeps it on a click on a layer', () => {
+    const map = fakeMap()
+    mount(map)
+    act(() => useSearchStore.getState().selectArea('El Born', [2.17, 41.38, 2.19, 41.39], outline))
+    const click = map.on.mock.calls.find(([name]) => name === 'click')![1] as (e: unknown) => void
+    map.getLayer.mockReturnValue({})
+    map.queryRenderedFeatures.mockReturnValue([{}])
+    act(() => click({ point: { x: 1, y: 1 } }))
+    expect(useSearchStore.getState().selection).not.toBeNull()
+    map.queryRenderedFeatures.mockReturnValue([])
+    act(() => click({ point: { x: 1, y: 1 } }))
+    expect(useSearchStore.getState().selection).toBeNull()
   })
 
   it('clears the selection on Escape', () => {

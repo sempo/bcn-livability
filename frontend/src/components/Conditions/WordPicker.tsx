@@ -1,11 +1,11 @@
-import { useState, type ReactNode } from 'react'
-import { Drawer, Popover, Text } from '@mantine/core'
-import { useMediaQuery } from '@mantine/hooks'
-import { PHONE_QUERY } from '../../services/phoneConfig'
+import { useContext, useEffect, useId, useState, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
+import { PickerHostContext, PickerSlotContext } from './pickerContext'
 
 /**
- * A tappable word of a sentence; opens a small picker under it, or on a phone a bottom sheet with large rows
- * (TODO-062). `children` gets a function that closes it.
+ * A tappable word of a sentence. It opens its picker in place, under the sentence (TODO-072), where the editor has
+ * left a slot for it; one picker is open at a time per panel, a second tap on the word or Escape closes it.
+ * `children` gets a function that closes it. Without an editor around it the panel goes to the page body.
  */
 export function WordPicker({ label, title, note, children }: {
   label: string
@@ -14,62 +14,39 @@ export function WordPicker({ label, title, note, children }: {
   note?: string
   children: (close: () => void) => ReactNode
 }) {
-  const [opened, setOpened] = useState(false)
-  const phone = useMediaQuery(PHONE_QUERY, false, { getInitialValueInEffect: false })
-  const content = (
-    <>
-      {title && <Text size="xs" c="dimmed" mb={note ? 2 : 4}>{title}</Text>}
-      {note && <Text size="xs" c="dimmed" mb={4}>{note}</Text>}
+  const id = useId()
+  const host = useContext(PickerHostContext)
+  const slot = useContext(PickerSlotContext)
+  const [localOpen, setLocalOpen] = useState(false)
+  const opened = host ? host.openId === id : localOpen
+  const setOpened = (v: boolean) => (host ? host.setOpenId(v ? id : null) : setLocalOpen(v))
+
+  useEffect(() => {
+    if (!opened) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') { e.stopPropagation(); setOpened(false) } }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [opened])
+
+  const panel = (
+    <div className="word-panel" role="group" aria-label={title ?? label}>
+      {title && <div className="word-panel__title">{title}</div>}
+      {note && <div className="word-panel__note">{note}</div>}
       {children(() => setOpened(false))}
-    </>
+    </div>
   )
-  const pill = (
-    <button
-      type="button"
-      className="word-pill"
-      aria-haspopup="dialog"
-      aria-expanded={opened}
-      onClick={() => setOpened((o) => !o)}
-    >
-      {label}
-    </button>
-  )
-
-  if (phone) {
-    return (
-      <>
-        {pill}
-        <Drawer
-          opened={opened}
-          onClose={() => setOpened(false)}
-          position="bottom"
-          size="auto"
-          radius="lg"
-          withCloseButton={false}
-          padding="md"
-          zIndex={300}
-          aria-label={title ?? label}
-          classNames={{ content: 'bottom-sheet' }}
-        >
-          <div className="word-picker word-picker--sheet">{content}</div>
-        </Drawer>
-      </>
-    )
-  }
-
   return (
-    <Popover
-      opened={opened}
-      onChange={setOpened}
-      position="bottom-start"
-      width={280}
-      shadow="md"
-      radius="md"
-      transitionProps={{ duration: 0 }}
-      trapFocus
-    >
-      <Popover.Target>{pill}</Popover.Target>
-      <Popover.Dropdown className="word-picker">{content}</Popover.Dropdown>
-    </Popover>
+    <>
+      <button
+        type="button"
+        className="word-pill"
+        aria-expanded={opened}
+        onClick={() => setOpened(!opened)}
+      >
+        {label}
+      </button>
+      {opened && createPortal(panel, slot ?? document.body)}
+    </>
   )
 }
