@@ -9,7 +9,7 @@ import {
 } from './shareImageModel'
 import type { BuildingRanks, Rank } from '../buildings/buildingRank'
 
-const rank = (o: Partial<Rank>): Rank => ({ pct: 80, n: 500, tied: false, samePct: 0, ...o })
+const rank = (o: Partial<Rank>): Rank => ({ pct: 80, n: 500, ...o })
 const RANKS: BuildingRanks = {
   local: { name: 'la Vila de Gràcia', kind: 'barri', rank: rank({ pct: 80 }) },
   wide: { scope: 'barcelona', rank: rank({ pct: 74 }) },
@@ -22,12 +22,12 @@ describe('rank lines on the building picture (TODO-070)', () => {
       'This home is better than 74% of homes in Barcelona',
     ])
   })
-  it('says "among the best" for the top group, and names a municipality and the metro area', () => {
+  it('names a municipality and the metro area', () => {
     expect(rankTexts({
-      local: { name: 'Badalona', kind: 'muni', rank: rank({ tied: true, samePct: 64 }) },
+      local: { name: 'Badalona', kind: 'muni', rank: rank({ pct: 91 }) },
       wide: { scope: 'metro', rank: rank({}) },
     })).toEqual([
-      'This home is among the best in Badalona: 64% of homes fit as well',
+      'This home is better than 91% of homes in Badalona',
       'This home is better than 80% of homes in the Barcelona area',
     ])
   })

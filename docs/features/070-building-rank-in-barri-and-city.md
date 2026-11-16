@@ -23,8 +23,7 @@ compares with its barri and with the city. The card does not yet say that plainl
 2. **Awards, not ranks.** Under the conditions and the risk line, a block "For your conditions" with one line per
    scope where the building stands out: "This home is better than 80% of homes in la Vila de Gràcia", "… of homes
    in Barcelona", each with a small award icon. No scale, no band words.
-3. **A scope gets a line only from `VITE_RANK_SHOW_MIN_PCT` (default 70)** of homes beaten, or when the building is
-   in the top group of the scope. The barri and the city are judged separately: a weak building in its barri can
+3. **A scope gets a line only from `VITE_RANK_SHOW_MIN_PCT` (default 70)** of homes beaten. The barri and the city are judged separately: a weak building in its barri can
    still earn the city line. When neither earns one, the whole block is absent.
 4. **The technical details are folded** under "Details about this building", closed by default. The state (open or
    closed) is kept in the store while the person moves between buildings. The photo, the match, the rows, the risk
@@ -44,9 +43,10 @@ home", never "your home"); "barri" means one of the 73 administrative barris (ou
 - What "better than N%" counts: the final score of the building against the final scores of every building of the
   scope under the same conditions; N = share with a lower score, rounded down, at most 99. Buildings, not dwellings;
   all buildings of the data, as everywhere in the app.
-- **Ties.** The top group is the buildings with the maximum score of the scope, when they are at least 2% of it
-  (and more than one). A building in it reads "This home is among the best: 64% of homes in X fit as well" and always
-  earns the line. A lone best building reads "better than 99%".
+- **Ties (changed 2026-11-16, owner).** No special rule: homes with the same score are not beaten, so only the
+  threshold counts. The first rule ("among the best: N% of homes fit as well" for the top group, from 2% of the
+  scope up) gave an award to a plateau: with a budget under the barri price, 93% of la Vila de Gràcia shared one
+  score of 63, and each of those homes read "among the best". A wide plateau now earns no line.
 - **Scope.** Barcelona building: the barri, then Barcelona. Elsewhere: the municipality, then "the Barcelona area".
   The barri line is hidden below `VITE_AREA_MIN_BUILDINGS` (50) buildings.
 - **Hidden:** no block for a building with incomplete data (060: the card says "No rank: …" instead), before the
