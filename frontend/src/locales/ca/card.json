@@ -115,8 +115,6 @@
     "cityCore": "Accés al centre",
     "age": "Antiguitat de l'edifici",
     "climate": "Risc climàtic",
-    "barri": "Nivell de barri",
-    "muni": "Nivell de municipi",
     "price": "Preu de venda"
   },
   "ui": {

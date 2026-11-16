@@ -280,7 +280,7 @@ export function DetailsView(p: DetailsViewProps) {
       {area && (
         <>
           <div className="barri-row">
-            <span><span>{area.kind === 'barri' ? t('section.barri') : t('section.muni')}</span> · {t('ui.sameFor', { kind })}</span>
+            <span>{t('ui.sameFor', { kind })}</span>
             <b>{area.name}</b>
           </div>
           <Section title={t('section.price')} score={weights.openPrice > 0 ? components.openPrice : null}
