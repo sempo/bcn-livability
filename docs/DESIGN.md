@@ -1,6 +1,6 @@
 # Design
 
-Synced with the code on 2026-11-11 (`frontend/src/main.tsx`, `index.css`, layer components).
+Synced with the code on 2026-11-15 (`frontend/src/main.tsx`, `index.css`, layer components).
 
 ## Brand and type
 
@@ -24,6 +24,27 @@ Synced with the code on 2026-11-11 (`frontend/src/main.tsx`, `index.css`, layer 
 | Exclusion zones | `#555555`, fill 28 %, outline 1.5 px |
 | Noise, flood, wildfire, street flooding | official palettes of each source (see the legend components) |
 
+## Building card, onboarding and settings (TODO-072)
+
+Tokens (`:root` in `index.css`): ink `#1f2937`, dim `#6b7280`, hairline `#eceef0`, field grey `#f6f7f8`, button grey
+`#f3f4f6` (hover `#e9ebee`). **Ink marks a state** (switch on, selected chip, active tab, selected radio, links with an
+underline); **coral marks an action or something to edit** (the "Show me the map" button with ink text, slider fill,
+the underline of an editable word). Coral is not used for small text or links.
+
+- **Card header:** a score ring (92 px, 104 on a phone, 52 in the phone's peek) in the colour of the map scale, the band,
+  "Meets N of M", one row per condition (status mark: ✓ / half circle / ✕ / empty; value, then " / limit" in dim), the
+  risk row, 0–2 rank tiles, two grey buttons (Save image, Share) and the "Details about this building" row.
+  With incomplete data the ring shows `min–max` on a hatched track.
+- **Details:** the facade photo and a four-column strip of Catastro facts, then one row per section with a 36 px ring
+  (score), the title and a one-line verdict. Noise and Climate risk are open at first. Barri-level sections follow a
+  plain header row. No emoji, no per-service bars.
+- **Onboarding:** profiles as one bordered list (no icons), "Build your own", "Just show me the map".
+- **Settings:** each condition row has its short name above the sentence; a word opens its picker **in place** under the
+  sentence (one at a time, Escape closes; "Custom…" shows a slider with the limits of `CONDITION_RANGES`); map layers are
+  single-select chips; risk strength stays a 1–10 slider with a checkbox.
+- Phone: every tap target is 44 px (words are 36 px with a larger hit area, and a tap on the whole condition row opens
+  its first picker).
+
 ## Area card (TODO-064)
 
 Same card as the building card (300 px at the top right on desktop, the bottom sheet on a phone). Order: description,
@@ -37,7 +58,7 @@ A white panel over the map, the same type and colours as the app. In priority or
 (or the share of good homes for an area), the place (street without a number, or the barri), "For a family" (only for a
 profile), up to four condition rows (✓ / ◐ / ✗ / ▲, colour and shape both), the brand and the address. 1200×630 for link
 previews (panel on the right), 1080×1350 for the saved image (panel at the bottom). Safe margin 36–60 px, row text 18–34 px.
-The map attribution is on every picture. No "Meets N of M" line, no house numbers.
+The map attribution is on every picture. No "Meets N of M" line. A building picture names the first address with its house number.
 
 ## Layout
 

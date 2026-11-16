@@ -11,6 +11,8 @@ export const SEARCH_SOURCE_ID = 'search-area'
 const FILL_ID = 'search-area-fill'
 const LINE_ID = 'search-area-line'
 const COLOR = '#1971c2'
+/** Layers that handle their own clicks (area, building, best zone): a click on them is not "empty map". */
+const CLICKABLE_LAYERS = ['areas-fill', 'buildings-fill', 'buildings-dots', 'best-zones-fill']
 const EMPTY: FeatureCollection = { type: 'FeatureCollection', features: [] }
 
 /** Leaves room for the filter panel (left) and the building card (right) on desktop. */
@@ -71,6 +73,24 @@ export function SearchLayer() {
       markerRef.current = new maplibregl.Marker({ color: COLOR }).setLngLat(selection.coords).addTo(map)
     }
   }, [map, selection])
+
+  // The outline of an area goes away once the user moves on: a building is picked, or an empty spot of the map.
+  const selectedBuilding = useStore((s) => s.selectedBuilding)
+  useEffect(() => {
+    if (selectedBuilding !== null && useSearchStore.getState().selection?.kind === 'area') clear()
+  }, [selectedBuilding, clear])
+
+  useEffect(() => {
+    if (!map || selection?.kind !== 'area') return
+    const onClick = (e: maplibregl.MapMouseEvent) => {
+      const layers = CLICKABLE_LAYERS.filter((id) => map.getLayer(id))
+      if (layers.length > 0 && map.queryRenderedFeatures(e.point, { layers }).length > 0) return
+      useStore.getState().setSelectedArea(null)
+      clear()
+    }
+    map.on('click', onClick)
+    return () => { map.off('click', onClick) }
+  }, [map, selection, clear])
 
   useEffect(() => {
     if (!selection) return

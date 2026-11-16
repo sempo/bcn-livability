@@ -1,4 +1,4 @@
-import { SegmentedControl, Stack, Text } from '@mantine/core'
+import { Stack, Text } from '@mantine/core'
 import { useTranslation } from 'react-i18next'
 import { features } from '../../features'
 import { useStore, mapLayerOf, type MapLayerId } from '../../store'
@@ -17,17 +17,18 @@ export function MapLayersControl() {
   const setMapLayer = useStore((s) => s.setMapLayer)
   return (
     <Stack gap={8}>
-      <Text size="xs" c="dimmed" fw={600} tt="uppercase" style={{ letterSpacing: '0.06em' }}>{t('layers.title')}</Text>
-      <SegmentedControl
-        fullWidth
-        size="xs"
-        radius="md"
-        value={layer}
-        onChange={(v) => setMapLayer(v as MapLayerId)}
-        data={LAYER_IDS.map((value) => ({ value, label: t(`layers.${value}`) }))}
-        aria-label={t('layers.title')}
-        className="map-layers-control"
-      />
+      <Text size="xs" c="dimmed" fw={600} style={{ fontSize: 13, color: 'var(--ink)' }}>{t('layers.title')}</Text>
+      <div className="layer-chips" role="radiogroup" aria-label={t('layers.title')}>
+        {LAYER_IDS.map((id) => (
+          <label key={id} className="layer-chip" data-selected={layer === id}>
+            <input
+              type="radio" name="map-layer" className="visually-hidden" value={id}
+              checked={layer === id} onChange={() => setMapLayer(id)}
+            />
+            {t(`layers.${id}`)}
+          </label>
+        ))}
+      </div>
       {layer === 'none' && <Text size="xs" c="dimmed">{t('layers.hint')}</Text>}
       {layer === 'noise' && <NoiseLegend />}
       {layer === 'river' && <FloodZonesLegend />}

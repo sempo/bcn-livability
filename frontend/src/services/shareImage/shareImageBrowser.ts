@@ -1,7 +1,8 @@
 import type * as maplibregl from 'maplibre-gl'
 import { PHONE_QUERY } from '../phoneConfig'
 import { captureMap } from './captureMap'
-import { MAP_ATTRIBUTION, SITE_URL, siteLabel } from './shareConfig'
+import i18n from '../../i18n'
+import { SITE_URL, siteLabel } from './shareConfig'
 import { drawShareImage, FONT, FORMAT_SIZE, type Ctx } from './shareImageDraw'
 import { shareFileName, type ShareModel } from './shareImageModel'
 
@@ -23,7 +24,7 @@ export async function renderShareBlob(map: maplibregl.Map, lngLat: [number, numb
   const ctx = canvas.getContext('2d')
   if (!ctx) throw new Error('No 2D canvas')
   await drawShareImage(ctx as Ctx, model, {
-    format: 'post', attribution: MAP_ATTRIBUTION, domain: siteLabel(SITE_URL), drawMap: captureMap(map, lngLat),
+    format: 'post', attribution: i18n.t('card:share.mapCredit'), domain: siteLabel(SITE_URL), drawMap: captureMap(map, lngLat),
   })
   return new Promise((resolve, reject) =>
     canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('The picture could not be made'))), 'image/png'))

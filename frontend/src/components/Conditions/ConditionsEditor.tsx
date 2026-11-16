@@ -1,4 +1,7 @@
-import { useMemo } from 'react'
+import { useMemo, useState, type MouseEvent } from 'react'
+import { useMediaQuery } from '@mantine/hooks'
+import { PHONE_QUERY } from '../../services/phoneConfig'
+import { PickerHostContext, PickerSlotContext } from './pickerContext'
 import { useTranslation } from 'react-i18next'
 import { useStore } from '../../store'
 import { features } from '../../features'
@@ -9,6 +12,33 @@ import { SentenceRow } from './SentenceRow'
 import { AddConditionChips } from './AddConditionChips'
 import { MatchBar } from './MatchBar'
 
+/** A condition: its number, short name and sentence, and under them the place where a word's picker opens. */
+function ConditionRow({ condition, index, onRemove }: { condition: ConditionKey; index: number; onRemove: () => void }) {
+  const { t } = useTranslation('editor')
+  const [slot, setSlot] = useState<HTMLElement | null>(null)
+  const phone = useMediaQuery(PHONE_QUERY, false, { getInitialValueInEffect: false })
+  // On a phone the words are smaller than a finger: a tap anywhere on the row opens the first picker.
+  const tapRow = (e: MouseEvent<HTMLDivElement>) => {
+    if (!phone || (e.target as HTMLElement).closest('button, .word-panel')) return
+    e.currentTarget.querySelector<HTMLButtonElement>('.word-pill')?.click()
+  }
+  return (
+    <div className="condition-row" onClick={tapRow}>
+      <span className="condition-row__num" aria-label={t('editor.priority', { n: index + 1 })}>{index + 1}</span>
+      <PickerSlotContext.Provider value={slot}>
+        <div className="condition-row__main">
+          <span className="condition-row__name">{SHORT_LABEL[condition]}</span>
+          <SentenceRow condition={condition} />
+          <div ref={setSlot} className="condition-row__panel" />
+        </div>
+      </PickerSlotContext.Provider>
+      <button type="button" className="condition-row__remove" aria-label={t('editor.remove', { name: SHORT_LABEL[condition] })} onClick={onRemove}>
+        ×
+      </button>
+    </div>
+  )
+}
+
 /** The conditions as numbered sentences, "+ add" chips for the rest, and the match bar (TODO-031). */
 export function ConditionsEditor() {
   const { t } = useTranslation('editor')
@@ -16,6 +46,7 @@ export function ConditionsEditor() {
   const strengths = useStore((s) => s.compositeRiskStrengths)
   const order = useStore((s) => s.conditionOrder)
   const applySettings = useStore((s) => s.applySettings)
+  const [openId, setOpenId] = useState<string | null>(null)
   const active = useMemo(() => activeConditions(weights, strengths, order), [weights, strengths, order])
   const missing = CONDITION_KEYS.filter((k) => !active.includes(k) && (k !== 'localsOpinion' || features.localsOpinion))
 
@@ -27,29 +58,18 @@ export function ConditionsEditor() {
   }
 
   return (
+    <PickerHostContext.Provider value={{ openId, setOpenId }}>
     <div className="conditions-editor">
       {active.length === 0 ? (
         <p className="conditions-editor__empty">{t('editor.empty')}</p>
       ) : (
         <div className="conditions-editor__rows">
-          {active.map((k, i) => (
-            <div key={k} className="condition-row">
-              <span className="condition-row__num" aria-label={t('editor.priority', { n: i + 1 })}>{i + 1}</span>
-              <SentenceRow condition={k} />
-              <button
-                type="button"
-                className="condition-row__remove"
-                aria-label={t('editor.remove', { name: SHORT_LABEL[k] })}
-                onClick={() => change(k, false)}
-              >
-                ×
-              </button>
-            </div>
-          ))}
+          {active.map((k, i) => <ConditionRow key={k} condition={k} index={i} onRemove={() => change(k, false)} />)}
         </div>
       )}
       <AddConditionChips missing={missing} onAdd={(k) => change(k, true)} />
       <MatchBar />
     </div>
+    </PickerHostContext.Provider>
   )
 }

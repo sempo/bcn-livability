@@ -39,6 +39,7 @@ export function StrengthRow({ label, weight, defaultWeight, onChange }: Strength
       <Group gap={6} wrap="nowrap">
         <Checkbox
           size="xs"
+          className="ink-control strength-check"
           checked={enabled}
           onChange={(e) => toggle(e.currentTarget.checked)}
           aria-label={t('strength.enable', { label })}
@@ -54,6 +55,7 @@ export function StrengthRow({ label, weight, defaultWeight, onChange }: Strength
           max={10}
           step={1}
           size="xs"
+          className="strength-slider"
           value={weight}
           onChange={(v) => onChange(v)}
           aria-label={t('strength.strength', { label })}

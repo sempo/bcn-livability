@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Slider, Text } from '@mantine/core'
+import { Slider } from '@mantine/core'
 
 export interface Choice<T extends string | number> {
   value: T
@@ -55,17 +55,27 @@ export function OptionList<T extends string | number>({ options, value, onChange
           </button>
           {showSlider && (
             <div className="option-list__custom">
+              <div className="option-list__custom-head">
+                <span>{t('picker.customValue')}</span>
+                <b>{custom.format(Number(value))}</b>
+              </div>
               <Slider
+                className="word-slider"
                 min={custom.min}
                 max={custom.max}
                 step={custom.step}
                 value={Number(value)}
                 onChange={custom.onChange}
-                label={custom.format}
+                label={null}
+                size={4}
+                thumbSize={18}
                 aria-label={t('picker.customValue')}
                 style={{ '--slider-color': '#F06965' } as React.CSSProperties}
               />
-              <Text size="xs" c="dimmed" mt={6}>{custom.format(Number(value))}</Text>
+              <div className="option-list__custom-range">
+                <span>{custom.format(custom.min)}</span>
+                <span>{custom.format(custom.max)}</span>
+              </div>
             </div>
           )}
         </>

@@ -1,3 +1,4 @@
+import i18n from '../../i18n'
 import { BAND_COLOR, BAND_LABEL, BAND_ORDER } from '../match/matchSummary'
 import { wrapLines, type RowStatus, type ShareModel } from './shareImageModel'
 
@@ -245,7 +246,7 @@ function drawBrandLine(
   drawMark(ctx, left, cy - markH / 2, markH, BRAND)
   const x = left + markH * 0.7 + 10
   ctx.textBaseline = 'middle'
-  const brand = 'Barcelona livability map'
+  const brand = i18n.t('common:brand.title')
   if (x - left + measure(600, size)(brand) + 24 + measure(400, size)(domain) <= width) {
     ctx.font = font(600, size)
     ctx.fillStyle = INK
@@ -390,7 +391,7 @@ export async function drawShareImage(ctx: Ctx, model: ShareModel, opts: DrawOpti
     ctx.font = font(700, pl.label)
     ctx.fillText(model.bandLabel, textX, y + plaqueH / 2 - 2)
     ctx.font = font(500, pl.small)
-    ctx.fillText('out of 100', textX, y + plaqueH / 2 + pl.small + 4)
+    ctx.fillText(i18n.t('card:share.outOf'), textX, y + plaqueH / 2 + pl.small + 4)
   } else {
     const lines = wrapLines(model.caption ?? '', textW, measure(700, pl.label * 0.62), 3)
     ctx.font = font(700, pl.label * 0.62)
@@ -481,7 +482,7 @@ export async function drawSiteImage(ctx: Ctx, opts: Omit<DrawOptions, 'format'> 
   ctx.font = font(600, 24)
   ctx.fillStyle = INK
   ctx.textBaseline = 'middle'
-  ctx.fillText('Barcelona livability map', left + 40 * 0.7 + 12, top + 20)
+  ctx.fillText(i18n.t('common:brand.title'), left + 40 * 0.7 + 12, top + 20)
   ctx.textBaseline = 'alphabetic'
 
   // The question and one sentence.

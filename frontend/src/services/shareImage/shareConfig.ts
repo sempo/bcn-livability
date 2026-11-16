@@ -16,5 +16,4 @@ export function siteLabel(url: string = SITE_URL): string {
   return url.replace(/^https?:\/\//, '')
 }
 
-export const MAP_ATTRIBUTION = 'Map: ICGC, OpenStreetMap contributors'
 export const AREA_ATTRIBUTION = 'Boundaries: Barcelona City Council, CC BY 4.0'

@@ -20,11 +20,12 @@ export function MatchColoursSwitch() {
         <Switch
           label={t('matchSwitch.label')}
           size="sm"
+          className="ink-control"
           checked={visible}
           onChange={(e) => setVisible(e.currentTarget.checked)}
           style={{ flex: 1 }}
         />
-        <ActionIcon size={20} variant="subtle" color="gray" onClick={() => setInfo(true)} aria-label={t('matchSwitch.about')}>
+        <ActionIcon size={20} className="info-icon-btn" variant="subtle" color="gray" onClick={() => setInfo(true)} aria-label={t('matchSwitch.about')}>
           <IconInfoCircle size={16} stroke={1.8} />
         </ActionIcon>
       </Group>

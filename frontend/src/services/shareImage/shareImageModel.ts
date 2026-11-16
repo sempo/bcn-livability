@@ -5,11 +5,13 @@ import {
 } from '../match/matchSummary'
 import type { BuildingRanks, Rank } from '../buildings/buildingRank'
 import { PRESETS, profileName } from '../presets'
+import i18n from '../../i18n'
+import { inPlace } from '../../components/BuildingCard/inPlace'
 import { decodeConfig, encodeConfig, type UrlSettings } from '../urlConfig'
 
 // What a share image says (TODO-063). Pure: the building card and the build script both turn their data into this
-// model, and the drawing (shareImageDraw.ts) only paints it. The image never carries a house number (privacy) and
-// has no "Meets N of M" line; the rows carry the detail.
+// model, and the drawing (shareImageDraw.ts) only paints it. The building picture names the first address with its
+// house number (decided 2026-11-16: a bare street name does not say which home it is) and has no "Meets N of M" line; the rows carry the detail.
 
 /** Rows on an image, the risk row included. */
 export const MAX_ROWS = 4
@@ -45,19 +47,16 @@ export interface ShareModel {
   rows: ShareRow[]
 }
 
-/** "For a family": the profile in words. Profiles from an override or a new one fall back to the name. */
-const FOR_PHRASE: Record<string, string> = {
-  family: 'For a family', remote: 'For a remote worker', city: 'For city life', retiree: 'For a retiree',
-}
+/** "For a family": the profile in words, in the page language. Profiles from an override or a new one fall back to the name. */
+const FOR_PHRASE = new Set(['family', 'remote', 'city', 'retiree'])
 const forWhom = (profile: Pick<Profile, 'id' | 'name'> | null) =>
-  profile ? FOR_PHRASE[profile.id] ?? `For ${profileName(profile)}` : null
+  !profile ? null
+    : FOR_PHRASE.has(profile.id) ? i18n.t(`card:share.for.${profile.id as 'family'}`)
+    : i18n.t('card:share.forName', { name: profileName(profile) })
 
-/** "Carrer Tenerife 59 · Carrer Torre Dulac 14" → "Carrer Tenerife": the first street, no house number. */
-export function streetOnly(address: string | null | undefined): string | null {
-  const first = address?.split(' · ')[0]?.trim()
-  if (!first) return null
-  const name = first.replace(/\s+(?:\d+[A-Za-z]?(?:\s*-\s*\d+[A-Za-z]?)?|s\/n)$/i, '').trim()
-  return name || null
+/** "Carrer Tenerife 59 · Carrer Torre Dulac 14" → "Carrer Tenerife 59": the first address, with its number. */
+export function firstAddress(address: string | null | undefined): string | null {
+  return address?.split(' · ')[0]?.trim() || null
 }
 
 /** The profile whose settings these are exactly, or null (a changed limit, a hand-made set, the defaults). */
@@ -71,12 +70,13 @@ export function profileOf(settings: UrlSettings, defaults: UrlSettings, presets:
 }
 
 const rankSentence = (r: Rank, place: string) =>
-  r.tied ? `This home is among the best: ${r.samePct}% of homes ${place} fit as well` : `This home is better than ${r.pct}% of homes ${place}`
+  r.tied ? i18n.t('card:rank.tied', { pct: r.samePct, place }) : i18n.t('card:rank.better', { pct: r.pct, place })
 
-/** The rank lines of a building picture: only the scopes where the building stands out. English like the rest. */
+/** The rank lines of a building picture: only the scopes where the building stands out, in the page language. */
 export function rankTexts(r: BuildingRanks): string[] {
-  const wide = r.wide?.scope === 'barcelona' ? 'in Barcelona' : 'in the Barcelona area'
-  return [...(r.local ? [rankSentence(r.local.rank, `in ${r.local.name}`)] : []), ...(r.wide ? [rankSentence(r.wide.rank, wide)] : [])]
+  const tt = (key: string, o: { name: string }) => i18n.t(`card:${key}` as never, o as never) as string
+  const wide = r.wide?.scope === 'barcelona' ? inPlace(tt, 'Barcelona') : i18n.t('card:rank.inMetro')
+  return [...(r.local ? [rankSentence(r.local.rank, inPlace(tt, r.local.name))] : []), ...(r.wide ? [rankSentence(r.wide.rank, wide)] : [])]
 }
 
 interface AreaRef { name: string; kind: 'barri' | 'muni' }
@@ -101,7 +101,7 @@ export function buildingShareModel(input: {
   const risk: ShareRow[] = input.riskText ? [{ status: 'risk', text: input.riskText }] : []
   return {
     kind: 'building',
-    place: streetOnly(input.address) ?? input.area?.name ?? 'Barcelona',
+    place: firstAddress(input.address) ?? input.area?.name ?? 'Barcelona',
     subtitle: subtitleOf(input.area),
     forWhom: forWhom(input.profile),
     value: String(input.score),
@@ -110,7 +110,7 @@ export function buildingShareModel(input: {
     bandColor: BAND_COLOR[band],
     caption: null,
     ranks,
-    ranksHeading: ranks.length > 0 && !input.profile ? 'For your conditions' : null,
+    ranksHeading: ranks.length > 0 && !input.profile ? i18n.t('card:rank.heading') : null,
     rows: [...rows.slice(0, MAX_ROWS - risk.length), ...risk],
   }
 }
@@ -124,16 +124,16 @@ export function areaShareModel(input: {
   return {
     kind: 'area',
     place: rank.name,
-    subtitle: rank.kind === 'barri' ? 'Barcelona' : 'Metro area',
+    subtitle: rank.kind === 'barri' ? 'Barcelona' : i18n.t('card:share.metro'),
     forWhom: forWhom(input.profile),
     value: `${Math.round(rank.shareGood)}%`,
     bandLabel: BAND_LABEL[band],
     band,
     bandColor: BAND_COLOR[band],
-    caption: 'of homes are a good match',
+    caption: i18n.t('card:share.areaCaption'),
     ranks: [],
     ranksHeading: null,
-    rows: rank.strongest.slice(0, MAX_ROWS).map((id) => ({ status: 'met' as const, text: `Strong on: ${CONDITION_LABEL[id]}` })),
+    rows: rank.strongest.slice(0, MAX_ROWS).map((id) => ({ status: 'met' as const, text: i18n.t('card:share.strongOn', { label: CONDITION_LABEL[id] }) })),
   }
 }
 

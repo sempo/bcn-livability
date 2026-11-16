@@ -41,6 +41,16 @@ function clickShare() {
   fireEvent.click(screen.getByRole('button', { name: 'Share this map' }))
 }
 
+describe('BrandBar: menu', () => {
+  it('closes after a language is picked', () => {
+    render(<BrandBar />)
+    openMenu()
+    expect(screen.getByRole('listbox')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('option', { name: /English/ }))
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument()
+  })
+})
+
 describe('BrandBar: Share (TODO-053)', () => {
   const writeText = vi.fn()
   beforeEach(() => {
