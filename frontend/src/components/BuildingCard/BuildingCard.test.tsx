@@ -120,7 +120,7 @@ describe('BuildingCard (TODO-046)', () => {
     // Locals' opinion on, but building 1 is outside Barcelona's barris → no data for it
     useStore.setState({ compositeWeights: { ...DEFAULT_COMPOSITE_WEIGHTS, localsOpinion: 1 } })
     await renderCard(1)
-    expect(screen.getByTestId('match-band').textContent).toMatch(/^(Great|Good|Partial|Poor) match$/)
+    expect(screen.getByTestId('match-band').textContent).toMatch(/^Possibly a (great|good|partial|poor) match$/)
     const ring = screen.getByTestId('match-ring').textContent!
     expect(ring).toMatch(/^\d+–\d+$/)
     expect(screen.getByTestId('match-ring')).toHaveAttribute('data-incomplete', 'true')

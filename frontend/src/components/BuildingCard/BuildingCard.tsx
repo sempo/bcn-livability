@@ -16,7 +16,7 @@ import { barriVibeData } from '../../services/localsOpinion/localsOpinion'
 import { scoreColorForRange } from './cardColors'
 import { USE_LABEL, groundFloorWarning } from './buildingCardText'
 import { features } from '../../features'
-import { BAND_LABEL, matchBand, matchSummary, riskLine } from '../../services/match/matchSummary'
+import { BAND_LABEL, BAND_LABEL_POSSIBLY, matchBand, matchSummary, riskLine } from '../../services/match/matchSummary'
 import {
   ageParts, ageText, cityCoreParts, cityCoreText, localsParts, localsText, noiseParts, noiseText, poiParts, poiText,
   priceParts, priceText,
@@ -201,7 +201,7 @@ export function BuildingCard({ embedded = false }: { embedded?: boolean }) {
             {peekAddresses.length > 1 && <Text span size="sm" fw={500} c="dimmed">{` +${peekAddresses.length - 1}`}</Text>}
           </Text>
           <Text size="sm" fw={500} data-testid="peek-match">
-            {BAND_LABEL[matchBand(score)]}
+            {(shownScore.includes('–') ? BAND_LABEL_POSSIBLY : BAND_LABEL)[matchBand(score)]}
             <Text span size="sm" fw={500} c="dimmed">
               {' · '}{summary.total > 0 ? t('ui.peekMeets', { met: summary.met, total: summary.total }) : t('ui.peekNone')}
             </Text>

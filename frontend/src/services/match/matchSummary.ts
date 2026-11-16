@@ -22,6 +22,8 @@ export function parseBands(raw: string | undefined): Bands {
 export const MATCH_BANDS = parseBands(import.meta.env.VITE_MATCH_BANDS)
 
 export const BAND_LABEL = lazyLabels('conditions:band', ['great', 'good', 'partial', 'poor'] as const)
+/** Band label for a score shown as a range (060): the top of the range is only possible, so "Possibly a great match". */
+export const BAND_LABEL_POSSIBLY = lazyLabels('conditions:bandPossibly', ['great', 'good', 'partial', 'poor'] as const)
 /** Swatch colours; the same stops as the map ramp (scoreRamp.ts). Poor runs from orange to red on the map. */
 export const BAND_COLOR: Record<MatchBandId, string> = {
   great: '#1a9850', good: '#91cf60', partial: '#fee08b', poor: '#fc8d59',
