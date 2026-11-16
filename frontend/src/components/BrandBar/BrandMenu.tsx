@@ -7,7 +7,7 @@ import { LanguageSwitcher } from '../LanguageSwitcher/LanguageSwitcher'
 /**
  * One "more" button for the brand bar (TODO-066): Share, About and data sources, and the language list drop down
  * from it, so the bar keeps room for the title and the search button. Closes on Escape, on a click outside and
- * after Share or About.
+ * after Share, About or a language pick.
  */
 export function BrandMenu({ onShare }: { onShare: () => void }) {
   const { t } = useTranslation()
@@ -47,7 +47,7 @@ export function BrandMenu({ onShare }: { onShare: () => void }) {
             <IconInfoCircle size={18} stroke={2} aria-hidden="true" />{tl('dialog.open')}
           </button>
           <div className="brand-menu__label">{t('language.label')}</div>
-          <LanguageSwitcher inline />
+          <LanguageSwitcher inline onChoose={() => setOpen(false)} />
         </div>
       )}
     </div>

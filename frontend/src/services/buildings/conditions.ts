@@ -54,7 +54,16 @@ export function noiseCondition(lden: number | null, c: Conditions): number | nul
   return lden === null ? null : atMost(lden, c.noiseMaxDb, c.noiseMaxDb + NOISE_FALLOFF_DB)
 }
 
+/** How far over the budget, in whole percent; 0 at or under it, and also when the overshoot rounds to 0%. */
+export function priceOverPct(eurM2: number, budget: number): number {
+  return eurM2 <= budget ? 0 : Math.round((100 * (eurM2 - budget)) / budget)
+}
+
+/** Up to this many percent over the budget the card says "almost fits" instead of the percentage (display only). */
+export const ALMOST_FITS_PCT = 3
+
 export function priceCondition(eurM2: number | null, c: Conditions): number | null {
+  if (eurM2 !== null && priceOverPct(eurM2, c.priceMaxEurM2) === 0) return 100
   return eurM2 === null ? null : atMost(eurM2, c.priceMaxEurM2, c.priceMaxEurM2 * (1 + PRICE_FALLOFF_PCT / 100))
 }
 

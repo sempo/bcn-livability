@@ -120,7 +120,6 @@ describe('Phone: a building in the sheet (TODO-062)', () => {
       enabledLandmarkIds: ['sagrada'], compositeRiskStrengths: { flood: 5, fire: 5, street: 5 },
       compositeColorRange: [0, 100], ageEras: ['before-1900'], conditions: DEFAULT_CONDITIONS,
     })
-    useStore.setState({ cardDetailsOpen: false })
     useSheetStore.setState({ position: 'half', mapInset: 0, tab: 'settings', pickedArea: null, restore: null })
   })
 
@@ -133,11 +132,11 @@ describe('Phone: a building in the sheet (TODO-062)', () => {
     expect(sheet()).toHaveAttribute('data-view', 'building')
     expect(sheet()).toHaveAttribute('data-position', 'peek')
     expect(await screen.findByText(/^Carrer Arago 255/)).toBeVisible()
-    expect(screen.getByTestId('peek-match').textContent).toMatch(/^\d+ of 100 · (Great|Good|Partial|Poor) match · Meets \d of \d$/)
+    expect(screen.getByTestId('peek-match').textContent).toMatch(/^(Great|Good|Partial|Poor) match · Meets \d of \d$/)
 
-    // The band and "Meets n of m" live in the header; the body goes straight to the condition rows.
-    expect(screen.queryByTestId('match-band')).not.toBeInTheDocument()
-    expect(screen.getByText(/✓ Quiet|◐ Quiet|✗ Quiet/)).toBeInTheDocument()
+    // The peek has the small ring, the band and "Meets n of m"; the body opens with the large ring.
+    expect(screen.getByTestId('match-ring')).toBeInTheDocument()
+    expect(screen.getByTestId('match-band')).toBeInTheDocument()
 
     // Drag the header up to full: the details are there to scroll.
     const address = screen.getByTestId('peek-match') // inside a portal: the drag must still reach the sheet
@@ -146,10 +145,7 @@ describe('Phone: a building in the sheet (TODO-062)', () => {
     pointer(address, 'up', 150, 320)
     expect(sheet()).toHaveAttribute('data-position', 'full')
     expect(sheet().style.transform).toBe(`translateY(${H.full - H.full}px)`)
-    // The technical sections are folded under "Details about this building" (TODO-070).
-    expect(screen.queryByText('Walkability')).not.toBeInTheDocument()
-    await act(async () => { await new Promise((r) => setTimeout(r, 0)) }) // the sheet swallows the click that ends a drag
-    fireEvent.click(screen.getByTestId('details-toggle'))
+    // The sections follow the header, folded (TODO-072).
     expect(screen.getByText('Walkability')).toBeInTheDocument()
 
     // Close: the conditions come back, at the position they had.

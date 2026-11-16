@@ -101,11 +101,16 @@
     "cityCore_other": "{{within}} de {{count}} llocs a menys de {{limit}} min",
     "priceUnder": "{{price}}/m², per sota dels teus {{budget}}",
     "priceOver": "{{price}}/m², un {{pct}}% per sobre dels teus {{budget}}",
+    "priceAlmost": "{{price}}/m², gairebé dins dels teus {{budget}}",
+    "almostFits": "gairebé hi cap",
     "locals": "valorat amb {{rating}}, el teu mínim {{min}}",
     "ageUnknown": "any de construcció desconegut",
     "noData": "sense dades",
     "risk": "Risc: −{{points}} punts — {{names}}",
-    "tooltip": "{{head}} — compleix {{met}} de {{total}}"
+    "tooltip": "{{head}} — compleix {{met}} de {{total}}",
+    "of": "{{within}} de {{total}}",
+    "inMin": "a menys de {{limit}} min",
+    "perM2": "{{budget}} per m²"
   },
   "risk": {
     "flood": "inundació de riu",

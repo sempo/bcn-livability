@@ -42,6 +42,7 @@ export function CheckList({ items, selected, onChange, allLabel }: {
   return (
     <div className="check-list">
       <Checkbox
+        className="ink-control"
         label={allLabel}
         checked={allSelected}
         indeterminate={!allSelected && current.length > 0}
@@ -51,6 +52,7 @@ export function CheckList({ items, selected, onChange, allLabel }: {
       {items.map((i) => (
         <Checkbox
           key={i.id}
+          className="ink-control"
           label={i.hint ? `${i.label} · ${i.hint}` : i.label}
           checked={current.includes(i.id)}
           onChange={() => toggle(i.id)}

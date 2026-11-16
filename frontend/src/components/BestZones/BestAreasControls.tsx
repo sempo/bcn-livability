@@ -85,7 +85,7 @@ export function BestAreasControls() {
       {(features.isochrone || features.exclusions) && (
         <Checkbox
           size="xs"
-          color="#F06965"
+          className="ink-control"
           label={t('best.restrict')}
           checked={restrict}
           onChange={(e) => setRestrict(e.currentTarget.checked)}

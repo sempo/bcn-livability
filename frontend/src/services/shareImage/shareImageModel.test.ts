@@ -1,10 +1,11 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
+import { setLanguage } from '../../i18n'
 import { PRESETS } from '../presets'
 import { URL_DEFAULTS } from '../../store'
 import { decodeConfig } from '../urlConfig'
 import type { MatchSummary } from '../match/matchSummary'
 import {
-  areaShareModel, buildingShareModel, MAX_ROWS, profileOf, rankTexts, shareFileName, streetOnly, wrapLines,
+  areaShareModel, buildingShareModel, MAX_ROWS, profileOf, rankTexts, shareFileName, firstAddress, wrapLines,
 } from './shareImageModel'
 import type { BuildingRanks, Rank } from '../buildings/buildingRank'
 
@@ -26,7 +27,7 @@ describe('rank lines on the building picture (TODO-070)', () => {
       local: { name: 'Badalona', kind: 'muni', rank: rank({ tied: true, samePct: 64 }) },
       wide: { scope: 'metro', rank: rank({}) },
     })).toEqual([
-      'This home is among the best: 64% of homes in Badalona fit as well',
+      'This home is among the best in Badalona: 64% of homes fit as well',
       'This home is better than 80% of homes in the Barcelona area',
     ])
   })
@@ -64,22 +65,17 @@ const quiet = { id: 'noise', label: 'Quiet', status: 'met', text: '52 dB, under 
 const services = { id: 'poiAccess', label: 'Everyday services', status: 'partly', text: '4 of 5 within 10 min' } as const
 const budget = { id: 'openPrice', label: 'Budget', status: 'missed', text: '€5,594/m², 57% over your €3,571' } as const
 
-describe('streetOnly', () => {
-  it('drops the house number', () => {
-    expect(streetOnly('Carrer Perla 20')).toBe('Carrer Perla')
-    expect(streetOnly('Carrer Diputacio 279B')).toBe('Carrer Diputacio')
-    expect(streetOnly('Passeig de Gràcia 12-14')).toBe('Passeig de Gràcia')
+describe('firstAddress', () => {
+  it('keeps the house number', () => {
+    expect(firstAddress('Carrer Perla 20')).toBe('Carrer Perla 20')
+    expect(firstAddress('Passeig de Gràcia 12-14')).toBe('Passeig de Gràcia 12-14')
   })
-  it('keeps the first street of a corner building', () => {
-    expect(streetOnly('Carrer Tenerife 59 · Carrer Torre Dulac 14')).toBe('Carrer Tenerife')
-  })
-  it('keeps a name that has no number, and a street with s/n', () => {
-    expect(streetOnly('Plaça Can Baro')).toBe('Plaça Can Baro')
-    expect(streetOnly('Carrer Major s/n')).toBe('Carrer Major')
+  it('keeps the first address of a corner building', () => {
+    expect(firstAddress('Carrer Tenerife 59 · Carrer Torre Dulac 14')).toBe('Carrer Tenerife 59')
   })
   it('is null for no address', () => {
-    expect(streetOnly(null)).toBeNull()
-    expect(streetOnly('')).toBeNull()
+    expect(firstAddress(null)).toBeNull()
+    expect(firstAddress('')).toBeNull()
   })
 })
 
@@ -108,7 +104,7 @@ describe('buildingShareModel', () => {
 
   it('puts the street without the number, the barri and the city', () => {
     const m = buildingShareModel(base)
-    expect(m.place).toBe('Carrer Tenerife')
+    expect(m.place).toBe('Carrer Tenerife 59')
     expect(m.subtitle).toBe('Can Baró, Barcelona')
   })
   it('names a municipality without the city', () => {
@@ -212,4 +208,28 @@ describe('wrapLines', () => {
   it('returns no lines for an empty text', () => {
     expect(wrapLines('', 100, width, 2)).toEqual([])
   })
+})
+
+describe('the picture speaks the page language', () => {
+  const FAM = { id: 'family', name: 'Family' }
+  afterEach(async () => { await setLanguage('en') })
+
+  it.each([['es', 'Para una familia', 'Esta vivienda'], ['ca', 'Per a una família', 'Aquest habitatge']])(
+    'in %s: the rank lines, the heading, the profile and the area texts have no English left', async (lang, family, home) => {
+      await setLanguage(lang as 'es' | 'ca')
+      const b = buildingShareModel({
+        address: 'Carrer Perla 20', area: null, score: 80, summary: { met: 0, total: 0, rows: [] }, riskText: null,
+        profile: null, ranks: RANKS,
+      })
+      expect(b.ranks.every((r) => r.startsWith(home))).toBe(true)
+      expect(b.ranksHeading).not.toBe('For your conditions')
+      expect(b.bandLabel).not.toMatch(/match/)
+      const a = areaShareModel({
+        rank: { name: 'Gràcia', kind: 'muni', shareGood: 62, mean: 70, strongest: ['noise'] }, profile: FAM,
+      })
+      expect(a.forWhom).toBe(family)
+      expect(a.subtitle).not.toBe('Metro area')
+      expect(a.caption).not.toBe('of homes are a good match')
+      expect(a.rows[0].text).not.toMatch(/^Strong on/)
+    })
 })

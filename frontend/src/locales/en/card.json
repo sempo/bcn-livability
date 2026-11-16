@@ -49,6 +49,7 @@
     "noiseOver": "{{db}} dB — {{diff}} dB over your {{limit}} dB",
     "priceWithin": "{{price}}/m² — within your {{budget}}/m²",
     "priceOver": "{{price}}/m² — {{pct}}% over your {{budget}}/m²",
+    "priceAlmost": "{{price}}/m² — almost fits your {{budget}}/m²",
     "services_one": "{{n}} of {{count}} service within {{limit}} min",
     "services_other": "{{n}} of {{count}} services within {{limit}} min",
     "places_one": "{{n}} of {{count}} place within {{limit}} min",
@@ -72,7 +73,15 @@
     "uncertain": "Catastro's date for many old buildings — the exact year is unknown",
     "builtArea": "Built area",
     "condition": "Condition",
-    "otherPremises": "Other premises: shops, offices, parking spaces, storage rooms"
+    "otherPremises": "Other premises: shops, offices, parking spaces, storage rooms",
+    "dwellingsLabel_one": "dwelling",
+    "dwellingsLabel_other": "dwellings",
+    "floorsLabel_one": "floor",
+    "floorsLabel_other": "floors",
+    "builtAreaLabel": "built area",
+    "belowLabel": "below ground",
+    "renovatedLabel": "renovated",
+    "otherLabel": "other premises"
   },
   "noise": {
     "noMap": "No official noise map for this municipality",
@@ -91,9 +100,10 @@
     "who": "WHO: < 53 dB · EU action: 55 dB · harmful: ≥ 65 dB",
     "veryQuiet": "very quiet",
     "quiet": "quiet",
-    "nearWho": "near WHO limit (53 dB)",
-    "aboveEu": "above EU action level (55 dB)",
-    "highly": "highly noisy"
+    "nearWho": "near WHO limit",
+    "aboveEu": "above EU level",
+    "highly": "highly noisy",
+    "facadeByFacade": "Facade by facade"
   },
   "section": {
     "building": "Building",
@@ -103,7 +113,8 @@
     "age": "Building age",
     "climate": "Climate risk",
     "barri": "Barri-level",
-    "muni": "Municipality-level"
+    "muni": "Municipality-level",
+    "price": "Sale price"
   },
   "ui": {
     "loading": "Loading…",
@@ -125,6 +136,8 @@
     "noPrice": "No sale price data",
     "salePrice": "Sale price: {{text}}",
     "salePriceOpen": "Sale price: <b>{{price}} €/m²</b> · Generalitat de Catalunya, INCASOL",
+    "priceZeroAt": "Score falls to 0 at €{{price}}/m² (+{{pct}}%).",
+    "priceFit": "{{n}} of {{total}} areas fit your budget.",
     "localsSay": "What locals say",
     "notBcn": "Not available outside Barcelona city",
     "riskRiver": "River flooding",
@@ -136,14 +149,22 @@
     "details": "Details about this building",
     "moreAddresses_one": "+{{count}} more address",
     "moreAddresses_other": "+{{count}} more addresses",
-    "fewerAddresses": "Show fewer"
+    "fewerAddresses": "Show fewer",
+    "climateVerdict": "−{{n}} pts · {{names}}",
+    "noPenalty": "No points lost"
   },
   "match": {
     "incomplete": "Incomplete data: some of your conditions have no data here. The score is a range, from the worst case (missing counts 0) to the best (missing ignored).",
     "meets": "Meets {{met}} of {{total}} of your conditions",
     "noneOn": "No conditions are on",
     "label": "Match with your conditions",
-    "score": "{{score}} of 100"
+    "score": "{{score}} of 100",
+    "status": {
+      "met": "Met",
+      "partly": "Partly met",
+      "missed": "Not met",
+      "nodata": "No data"
+    }
   },
   "locals": {
     "satisfaction": "Satisfaction",
@@ -211,11 +232,27 @@
   "rank": {
     "heading": "For your conditions",
     "better": "This home is better than {{pct}}% of homes {{place}}",
-    "tied": "This home is among the best: {{pct}}% of homes {{place}} fit as well",
+    "tied": "This home is among the best {{place}}: {{pct}}% of homes fit as well",
     "incomplete": "No rank: some of your conditions have no data for this building.",
     "in": "in {{name}}",
     "inEl": "in el {{name}}",
     "inEls": "in els {{name}}",
-    "inMetro": "in the Barcelona area"
+    "inMetro": "in the Barcelona area",
+    "tileTied": "of homes {{place}} fit as well. Among the best.",
+    "tileBetter": "of homes {{place}} are a weaker match."
+  },
+  "share": {
+    "outOf": "out of 100",
+    "areaCaption": "of homes are a good match",
+    "metro": "Metro area",
+    "strongOn": "Strong on: {{label}}",
+    "mapCredit": "Map: ICGC, OpenStreetMap contributors",
+    "for": {
+      "family": "For a family",
+      "remote": "For a remote worker",
+      "city": "For city life",
+      "retiree": "For a retiree"
+    },
+    "forName": "For {{name}}"
   }
 }

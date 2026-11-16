@@ -50,6 +50,7 @@
     "noiseOver": "{{db}} dB — {{diff}} dB por encima de tus {{limit}} dB",
     "priceWithin": "{{price}}/m² — dentro de tus {{budget}}/m²",
     "priceOver": "{{price}}/m² — un {{pct}}% por encima de tus {{budget}}/m²",
+    "priceAlmost": "{{price}}/m² — casi dentro de tus {{budget}}/m²",
     "services_one": "{{n}} de {{count}} servicio a menos de {{limit}} min",
     "services_many": "{{n}} de {{count}} servicios a menos de {{limit}} min",
     "services_other": "{{n}} de {{count}} servicios a menos de {{limit}} min",
@@ -75,7 +76,15 @@
     "uncertain": "Fecha del Catastro para muchos edificios antiguos — se desconoce el año exacto",
     "builtArea": "Superficie construida",
     "condition": "Estado",
-    "otherPremises": "Otros locales: tiendas, oficinas, plazas de aparcamiento, trasteros"
+    "otherPremises": "Otros locales: tiendas, oficinas, plazas de aparcamiento, trasteros",
+    "dwellingsLabel_one": "vivienda",
+    "dwellingsLabel_other": "viviendas",
+    "floorsLabel_one": "planta",
+    "floorsLabel_other": "plantas",
+    "builtAreaLabel": "superficie construida",
+    "belowLabel": "bajo rasante",
+    "renovatedLabel": "reformado",
+    "otherLabel": "otros locales"
   },
   "noise": {
     "noMap": "No hay mapa oficial de ruido para este municipio",
@@ -94,9 +103,10 @@
     "who": "OMS: < 53 dB · acción UE: 55 dB · dañino: ≥ 65 dB",
     "veryQuiet": "muy tranquilo",
     "quiet": "tranquilo",
-    "nearWho": "cerca del límite de la OMS (53 dB)",
-    "aboveEu": "por encima del nivel de acción de la UE (55 dB)",
-    "highly": "muy ruidoso"
+    "nearWho": "cerca del límite OMS",
+    "aboveEu": "sobre el nivel UE",
+    "highly": "muy ruidoso",
+    "facadeByFacade": "Fachada por fachada"
   },
   "section": {
     "building": "Edificio",
@@ -106,7 +116,8 @@
     "age": "Antigüedad del edificio",
     "climate": "Riesgo climático",
     "barri": "Nivel de barrio",
-    "muni": "Nivel de municipio"
+    "muni": "Nivel de municipio",
+    "price": "Precio de venta"
   },
   "ui": {
     "loading": "Cargando…",
@@ -128,6 +139,8 @@
     "noPrice": "Sin datos de precio de venta",
     "salePrice": "Precio de venta: {{text}}",
     "salePriceOpen": "Precio de venta: <b>{{price}} €/m²</b> · Generalitat de Catalunya, INCASOL",
+    "priceZeroAt": "La puntuación baja a 0 en {{price}} €/m² (+{{pct}}%).",
+    "priceFit": "{{n}} de {{total}} zonas encajan con tu presupuesto.",
     "localsSay": "Qué dicen los vecinos",
     "notBcn": "No disponible fuera de la ciudad de Barcelona",
     "riskRiver": "Inundación de río",
@@ -140,14 +153,22 @@
     "moreAddresses_one": "+{{count}} dirección más",
     "moreAddresses_other": "+{{count}} direcciones más",
     "moreAddresses_many": "+{{count}} direcciones más",
-    "fewerAddresses": "Mostrar menos"
+    "fewerAddresses": "Mostrar menos",
+    "climateVerdict": "−{{n}} pts · {{names}}",
+    "noPenalty": "Ningún punto perdido"
   },
   "match": {
     "incomplete": "Datos incompletos: algunas de tus condiciones no tienen datos aquí. La puntuación es un rango, del peor caso (lo que falta cuenta 0) al mejor (lo que falta se ignora).",
     "meets": "Cumple {{met}} de {{total}} de tus condiciones",
     "noneOn": "No hay condiciones activas",
     "label": "Encaje con tus condiciones",
-    "score": "{{score}} de 100"
+    "score": "{{score}} de 100",
+    "status": {
+      "met": "Cumplida",
+      "partly": "Cumplida en parte",
+      "missed": "No cumplida",
+      "nodata": "Sin datos"
+    }
   },
   "locals": {
     "satisfaction": "Satisfacción",
@@ -218,11 +239,27 @@
   "rank": {
     "heading": "Para tus condiciones",
     "better": "Esta vivienda es mejor que el {{pct}}% de las viviendas {{place}}",
-    "tied": "Esta vivienda está entre las mejores: el {{pct}}% de las viviendas {{place}} encaja igual de bien",
+    "tied": "Esta vivienda está entre las mejores {{place}}: el {{pct}}% de las viviendas encaja igual de bien",
     "incomplete": "Sin clasificación: algunas de tus condiciones no tienen datos para este edificio.",
     "in": "en {{name}}",
     "inEl": "en el {{name}}",
     "inEls": "en els {{name}}",
-    "inMetro": "en el área metropolitana de Barcelona"
+    "inMetro": "en el área metropolitana de Barcelona",
+    "tileTied": "de las viviendas {{place}} encaja igual de bien. Entre las mejores.",
+    "tileBetter": "de las viviendas {{place}} encajan peor."
+  },
+  "share": {
+    "outOf": "sobre 100",
+    "areaCaption": "de las viviendas encajan bien",
+    "metro": "Área metropolitana",
+    "strongOn": "Destaca en: {{label}}",
+    "mapCredit": "Mapa: ICGC, colaboradores de OpenStreetMap",
+    "for": {
+      "family": "Para una familia",
+      "remote": "Para quien teletrabaja",
+      "city": "Para la vida en la ciudad",
+      "retiree": "Para una persona jubilada"
+    },
+    "forName": "Para {{name}}"
   }
 }

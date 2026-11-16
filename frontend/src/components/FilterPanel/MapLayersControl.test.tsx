@@ -42,4 +42,13 @@ describe('MapLayersControl (TODO-052)', () => {
     act(() => useStore.getState().setMapLayer('street'))
     expect((screen.getByRole('radio', { name: 'Street flooding' }) as HTMLInputElement).checked).toBe(true)
   })
+
+  it('shows the chosen layer as a filled chip (072)', () => {
+    renderWithMantine(<MapLayersControl />)
+    const chip = (name: string) => screen.getByLabelText(name).closest('label')!
+    expect(chip('None')).toHaveAttribute('data-selected', 'true')
+    fireEvent.click(screen.getByLabelText('Noise'))
+    expect(chip('Noise')).toHaveAttribute('data-selected', 'true')
+    expect(chip('None')).toHaveAttribute('data-selected', 'false')
+  })
 })

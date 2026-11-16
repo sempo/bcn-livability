@@ -25,6 +25,7 @@ describe('conditions in real units (049)', () => {
     expect(noiseCondition(75, C)).toBe(0)
     expect(noiseCondition(null, C)).toBeNull()
     expect(priceCondition(3900, C)).toBe(100)
+    expect(priceCondition(4010, C)).toBe(100) // 0.25% over rounds to 0%: it fits
     expect(priceCondition(4500, C)).toBe(50)
     expect(priceCondition(5000, C)).toBe(0)
     expect(priceCondition(null, C)).toBeNull()

@@ -101,11 +101,16 @@
     "cityCore_other": "{{within}} de {{count}} lugares a menos de {{limit}} min",
     "priceUnder": "{{price}}/m², por debajo de tus {{budget}}",
     "priceOver": "{{price}}/m², un {{pct}}% por encima de tus {{budget}}",
+    "priceAlmost": "{{price}}/m², casi dentro de tus {{budget}}",
+    "almostFits": "casi encaja",
     "locals": "valorado con {{rating}}, tu mínimo {{min}}",
     "ageUnknown": "año de construcción desconocido",
     "noData": "sin datos",
     "risk": "Riesgo: −{{points}} puntos — {{names}}",
-    "tooltip": "{{head}} — cumple {{met}} de {{total}}"
+    "tooltip": "{{head}} — cumple {{met}} de {{total}}",
+    "of": "{{within}} de {{total}}",
+    "inMin": "a menos de {{limit}} min",
+    "perM2": "{{budget}} por m²"
   },
   "risk": {
     "flood": "inundación de río",
