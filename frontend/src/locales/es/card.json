@@ -152,7 +152,7 @@
     "moreAddresses_other": "+{{count}} direcciones más",
     "moreAddresses_many": "+{{count}} direcciones más",
     "fewerAddresses": "Mostrar menos",
-    "climateVerdict": "−{{n}} pts · {{names}}",
+    "climateVerdict": "{{names}}",
     "noPenalty": "Ningún punto perdido"
   },
   "match": {
