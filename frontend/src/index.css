@@ -1515,10 +1515,11 @@ html, body { overscroll-behavior: none; }
 .rank-tiles[data-count="1"] .rank-tile b { font-size: 24px; }
 .rank-tiles[data-count="1"] .rank-tile span { font-size: 12.5px; }
 
-/* Save image / Share: two equal grey buttons. */
+/* Save image / Share: two grey buttons filling the row. Sized by their label (not split 50/50): on the narrow desktop
+   card "Guardar imagen" / "Desa la imatge" did not fit half the row and were cut to "Guardar imag" (TODO-075). */
 .save-image__button.mantine-Button-root {
-  flex: 1 1 0; height: 34px; border-radius: 8px; border: 0; background: var(--btn-grey); color: var(--ink);
-  font-size: 13px; font-weight: 500;
+  flex: 1 1 auto; height: 34px; border-radius: 8px; border: 0; background: var(--btn-grey); color: var(--ink);
+  font-size: 13px; font-weight: 500; padding-inline: 12px;
 }
 .save-image__button.mantine-Button-root:hover { background: var(--btn-grey-hover); }
 @media (max-width: 768px) {
