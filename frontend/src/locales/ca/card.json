@@ -147,7 +147,6 @@
     "riskStreet": "Inundació al carrer (pluja intensa)",
     "riskWildfire": "Incendi forestal",
     "penalty": "−{{n}} pts",
-    "peekMeets": "Compleix {{met}} de {{total}}",
     "peekNone": "No hi ha condicions actives",
     "details": "Detalls d'aquest edifici",
     "moreAddresses_one": "+{{count}} adreça més",
@@ -158,7 +157,6 @@
   },
   "match": {
     "incomplete": "Dades incompletes: algunes de les teves condicions no tenen dades aquí. La puntuació és un rang, del pitjor cas (el que falta compta 0) al millor (el que falta compta 100).",
-    "meets": "Compleix {{met}} de {{total}} de les teves condicions",
     "noneOn": "No hi ha condicions actives",
     "overBudget": "Per sobre del teu pressupost: com a molt un encaix parcial",
     "label": "Encaix amb les teves condicions",
@@ -238,13 +236,14 @@
   },
   "rank": {
     "heading": "Per a les teves condicions",
-    "better": "Aquest habitatge és millor que el {{pct}}% dels habitatges {{place}}",
     "incomplete": "Sense classificació: algunes de les teves condicions no tenen dades per a aquest edifici.",
     "in": "a {{name}}",
     "inEl": "al {{name}}",
     "inEls": "als {{name}}",
     "inMetro": "a l'àrea metropolitana de Barcelona",
-    "tileBetter": "dels habitatges {{place}} encaixen pitjor."
+    "crowded": "És una zona amb molt habitatge bo, així que destacar-hi costa més.",
+    "top": "Top {{tier}}%",
+    "tileOf": "dels habitatges {{place}}"
   },
   "share": {
     "outOf": "sobre 100",

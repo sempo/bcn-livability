@@ -140,3 +140,12 @@ Follow-up: the area card with Save image / Share and the share link of a buildin
 The building picture carries the award lines ("This home is better than N% of homes in …") when the building stands
 out. The 1080×1350 picture is stacked on white: brand line on top, the map in a rounded rectangle, the result below.
 The 1200×630 preview is unchanged. See `070-building-rank-in-barri-and-city.md`.
+
+## Follow-up: rank tiles (2026-11-16)
+
+The award lines became tiles: the building picture shows the rank as the card's tiles, two side by side or one across the width ("Top 10%" over "of homes in l'Hospitalet de Llobregat"; first build "87%" over "… are a weaker match."), instead of two sentences "This home is better than N% of homes in …". The sentences repeated their start, wrapped badly in Spanish and Catalan, and "better" read as a verdict on the home to whoever got the picture. When the 1200×630 preview cannot hold everything, the condition rows go (last first, the risk row last), not the tiles. A long band name shrinks to fit the plaque.
+
+The tiles are drawn as **award badges** (2026-11-16): a round medal with a star beside "Top 10%", the place under it, in a
+rounded box. Gold for the narrowest tier (10), silver for a wider one (20), so the two read as different prizes. The card
+keeps plain cream tiles and has the "area with a lot of good homes" note; the picture has neither the note nor the colours of
+the card. `ShareRank` carries the `tier` for the colour.

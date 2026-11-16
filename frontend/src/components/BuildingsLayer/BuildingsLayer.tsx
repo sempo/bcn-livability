@@ -6,7 +6,7 @@ import { loadBuildings, loadScores, type BuildingData } from '../../services/bui
 import { scoreBuilding } from '../../services/buildings/buildingScore'
 import { scoreClient } from '../../services/buildings/scoreClient'
 import type { ScoreResult } from '../../services/buildings/scoreProtocol'
-import { matchSummary, matchTooltip, type ConditionId } from '../../services/match/matchSummary'
+import { matchTooltip, type ConditionId } from '../../services/match/matchSummary'
 import { AREA_VIEW_MAX_ZOOM, rankAreas } from '../../services/areas/areaRank'
 import { loadBarriVibe, type BarriVibeData } from '../../services/localsOpinion/localsOpinion'
 import { buildStateColorForRange, colorRange } from './scoreRamp'
@@ -267,7 +267,7 @@ export function BuildingsLayer() {
         })
         popup = new maplibregl.Popup({ closeButton: false, closeOnClick: false, offset: 10, className: 'match-tooltip' })
           .setLngLat(lngLat)
-          .setText(matchTooltip(r.score, matchSummary(r, st.compositeWeights), undefined, r.hasGap))
+          .setText(matchTooltip(r.score, undefined, r.hasGap))
           .addTo(map)
       }, TOOLTIP_DELAY_MS)
     }

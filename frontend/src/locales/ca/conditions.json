@@ -113,7 +113,6 @@
     "ageUnknown": "any de construcció desconegut",
     "noData": "sense dades",
     "risk": "Risc: −{{points}} punts — {{names}}",
-    "tooltip": "{{head}} — compleix {{met}} de {{total}}",
     "of": "{{within}} de {{total}}",
     "inMin": "a menys de {{limit}} min",
     "perM2": "{{budget}} per m²"

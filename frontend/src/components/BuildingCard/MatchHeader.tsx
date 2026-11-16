@@ -43,9 +43,7 @@ export function MatchHeader({
         <div className="match-block__text">
           <span className="match-block__label" data-testid="match-label">{t('match.label')}</span>
           <span className="match-block__band" data-testid="match-band">{bandLabel}</span>
-          <span className="match-block__meets">
-            {summary.total > 0 ? t('match.meets', { met: summary.met, total: summary.total }) : t('match.noneOn')}
-          </span>
+          {summary.total === 0 && <span className="match-block__meets">{t('match.noneOn')}</span>}
         </div>
       </div>
       {overBudget && (
