@@ -151,7 +151,7 @@
     "moreAddresses_one": "+{{count}} adreça més",
     "moreAddresses_other": "+{{count}} adreces més",
     "fewerAddresses": "Mostra'n menys",
-    "climateVerdict": "−{{n}} pts · {{names}}",
+    "climateVerdict": "{{names}}",
     "noPenalty": "Cap punt perdut"
   },
   "match": {

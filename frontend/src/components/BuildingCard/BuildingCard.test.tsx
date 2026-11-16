@@ -312,7 +312,7 @@ describe('BuildingCard (TODO-046)', () => {
       await renderCard(0)
       const lead = screen.getByTestId('risk-lead').textContent!
       expect(lead).toMatch(/^−\d+$/)
-      expect(row('Climate risk')).toHaveTextContent(new RegExp(`^${lead}Climate risk${lead} pts · .*River flooding`))
+      expect(row('Climate risk')).toHaveTextContent(new RegExp(`^${lead}Climate risk.*River flooding`))
     })
 
     it('the facade list is behind its own toggle, closed at first', async () => {
