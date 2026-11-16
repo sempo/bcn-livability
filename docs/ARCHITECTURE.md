@@ -224,22 +224,31 @@ src/
 Map layers are stacked by `layerOrder.ts`, from the bottom: buildings → noise → climate view layers → facade
 circles → exclusions → best zones → Idealista prices → isochrone → transit → POI → walkability markers → pins.
 
-## Livability Index on buildings (public core; features 022, 046, 047, 049, 036, 037, 042)
+## Match score on buildings (public core; features 022, 046, 047, 049, 036, 037, 042, 073)
+
+The score was called the Livability Index until 073; the code keeps the old names (`composite*`, `poiAccess`).
 
 ### Data the browser loads
 
 | File (`frontend/public/data/`) | Size | Content | Built by |
 |---|---|---|---|
 | `buildings.pmtiles` | 26 MB | layer `b`, feature id = row: centroid points z10–13, footprints z14–16 (`ref`, `floors`, `h`) | `build_building_tiles.py` |
-| `buildings-scores.bin.gz` | 1.0 MB | one typed array per score column, 173,634 rows; multi-byte columns as byte planes (`scripts/building_blob.py`) | `build_building_tiles.py` |
+| `buildings-scores.bin.gz` | 1.2 MB | one typed array per score column, 173,634 rows; multi-byte columns as byte planes (`scripts/building_blob.py`) | `build_building_tiles.py` |
 | `buildings-positions.bin.gz` | 0.5 MB | `lng`, `lat` (f32, byte planes) | `build_building_tiles.py` |
-| `buildings-meta.json` | 12 KB | format 2: columns (type, scale, offset, sentinel, file, layout), 113 areas (barri / municipality, name, INCASOL €/m²), categories, landmarks | `build_building_tiles.py` (`building_blob.py --repack` converts format 1 without the pipeline) |
+| `buildings-meta.json` | 12 KB | format 2: columns (type, scale, offset, sentinel, file, layout), 113 areas (barri / municipality, name, INCASOL €/m²), categories, landmarks, `minutes_cap` (how far the minutes columns reach, 073) | `build_building_tiles.py` (`building_blob.py --repack` converts format 1 without the pipeline) |
 | `buildings-detail.pmtiles` | 18 MB | z14 only: layer `d` card fields per building, layer `f` facade noise points | `build_building_tiles.py` |
 | `barri-vibe.json` | 21 KB | ESM residents' survey per barri (042) | `build_neighbourhood_vibe.py` |
 
-Score columns: `lng`, `lat`, `lden_avg`, `river_zone`, `street_t10_cm`, `street_t100_cm`, `fire_hazard`,
-`fire_wui`, `area`, `year_built`, `min_<category>` (10 walking-minute columns), `cc_<landmark>` (13 walking-minute
-columns).
+**Versioned addresses** (073, `src/services/dataUrl.ts`): the building files above, `areas.geojson` and
+`area-start.json` are fetched as `data/<name>?v=<hash>`. The hash is the SHA-1 of their contents
+(`scripts/dataVersion.mjs`, computed by `vite.config.ts` and set as `VITE_DATA_VERSION`; the `index.html` preloads get
+the same address). A deploy with new data is a new address, so a browser never mixes a cached old file (GitHub Pages
+caches for 10 min) with new ones read by the same building row.
+
+Score columns: `lng`, `lat`, `lden_avg`, `lden_street` (073), `river_zone`, `street_t10_cm`, `street_t100_cm`,
+`fire_hazard`, `fire_wui`, `area`, `year_built`, `dwellings` (≥ 1, 073), `min_<category>` (10 walking-minute
+columns), `cc_<landmark>` (13 walking-minute columns). The shipped files got `lden_street`, `dwellings` and
+`minutes_cap` from `scripts/add_073_columns.py` (read from the card tiles); the next full run writes them directly.
 
 ### Score of one building
 
@@ -251,9 +260,9 @@ buildings whose score changed get a new feature state. Changes to the settings a
 
    | Condition | Input | Default limit | Score 0 at | On by default |
    |---|---|---|---|---|
-   | `poiAccess` (Walkability) | `min_<category>` of the services the user keeps | 10 min | 2× the limit (per service; score = mean over services) | yes |
-   | `noise` (Noise outside the window) | `lden_avg`, facade-length-weighted Lden | 65 dB | +10 dB | yes |
-   | `cityCore` (City Core Access) | `cc_<landmark>` of the places the user keeps | 30 min | 2× the limit (per place) | yes |
+   | `poiAccess` (Services on foot) | `min_<category>` of the services the user keeps (default: all but the beach) | 10 min | 2× the limit, or the reach of the data (`minutes_cap`) if sooner (per service; score = mean over services) | yes |
+   | `noise` (Noise on the street side) | `lden_street`, else `lden_avg` (no street side) | 65 dB | +10 dB | yes |
+   | `cityCore` (City Core Access) | `cc_<landmark>` of the places the user keeps (default: Plaça Catalunya, Barri Gòtic, Passeig de Gràcia) | 30 min | 2× the limit, or the reach of the data if sooner (per place) | yes |
    | `openPrice` (Market Price) | INCASOL €/m² of the barri / municipality | €4,000/m² | +25 % | yes |
    | `localsOpinion` (flag) | satisfaction 0–10, shrunk to the gran barri for small samples | 7.5 | 1 point below | no |
    | `age` (Building age) | `year_built` against the liked eras | eras 1900/1940/1980/2007 | outside a liked era, fading over 5 years | no |
@@ -261,15 +270,20 @@ buildings whose score changed get a new feature state. Changes to the settings a
    A service or place out of reach (null) counts 0. Catastro's `1900` (unknown old year) counts for both
    neighbouring eras.
 2. **Mean** over the conditions that are on, all with equal weight (`compositeWeights` is 1 / 0 since 049; old
-   stored weights of 1–10 are read as "on"). A condition that is on but has no data counts **0** and sets
-   `hasGap`, which draws a black outline. A small Locals' opinion sample also sets `hasGap`.
+   stored weights of 1–10 are read as "on"). A condition that is on but has no data makes the score a range (060):
+   it counts 0 for `scoreMin` and 100 for `score` (073), sets `hasGap` and draws the hatch. A small Locals'
+   opinion sample also sets `hasGap`.
 3. **Climate-risk penalties** (`services/climateRisk`):
    `score = base × (1 − sFlood/10·flood) × (1 − sFire/10·fire) × (1 − sStreet/10·street)`. Strengths are 0–10
    (default 5, the panel slider is 1–10, unchecked = 0).
-   - River flood: the ACA zone the footprint touches; band penalties T10 = 1, T100 = 0.6, T500 = 0.25.
+   - River flood: the ACA zone the footprint touches; band penalties T10 = 1, T100 = 0.27, T500 = 0.06 (the chance
+     of a flood within 30 years, 073).
    - Wildfire: WUI × distance-decayed forest hazard.
    - Street flooding: water depth at the door (Barcelona only), 0 at ≤ 10 cm and 1 at ≥ 50 cm, banded like the
-     river zones (T10 fully, the extra part of T100 at 0.6).
+     river zones (T10 fully, the extra part of T100 at 0.27).
+   - **Budget ceiling** (073, `VITE_BUDGET_HARD`): with the budget on and priced, the final score is at most
+     `64 + 36 × p / 100` (p = the budget score; 64 = the top of "Partial"), so a home over the budget is at most a
+     partial match. `budgetCap` is the points it took.
 4. **Colour** (050): the RdYlGn ramp is fixed on 0–100, so a building is the same colour anywhere on the map.
    The legend names four bands (Great ≥ 85, Good ≥ 65, Partial ≥ 40, Poor; `VITE_MATCH_BANDS`). The switch
    **Boost contrast for this view** (`contrastBoost`, `bcn_contrast_boost`, off by default) brings back the
@@ -432,7 +446,7 @@ Outputs in `frontend/public/` are committed.
 | 2a | `fetch_exposure_sources.py`: BCN noise rasters 2022 + 2017 facade map, SICA 2022 agglomeration maps, Catastro parcels and blocks | `data/noise/`, `data/buildings/raw/`, `blocks.gpkg` |
 | 2b | `fetch_climate_risk.py`: ACA flood, RESCCUE, wildfire hazard 2024, WUI, heat | `data/climate-risk/` |
 | 2c | `building_exposure.py`: noise per facade (street / courtyard × 8 directions), river zone, water at the door, wildfire | `data/buildings/exposure.gpkg` |
-| 3 | `building_access.py`: walking network from the OSM PBF (pandana), from the first entrance; parks and beaches at their edge | `data/buildings/access.gpkg` (`walk_*`, `min_*`, `cc_*`) |
+| 3 | `building_access.py`: walking network from the OSM PBF (pandana), from the first entrance; parks and beaches at their edge; `min_*` to `WALK_MIN_RMAX_M` (2,400 m = 30 min), `cc_*` to `CITY_CORE_MAX_MIN` (120) since 073 | `data/buildings/access.gpkg` (`walk_*`, `min_*`, `cc_*`) |
 | 4 | prices: `fetch_incasol_sale_prices.py`, `fetch_incasol_sale_catalonia.py` (+ rental / INE fetchers, not used by the app) → `build_price_geopackage.py` | `data/open-prices/bcn_prices.gpkg` |
 | 5 | `build_neighbourhood_vibe.py`: ESM survey (+ Inside Airbnb, research only) | `public/data/barri-vibe.json`, `data/neighbourhood-vibe/` |
 | 6 | `build_building_tiles.py`: non-residential filter, barri / municipality, tiles and columns | `buildings*.pmtiles`, `buildings-scores.bin.gz`, `buildings-positions.bin.gz`, `buildings-meta.json` |
@@ -450,6 +464,12 @@ Outputs in `frontend/public/` are committed.
 | `har_to_geojson.py` (gitignored, local only) | `idealista_prices.geojson` |
 
 Pipeline tests: `scripts/test_*.py` (unittest).
+
+**Score audit** (073): `cd frontend && npm run audit:score` runs the app's own scoring over the data files for the
+first-visit settings and every profile and prints, for Barcelona homes, the share meeting each condition, the
+bands, the best score and how much each condition moves the score. It exits with 1 when a setting has no building
+meeting every condition or a condition met by fewer than 5% of homes. Run it after every data rebuild and after
+changing a default; `-- --write` updates `src/services/audit/influence.json`, which the info modal quotes.
 
 ## Environment variables
 
@@ -472,12 +492,15 @@ build, committed) and `frontend/.env.test` (all flags on). Every default below i
 | `VITE_AGE_ERA_BOUNDS` | 1900,1940,1980,2007 | era starts (era names are written for these) |
 | `VITE_AGE_ERA_BLUR_YEARS` | 5 | fade at era edges |
 | `VITE_AGE_UNCERTAIN_YEAR` | 1900 | Catastro's "unknown old" year, counts for both eras |
-| `VITE_FLOOD_PENALTY_T10` / `_T100` / `_T500` | 1 / 0.6 / 0.25 | penalty per flood band (river and street) |
+| `VITE_FLOOD_PENALTY_T10` / `_T100` / `_T500` | 1 / 0.27 / 0.06 | penalty per flood band (river and street), ∝ chance of a flood within 30 years (073) |
+| `VITE_WALK_DEFAULT_CATEGORIES` | the 9 services but the beach | services on at a first visit (073) |
+| `VITE_CITY_CORE_DEFAULT_LANDMARKS` | placa_cat,barri_gotic,pg_gracia | City Core places on at a first visit (073) |
+| `VITE_BUDGET_HARD` | true | over the budget a home is at most a partial match (073) |
 | `VITE_RISK_STRENGTH_FLOOD` / `_FIRE` / `_STREET` | 5 / 5 / 5 | default risk strengths 0–10 |
 | `VITE_STREET_FLOOD_MIN_CM` / `_MAX_CM` | 10 / 50 | water at the door: counts from / fully at |
 | `VITE_MATCH_BANDS` | 85,65,40 | lower edges of Great / Good / Partial match (050) |
 | `VITE_QUIZ_NOISE_OPTIONS` | 50,58,65 | steps of the noise word, dB (031; 052 reuses them) |
-| `VITE_QUIZ_WALK_OPTIONS` / `_CENTRE_OPTIONS` | 5,10,15 / 15,30,45 | steps of the "within N min" words |
+| `VITE_QUIZ_WALK_OPTIONS` / `_CENTRE_OPTIONS` | 5,10,15 / 25,30,45 | steps of the "within N min" words |
 | `VITE_QUIZ_BUDGET_OPTIONS` | 150000,250000,350000,500000 | steps of the budget word, € for a flat (÷ its size = the price per m²; each shows "≈ N % of homes") |
 | `VITE_QUIZ_FLAT_AREA_OPTIONS` / `VITE_FLAT_AREA_M2` | 50,70,90,120 / 70 | steps of the flat-size word, m² / the size to start with |
 | `VITE_QUIZ_LOCALS_OPTIONS` | 7.0,7.5,8.0 | steps of the residents' satisfaction word |

@@ -49,14 +49,14 @@
     "tickOne": "Tick at least one. The map keeps your last choice until you do."
   },
   "sentence": {
-    "noise": "No louder than <limit/> outside my window",
+    "noise": "No louder than <limit/> on the street side",
     "poiAccess": "<services/> within <limit/> on foot",
     "cityCore": "<places/> within <limit/> on foot",
     "openPrice": "A <area/> flat costs up to <budget/> on average",
     "localsOpinion": "Residents rate the area at least <limit/> out of 10",
     "age": "Built in <eras/>",
     "risk": "<level/> flood and wildfire risk",
-    "noiseTitle": "How quiet should it be outside your window?",
+    "noiseTitle": "How quiet should the street side be?",
     "walkTitle": "How far would you walk for daily errands?",
     "centreTitle": "How close to the centre?",
     "localsTitle": "How happy should residents be with the area?",

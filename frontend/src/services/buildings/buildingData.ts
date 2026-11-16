@@ -9,6 +9,7 @@
  */
 
 import { afterFirstPaint } from '../firstPaint'
+import { dataUrl } from '../dataUrl'
 
 export interface BuildingArea {
   /** Barri code ('01'…'73', Barcelona) or INE municipality code. */
@@ -57,6 +58,23 @@ export interface BuildingsMeta {
   categories: string[]
   /** City Core landmark ids (cc_<id> columns). */
   landmarks: string[]
+  /**
+   * How far the minutes columns reach (TODO-073): beyond it the data has no value. `walk` for `min_<category>`,
+   * `cityCore` for `cc_<landmark>`. Absent in files built before 073: see `DEFAULT_MINUTES_CAP`.
+   */
+  minutes_cap?: MinutesCap
+}
+
+export interface MinutesCap {
+  walk: number
+  cityCore: number
+}
+
+/** Reach of the files built before TODO-073: services to 1.5 km at 80 m/min, City Core places to 90 min. */
+export const DEFAULT_MINUTES_CAP: MinutesCap = { walk: 1500 / 80, cityCore: 90 }
+
+export function minutesCapOf(meta: Pick<BuildingsMeta, 'minutes_cap'>): MinutesCap {
+  return meta.minutes_cap ?? DEFAULT_MINUTES_CAP
 }
 
 export interface BuildingData {
@@ -167,7 +185,6 @@ export function copyRawScores(): ArrayBuffer | null {
   return rawScores ? rawScores.slice(0) : null
 }
 
-const dataUrl = (name: string) => `${import.meta.env.BASE_URL}data/${name}`
 
 async function fetchColumnFile(file: ColumnFile, init?: RequestInit): Promise<ArrayBuffer> {
   const r = await fetch(dataUrl(COLUMN_FILES[file]), init)

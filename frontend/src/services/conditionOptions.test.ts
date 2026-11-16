@@ -138,12 +138,13 @@ describe('profileToPatch', () => {
     const patch = profileToPatch({ id: 'x', name: 'X', blurb: '', order: ['noise', 'risk'], risk: 'strong' })
     expect(patch.riskStrengths).toEqual(strengthsFor('strong'))
   })
-  it('uses all services, places and eras unless the profile narrows them', () => {
+  it('uses the default services and places and all eras unless the profile narrows them (TODO-073)', () => {
     const wide = profileToPatch({ id: 'x', name: 'X', blurb: '', order: ['poiAccess'] })
     const narrow = profileToPatch({ id: 'x', name: 'X', blurb: '', order: ['poiAccess'], walkCategories: ['park'] })
     expect(wide.walkCategories!.length).toBeGreaterThan(1)
     expect(narrow.walkCategories).toEqual(['park'])
-    expect(wide.landmarkIds!.length).toBe(13)
+    expect(wide.walkCategories).not.toContain('beach')
+    expect(wide.landmarkIds).toEqual(['placa_cat', 'barri_gotic', 'pg_gracia'])
     expect(wide.eras!.length).toBe(5)
   })
 })
@@ -156,7 +157,14 @@ describe('budget shares', () => {
   } as unknown as BuildingData
 
   it('sorts the prices of the buildings that have one', () => {
-    expect(Array.from(sortedPrices(data))).toEqual([2000, 2000, 3000, 5000])
+    expect(Array.from(sortedPrices(data).prices)).toEqual([2000, 2000, 3000, 5000])
+  })
+  it('counts homes, not buildings (TODO-073)', () => {
+    const withHomes = { ...data, cols: { ...data.cols, dwellings: Float32Array.from([1, 1, 6, 0, 1, 1]) } } as unknown as BuildingData
+    // homes by price: 2000 → 2, 3000 → 6, 5000 → 1 (0 dwellings counts as one home)
+    expect(Array.from(sortedPrices(withHomes).cum)).toEqual([1, 2, 8, 9])
+    expect(shareUnder(sortedPrices(withHomes), 2000)).toBe(22)
+    expect(shareUnder(sortedPrices(withHomes), 3000)).toBe(89)
   })
   it('share under a limit is the fraction at or below it, in percent', () => {
     const prices = sortedPrices(data)
@@ -166,7 +174,7 @@ describe('budget shares', () => {
     expect(shareUnder(prices, 9000)).toBe(100)
   })
   it('is monotonic and 0 for no data', () => {
-    expect(shareUnder(new Float32Array(), 3000)).toBe(0)
+    expect(shareUnder({ prices: new Float32Array(), cum: new Float64Array() }, 3000)).toBe(0)
     const prices = sortedPrices(data)
     const shares = [1500, 2500, 3500, 4500, 6000].map((v) => shareUnder(prices, v))
     expect([...shares].sort((a, b) => a - b)).toEqual(shares)

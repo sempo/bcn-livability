@@ -6,6 +6,7 @@ import type { BarriVibeData } from '../localsOpinion/localsOpinion'
 import type { ConditionId } from '../match/matchSummary'
 import { joinAreas } from './areaJoin'
 import { rankAreas, type AreaRank } from './areaRank'
+import { dataUrl } from '../dataUrl'
 
 // The area view at start without the building data (TODO-058). The build (scripts/build-area-start.mjs) writes
 // dist/data/area-start.json: which polygon of areas.geojson each area of the data is, and the ranks of the areas
@@ -39,7 +40,7 @@ export function computeAreaStart(data: BuildingData, features: readonly AreaFeat
     count: meta.count,
     key: settingsKey(settings),
     join: Object.fromEntries([...join].map(([index, f]) => [String(index), f.properties.id])),
-    ranks: rankAreas(score, cols.area, meta.areas, components!, on, undefined, undefined, gap),
+    ranks: rankAreas(score, cols.area, meta.areas, components!, on, undefined, undefined, gap, undefined, cols.dwellings),
   }
 }
 
@@ -65,7 +66,7 @@ let cache: Promise<AreaStart | null> | null = null
 /** The file, when the build wrote one for the building data the app has; else null (dev server, old file). */
 export function loadAreaStart(): Promise<AreaStart | null> {
   cache ??= Promise.all([
-    fetch(`${import.meta.env.BASE_URL}data/${AREA_START_FILE}`).then((r) => (r.ok ? (r.json() as Promise<AreaStart>) : null)),
+    fetch(dataUrl(AREA_START_FILE)).then((r) => (r.ok ? (r.json() as Promise<AreaStart>) : null)),
     loadBuildingsMeta(),
   ])
     .then(([start, meta]) => (start && matchesData(start, meta) ? start : null))

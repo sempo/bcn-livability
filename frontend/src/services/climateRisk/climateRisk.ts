@@ -38,11 +38,15 @@ export interface Risks {
   street: number // 0–1
 }
 
-/** Penalty in each (exclusive) flood band. */
+/**
+ * Penalty in each (exclusive) flood band, in proportion to the chance of at least one flood within 30 years
+ * (TODO-073): 10-year 96%, 100-year 26%, 500-year 6% → 1 / 0.27 / 0.06. Also used for the 10- and 100-year rain
+ * of street flooding (037).
+ */
 export const FLOOD_ZONE_PENALTIES: FloodZonePenalties = {
   t10: Number(import.meta.env.VITE_FLOOD_PENALTY_T10 ?? 1),
-  t100: Number(import.meta.env.VITE_FLOOD_PENALTY_T100 ?? 0.6),
-  t500: Number(import.meta.env.VITE_FLOOD_PENALTY_T500 ?? 0.25),
+  t100: Number(import.meta.env.VITE_FLOOD_PENALTY_T100 ?? 0.27),
+  t500: Number(import.meta.env.VITE_FLOOD_PENALTY_T500 ?? 0.06),
 }
 
 export const DEFAULT_RISK_STRENGTHS: RiskStrengths = {

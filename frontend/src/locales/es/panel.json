@@ -5,7 +5,7 @@
   },
   "matchSwitch": {
     "label": "Mostrar colores de encaje",
-    "about": "Acerca del Índice de habitabilidad",
+    "about": "Acerca de la puntuación de encaje",
     "hatched": "Rayado = datos incompletos (la puntuación es un rango; el color muestra el mejor caso)"
   },
   "layers": {

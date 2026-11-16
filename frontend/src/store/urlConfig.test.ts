@@ -40,7 +40,7 @@ describe('settings in the URL (TODO-053)', () => {
   it('a profile link opens that profile', async () => {
     localStorage.clear()
     const s = await loadStoreAt('?c=preset:city')
-    expect(s.getState().conditions.cityCoreMaxMin).toBe(15)
+    expect(s.getState().conditions.cityCoreMaxMin).toBe(25)
     expect(s.getState().conditionOrder).toEqual(['cityCore', 'poiAccess', 'noise'])
   })
 

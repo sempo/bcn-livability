@@ -50,12 +50,12 @@ describe('CompositeControls', () => {
     useStore.setState({ compositeVisible: true })
     renderControls()
     expect(screen.getByText('Everyday services within 10 min walk')).toBeTruthy()
-    expect(screen.getByText('Up to 65 dB is OK for me — like a busy street')).toBeTruthy()
+    expect(screen.getByText('Up to 65 dB on the street side is OK for me — like a busy street')).toBeTruthy()
     expect(screen.getByText('My places within 30 min walk')).toBeTruthy()
     expect(screen.getByText(/^I'm ready to pay up to €4[.,]?000\/m²$/)).toBeTruthy()
-    for (let k = 0; k < 10; k++) fireEvent.keyDown(screen.getByLabelText('Noise outside the window limit'), { key: 'ArrowLeft' })
+    for (let k = 0; k < 10; k++) fireEvent.keyDown(screen.getByLabelText('Noise on the street side limit'), { key: 'ArrowLeft' })
     expect(useStore.getState().conditions.noiseMaxDb).toBe(55)
-    expect(screen.getByText('Up to 55 dB is OK for me — like a calm street')).toBeTruthy()
+    expect(screen.getByText('Up to 55 dB on the street side is OK for me — like a calm street')).toBeTruthy()
     expect(JSON.parse(localStorage.getItem('bcn_conditions')!).noiseMaxDb).toBe(55)
   })
 
@@ -109,16 +109,16 @@ describe('CompositeControls', () => {
     expect(useStore.getState().ageEras).toEqual(['before-1900']) // the last one stays
   })
 
-  it('renders a Livability Index toggle', () => {
+  it('renders a Match score toggle', () => {
     renderControls()
-    expect(screen.getByText('Livability Index')).toBeTruthy()
+    expect(screen.getByText('Match score')).toBeTruthy()
   })
 
   it('shows component rows when layer is enabled', () => {
     useStore.setState({ compositeVisible: true })
     renderControls()
-    expect(screen.getByText('Walkability')).toBeTruthy()
-    expect(screen.getByText('Noise outside the window')).toBeTruthy()
+    expect(screen.getByText('Services on foot')).toBeTruthy()
+    expect(screen.getByText('Noise on the street side')).toBeTruthy()
     expect(screen.getByText('City Core Access')).toBeTruthy()
     expect(screen.getByText('Market Price')).toBeTruthy()
     expect(screen.getByText("Locals' opinion")).toBeTruthy()
@@ -144,10 +144,10 @@ describe('CompositeControls', () => {
   it('turning a condition off and on', () => {
     useStore.setState({ compositeVisible: true })
     renderControls()
-    fireEvent.click(screen.getByLabelText('Enable Noise outside the window'))
+    fireEvent.click(screen.getByLabelText('Enable Noise on the street side'))
     expect(useStore.getState().compositeWeights.noise).toBe(0)
-    expect(screen.queryByLabelText('Noise outside the window limit')).toBeNull()
-    fireEvent.click(screen.getByLabelText('Enable Noise outside the window'))
+    expect(screen.queryByLabelText('Noise on the street side limit')).toBeNull()
+    fireEvent.click(screen.getByLabelText('Enable Noise on the street side'))
     expect(useStore.getState().compositeWeights.noise).toBe(1)
   })
 
@@ -182,7 +182,7 @@ describe('CompositeControls', () => {
   it('walkability gear: the user drops services, but never the last one (TODO-046)', () => {
     useStore.setState({ compositeVisible: true, enabledWalkCategories: ['school', 'clinic'] })
     renderControls()
-    fireEvent.click(screen.getByLabelText('Configure Walkability'))
+    fireEvent.click(screen.getByLabelText('Configure Services on foot'))
     expect(screen.getByText('Walkability services')).toBeTruthy()
     fireEvent.click(screen.getByLabelText('🎓 School'))
     expect(useStore.getState().enabledWalkCategories).toEqual(['clinic'])
@@ -217,7 +217,7 @@ describe('CompositeControls', () => {
     it('explains the penalties in the info modal', () => {
       useStore.setState({ compositeVisible: true })
       renderControls()
-      fireEvent.click(screen.getByLabelText('About Livability Index'))
+      fireEvent.click(screen.getByLabelText('About the match score'))
       expect(screen.getByText(/river flood zones/i)).toBeTruthy()
       expect(screen.getByText(/wildland–urban interface/i)).toBeTruthy()
       expect(screen.getByText(/ground-floor flats, basements and underground parking/i)).toBeTruthy()

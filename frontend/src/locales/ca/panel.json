@@ -5,7 +5,7 @@
   },
   "matchSwitch": {
     "label": "Mostra els colors d'encaix",
-    "about": "Quant a l'Índex d'habitabilitat",
+    "about": "Quant a la puntuació d'encaix",
     "hatched": "Ratllat = dades incompletes (la puntuació és un rang; el color mostra el millor cas)"
   },
   "layers": {

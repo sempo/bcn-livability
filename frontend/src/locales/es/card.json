@@ -88,7 +88,9 @@
   },
   "noise": {
     "noMap": "No hay mapa oficial de ruido para este municipio",
-    "typical": "Ventana típica: {{approx}}{{db}} dB",
+    "scoredStreet": "Lado calle: {{approx}}{{db}} dB — con esto se compara tu condición",
+    "scoredAll": "Todas las fachadas: {{approx}}{{db}} dB (sin lado calle) — con esto se compara tu condición",
+    "quietSide": "Lado tranquilo: patio, {{approx}}{{db}} dB — dentro de tu límite",
     "night": " · noche {{ln}}",
     "extremes": "Fachada más ruidosa {{max}} dB · más tranquila {{min}} dB",
     "street": "Calle",
@@ -156,9 +158,10 @@
     "noPenalty": "Ningún punto perdido"
   },
   "match": {
-    "incomplete": "Datos incompletos: algunas de tus condiciones no tienen datos aquí. La puntuación es un rango, del peor caso (lo que falta cuenta 0) al mejor (lo que falta se ignora).",
+    "incomplete": "Datos incompletos: algunas de tus condiciones no tienen datos aquí. La puntuación es un rango, del peor caso (lo que falta cuenta 0) al mejor (lo que falta cuenta 100).",
     "meets": "Cumple {{met}} de {{total}} de tus condiciones",
     "noneOn": "No hay condiciones activas",
+    "overBudget": "Por encima de tu presupuesto: como mucho un encaje parcial",
     "label": "Encaje con tus condiciones",
     "score": "{{score}} de 100",
     "status": {

@@ -1,5 +1,7 @@
 # 050 — Match score: "meets N of M of your conditions"
 
+**Changed by 073 (2026-11-16):** the budget caps the score (`budgetCeiling`, card line "Over your budget: at most a partial match"); the band shares count homes (dwellings).
+
 **Status:** Done 2026-11-11. First step of the mass-market UX track (031, 051, 052, 053 follow).
 Cheapest change with the largest effect: display only, on top of the existing `computeComposite`.
 

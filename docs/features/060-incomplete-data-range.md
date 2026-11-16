@@ -1,5 +1,7 @@
 # 060 — Incomplete data: score range and hatched fill
 
+**Changed by 073 (2026-11-16):** the top of the range counts a missing condition as 100 (the real best case), not as dropped. The card text says so.
+
 ## Problem
 
 Today (022, "Missing data rule") a missing component counts as 0 with its weight kept in the denominator, and the

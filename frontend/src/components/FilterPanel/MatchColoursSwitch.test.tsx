@@ -36,9 +36,9 @@ describe('MatchColoursSwitch (TODO-052)', () => {
   it('opens and closes the explanation of the index', () => {
     renderWithMantine(<MatchColoursSwitch />)
     expect(screen.queryByRole('dialog')).toBeNull()
-    fireEvent.click(screen.getByLabelText('About Livability Index'))
+    fireEvent.click(screen.getByLabelText('About the match score'))
     expect(screen.getByRole('dialog')).toBeTruthy()
-    expect(screen.getByText('About Livability Index')).toBeTruthy()
+    expect(screen.getByText('About the match score')).toBeTruthy()
     fireEvent.click(screen.getByLabelText('Close'))
     expect(screen.queryByRole('dialog')).toBeNull()
   })

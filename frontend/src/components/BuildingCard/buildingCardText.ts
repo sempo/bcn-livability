@@ -54,6 +54,17 @@ export function sideText(side: 'street' | 'inner', lden: number | undefined, ln:
   return `${i18n.t('card:side.line', { side: i18n.t(`card:side.${side}`), db: Math.round(lden) })}${night}`
 }
 
+/**
+ * The courtyard level when the building has a quiet side (TODO-073): a courtyard side at or under the noise limit
+ * while the street side, which the score uses, is over it. Shown in the card; it does not change the score.
+ */
+export function quietSide(
+  d: { lden_street?: number; lden_inner?: number }, limit: number,
+): number | null {
+  if (d.lden_street === undefined || d.lden_inner === undefined) return null
+  return Math.round(d.lden_street) > limit && Math.round(d.lden_inner) <= limit ? d.lden_inner : null
+}
+
 // ── The building against the user's conditions (049) ────────────────────────────────────────────────────────
 
 const eur = (n: number) => `€${int(n)}`

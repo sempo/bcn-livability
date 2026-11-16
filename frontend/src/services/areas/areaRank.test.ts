@@ -150,3 +150,35 @@ describe('rankAreas', () => {
     })
   })
 })
+
+describe('rankAreas by homes (TODO-073)', () => {
+  // el Raval: three houses at 90, one block of 60 flats at 30. Hospitalet: four houses at 70.
+  const { scores, areaCol, components } = build([
+    { area: 0, score: 90, noise: 100 }, { area: 0, score: 90, noise: 100 }, { area: 0, score: 90, noise: 100 },
+    { area: 0, score: 30, noise: 0 },
+    { area: 2, score: 70, noise: 50 }, { area: 2, score: 70, noise: 50 }, { area: 2, score: 70, noise: 50 },
+    { area: 2, score: 70, noise: 50 },
+  ])
+  const homes = Float32Array.from([1, 1, 1, 60, 1, 1, 1, 1])
+  const ranks = rankAreas(scores, areaCol, AREAS, components, ['noise'], BANDS, 4, null, 0.3, homes)
+  const raval = ranks.find((r) => r.name === 'el Raval')!
+
+  it('shares and means count homes; the building count stays for the size limit', () => {
+    expect(raval.n).toBe(63)
+    expect(raval.buildings).toBe(4)
+    expect(raval.shareGood).toBeCloseTo((100 * 3) / 63)
+    expect(raval.mean).toBeCloseTo((3 * 90 + 60 * 30) / 63)
+    expect(raval.ranked).toBe(true)
+  })
+
+  it('an area of many good houses ranks above one of a few good houses and a large poor block', () => {
+    expect(ranks[0].name).toBe('Hospitalet')
+  })
+
+  it('without the column every building counts once, as before', () => {
+    const raw = rankAreas(scores, areaCol, AREAS, components, ['noise'], BANDS, 4)
+    const r = raw.find((x) => x.name === 'el Raval')!
+    expect(r.n).toBe(4)
+    expect(r.shareGood).toBe(75) // 3 of 4 buildings, against 3 of 63 homes above
+  })
+})

@@ -18,13 +18,17 @@ interface Props {
   compact?: boolean
   /** Where the building stands in its barri and the city (TODO-070); null = no rank tiles. */
   ranks?: BuildingRanks | null
+  /** The budget ceiling lowered the score (TODO-073). */
+  overBudget?: boolean
 }
 
 /**
  * Top of the building card (TODO-050, 072): the score in a ring, the band, how many conditions are met, and the rank
  * tiles (the best-in-barri / best-in-city badges). The per-condition rows live in the sections below.
  */
-export function MatchHeader({ score, summary, color, scoreMin, incomplete = false, compact = false, ranks = null }: Props) {
+export function MatchHeader({
+  score, summary, color, scoreMin, incomplete = false, compact = false, ranks = null, overBudget = false,
+}: Props) {
   const { t } = useTranslation('card')
   const isRange = incomplete && scoreMin !== undefined && scoreMin < score
   const range = isRange ? `${scoreMin}–${score}` : String(score)
@@ -44,6 +48,9 @@ export function MatchHeader({ score, summary, color, scoreMin, incomplete = fals
           </span>
         </div>
       </div>
+      {overBudget && (
+        <Text size="xs" data-testid="over-budget">{t('match.overBudget')}</Text>
+      )}
       {incomplete && (
         <Text size="xs" c="dimmed" data-testid="incomplete-note">
           {t('match.incomplete')}

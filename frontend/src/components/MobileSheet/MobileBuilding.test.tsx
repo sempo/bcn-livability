@@ -146,7 +146,7 @@ describe('Phone: a building in the sheet (TODO-062)', () => {
     expect(sheet()).toHaveAttribute('data-position', 'full')
     expect(sheet().style.transform).toBe(`translateY(${H.full - H.full}px)`)
     // The sections follow the header, folded (TODO-072).
-    expect(screen.getByText('Walkability')).toBeInTheDocument()
+    expect(screen.getByText('Services on foot')).toBeInTheDocument()
 
     // Close: the conditions come back, at the position they had.
     tap(screen.getByRole('button', { name: 'Close building card' }))

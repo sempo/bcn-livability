@@ -241,7 +241,7 @@ export function CompositeControls() {
       <Stack gap={8}>
         <Group gap={4} wrap="nowrap" align="center">
           <Switch
-            label="Livability Index"
+            label="Match score"
             size="sm"
             checked={visible}
             onChange={(e) => setVisible(e.currentTarget.checked)}
@@ -252,18 +252,18 @@ export function CompositeControls() {
             variant="subtle"
             color="gray"
             onClick={() => setInfoModalOpen(true)}
-            aria-label="About Livability Index"
+            aria-label="About the match score"
           >
             <IconInfoCircle size={16} stroke={1.8} />
           </ActionIcon>
         </Group>
         {visible && (
           <Stack gap={10} pl={28}>
-            <ConditionRow label="Walkability" {...conditionRow('poiAccess', 'walkMaxMin')}
+            <ConditionRow label="Services on foot" {...conditionRow('poiAccess', 'walkMaxMin')}
               onGear={() => setWalkModalOpen(true)}
               sentence={`${services} within ${conditions.walkMaxMin} min walk`} />
-            <ConditionRow label="Noise outside the window" {...conditionRow('noise', 'noiseMaxDb')}
-              sentence={`Up to ${conditions.noiseMaxDb} dB is OK for me — like ${noiseAnchor(conditions.noiseMaxDb)}`} />
+            <ConditionRow label="Noise on the street side" {...conditionRow('noise', 'noiseMaxDb')}
+              sentence={`Up to ${conditions.noiseMaxDb} dB on the street side is OK for me — like ${noiseAnchor(conditions.noiseMaxDb)}`} />
             <ConditionRow label="City Core Access" {...conditionRow('cityCore', 'cityCoreMaxMin')}
               onGear={() => setCityModalOpen(true)}
               sentence={`${places} within ${conditions.cityCoreMaxMin} min walk`} />
