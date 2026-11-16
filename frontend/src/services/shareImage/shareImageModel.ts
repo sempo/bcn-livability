@@ -74,7 +74,7 @@ const rankSentence = (r: Rank, place: string) =>
 
 /** The rank lines of a building picture: only the scopes where the building stands out, in the page language. */
 export function rankTexts(r: BuildingRanks): string[] {
-  const tt = (key: string, o: { name: string }) => i18n.t(`card:${key}` as never, o as never) as string
+  const tt = (key: string, o: { name: string }) => String(i18n.t(`card:${key}` as never, o as never))
   const wide = r.wide?.scope === 'barcelona' ? inPlace(tt, 'Barcelona') : i18n.t('card:rank.inMetro')
   return [...(r.local ? [rankSentence(r.local.rank, inPlace(tt, r.local.name))] : []), ...(r.wide ? [rankSentence(r.wide.rank, wide)] : [])]
 }
