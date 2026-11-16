@@ -112,8 +112,6 @@
     "cityCore": "City Core Access",
     "age": "Building age",
     "climate": "Climate risk",
-    "barri": "Barri-level",
-    "muni": "Municipality-level",
     "price": "Sale price"
   },
   "ui": {

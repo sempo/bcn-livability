@@ -241,7 +241,7 @@ describe('BuildingCard (TODO-046)', () => {
   it('labels price and Locals’ opinion as barri-level', async () => {
     await renderCard(0)
     openAll()
-    expect(screen.getByText('Barri-level')).toBeInTheDocument()
+    expect(screen.getByText('The same for every building in the barri')).toBeInTheDocument()
     expect(document.body.textContent).toMatch(/€4[.,]?200\/m²/)
     expect(screen.getByText('What locals say')).toBeInTheDocument()
   })
@@ -251,7 +251,7 @@ describe('BuildingCard (TODO-046)', () => {
     openAll()
     expect(screen.getByText('Student residence')).toBeInTheDocument()
     expect(screen.getByText(/Different official model \(SICA 2022/)).toBeInTheDocument()
-    expect(screen.getByText('Municipality-level')).toBeInTheDocument()
+    expect(screen.getByText('The same for every building in the municipality')).toBeInTheDocument()
     expect(screen.getByText('Not available outside Barcelona city')).toBeInTheDocument()
   })
 

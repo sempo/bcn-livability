@@ -115,8 +115,6 @@
     "cityCore": "Acceso al centro",
     "age": "Antigüedad del edificio",
     "climate": "Riesgo climático",
-    "barri": "Nivel de barrio",
-    "muni": "Nivel de municipio",
     "price": "Precio de venta"
   },
   "ui": {
