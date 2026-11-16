@@ -49,14 +49,14 @@
     "tickOne": "Marca al menos una. El mapa conserva tu última elección hasta entonces."
   },
   "sentence": {
-    "noise": "Con no más ruido que <limit/> en la fachada a la calle",
+    "noise": "Con no más ruido que <limit/> en la fachada exterior",
     "poiAccess": "<services/> a menos de <limit/> a pie",
     "cityCore": "<places/> a menos de <limit/> a pie",
     "openPrice": "Un piso de <area/> cuesta hasta <budget/> de media",
     "localsOpinion": "Los vecinos valoran la zona con al menos <limit/> sobre 10",
     "age": "Construido en <eras/>",
     "risk": "<level/> el riesgo de inundación e incendio",
-    "noiseTitle": "¿Cuánto ruido aceptas en la fachada a la calle?",
+    "noiseTitle": "¿Cuánto ruido aceptas en la fachada exterior?",
     "walkTitle": "¿Cuánto caminarías para tus recados diarios?",
     "centreTitle": "¿A qué distancia del centro?",
     "localsTitle": "¿Cuánto deben valorar los vecinos la zona?",

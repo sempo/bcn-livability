@@ -18,7 +18,7 @@ describe('translated UI', () => {
     await act(async () => { await setLanguage('es') })
     render(<MantineProvider><SentenceRow condition="noise" /></MantineProvider>)
     expect(screen.getByText(/Con no más ruido que/)).toBeInTheDocument()
-    expect(screen.getByText(/en la fachada a la calle/)).toBeInTheDocument()
+    expect(screen.getByText(/en la fachada exterior/)).toBeInTheDocument()
   })
 
   it('translates generated texts, with plurals', async () => {

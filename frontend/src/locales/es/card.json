@@ -40,7 +40,7 @@
     "below_other": " Este edificio tiene {{count}} plantas bajo rasante."
   },
   "side": {
-    "street": "Fachada a la calle",
+    "street": "Fachada exterior",
     "inner": "Fachada al patio",
     "line": "{{side}}: {{db}} dB",
     "night": " · noche {{ln}}"
@@ -88,8 +88,8 @@
   },
   "noise": {
     "noMap": "No hay mapa oficial de ruido para este municipio",
-    "scoredStreet": "Fachada a la calle: {{approx}}{{db}} dB — con esto se compara tu condición",
-    "scoredAll": "Todas las fachadas: {{approx}}{{db}} dB (sin fachada a la calle) — con esto se compara tu condición",
+    "scoredStreet": "Fachada exterior: {{approx}}{{db}} dB — con esto se compara tu condición",
+    "scoredAll": "Todas las fachadas: {{approx}}{{db}} dB (sin fachada exterior) — con esto se compara tu condición",
     "quietSide": "Fachada al patio, tranquila: {{approx}}{{db}} dB — dentro de tu límite",
     "night": " · noche {{ln}}",
     "extremes": "Fachada más ruidosa {{max}} dB · más tranquila {{min}} dB",

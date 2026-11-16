@@ -14,6 +14,11 @@ Two more problems were fixed in passing:
 
 - "lado calle / lado patio", "costat carrer / costat pati" are calques of *street side*. Spanish says
   "fachada a la calle / al patio"; Catalan "façana de carrer / de pati".
+
+The street side is named **"fachada exterior / façana exterior"** (the word Spanish and Catalan property
+ads use for "faces the street"), not "fachada a la calle / façana de carrer": the sentence read "Con no más ruido que
+una calle tranquila en la fachada a la calle", with "calle" twice. The info text says once that it is the side facing
+the street. The courtyard side stays "fachada al patio / façana de pati".
 - "¿Qué tan…?" is Latin American Spanish; peninsular Spanish uses other forms. "Com de a prop" in Catalan is clumsy.
 
 ## Decision
@@ -21,9 +26,9 @@ Two more problems were fixed in passing:
 | Where | Before (ES / CA) | After (ES / CA) |
 |---|---|---|
 | Condition name, chip, add button (`conditions:label/short/add.noise`) | Tranquilidad, Tranquilo / Tranquil·litat, Tranquil | Poco ruido / Poc soroll |
-| Sentence (`editor:sentence.noise`) | …en el lado calle / …al costat carrer | …en la fachada a la calle / …a la façana de carrer |
-| Editor title (`editor.noiseTitle`) | ¿Qué tan tranquilo debe ser el lado calle? / Com de tranquil ha de ser el costat carrer? | ¿Cuánto ruido aceptas en la fachada a la calle? / Quant soroll acceptes a la façana de carrer? |
-| Card and info (`card:side.*`, `card:noise.scored*`, `quietSide`, `info.noiseTitle`, `info.noise`) | Lado calle / patio, Costat carrer / pati | Fachada a la calle / al patio, Façana de carrer / de pati |
+| Sentence (`editor:sentence.noise`) | …en el lado calle / …al costat carrer | …en la fachada exterior / …a la façana exterior |
+| Editor title (`editor.noiseTitle`) | ¿Qué tan tranquilo debe ser el lado calle? / Com de tranquil ha de ser el costat carrer? | ¿Cuánto ruido aceptas en la fachada exterior? / Quant soroll acceptes a la façana exterior? |
+| Card and info (`card:side.*`, `card:noise.scored*`, `quietSide`, `info.noiseTitle`, `info.noise`) | Lado calle / patio, Costat carrer / pati | Fachada exterior / al patio, Façana exterior / de pati |
 | Info reference levels | una calle calmada / un carrer calmat | una calle tranquila / un carrer tranquil |
 | Other editor titles (ES) | ¿Qué tan cerca del centro?, ¿Qué tan contentos…? | ¿A qué distancia del centro?, ¿Cuánto deben valorar los vecinos la zona? |
 | Other editor title (CA) | Com de a prop del centre? | A quina distància del centre? |
@@ -40,7 +45,7 @@ English does not change ("Quiet" is about sound).
 
 ## Tests
 
-- `src/i18n/translated-ui.test.tsx`: the sentence says "en la fachada a la calle"; in ES and CA the short label, the
+- `src/i18n/translated-ui.test.tsx`: the sentence says "en la fachada exterior"; in ES and CA the short label, the
   condition label and the "strongest" line name the condition "Poco ruido / Poc soroll".
 
 ## Definition of Done

@@ -40,7 +40,7 @@
     "below_other": " Aquest edifici té {{count}} plantes sota rasant."
   },
   "side": {
-    "street": "Façana de carrer",
+    "street": "Façana exterior",
     "inner": "Façana de pati",
     "line": "{{side}}: {{db}} dB",
     "night": " · nit {{ln}}"
@@ -88,8 +88,8 @@
   },
   "noise": {
     "noMap": "No hi ha mapa oficial de soroll per a aquest municipi",
-    "scoredStreet": "Façana de carrer: {{approx}}{{db}} dB — amb això es compara la teva condició",
-    "scoredAll": "Totes les façanes: {{approx}}{{db}} dB (sense façana de carrer) — amb això es compara la teva condició",
+    "scoredStreet": "Façana exterior: {{approx}}{{db}} dB — amb això es compara la teva condició",
+    "scoredAll": "Totes les façanes: {{approx}}{{db}} dB (sense façana exterior) — amb això es compara la teva condició",
     "quietSide": "Façana de pati, tranquil·la: {{approx}}{{db}} dB — dins del teu límit",
     "night": " · nit {{ln}}",
     "extremes": "Façana més sorollosa {{max}} dB · més tranquil·la {{min}} dB",

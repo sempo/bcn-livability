@@ -49,14 +49,14 @@
     "tickOne": "Marca'n almenys un. El mapa conserva la teva última elecció fins aleshores."
   },
   "sentence": {
-    "noise": "Amb no més soroll que <limit/> a la façana de carrer",
+    "noise": "Amb no més soroll que <limit/> a la façana exterior",
     "poiAccess": "<services/> a menys de <limit/> a peu",
     "cityCore": "<places/> a menys de <limit/> a peu",
     "openPrice": "Un pis de <area/> costa fins a <budget/> de mitjana",
     "localsOpinion": "Els veïns valoren la zona amb almenys <limit/> sobre 10",
     "age": "Construït en <eras/>",
     "risk": "<level/> el risc d'inundació i d'incendi",
-    "noiseTitle": "Quant soroll acceptes a la façana de carrer?",
+    "noiseTitle": "Quant soroll acceptes a la façana exterior?",
     "walkTitle": "Quant caminaries per als teus encàrrecs diaris?",
     "centreTitle": "A quina distància del centre?",
     "localsTitle": "Com de contents han d'estar els veïns amb la zona?",
