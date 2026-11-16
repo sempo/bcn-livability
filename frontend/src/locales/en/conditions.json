@@ -92,6 +92,12 @@
     "partial": "Partial match",
     "poor": "Poor match"
   },
+  "bandPossibly": {
+    "great": "Possibly a great match",
+    "good": "Possibly a good match",
+    "partial": "Possibly a partial match",
+    "poor": "Possibly a poor match"
+  },
   "match": {
     "noiseUnder": "{{db}} dB, under your {{limit}}",
     "noiseOver": "{{db}} dB, {{diff}} dB over your {{limit}}",

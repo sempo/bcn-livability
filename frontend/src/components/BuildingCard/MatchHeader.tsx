@@ -1,7 +1,7 @@
 import { Text } from '@mantine/core'
 import type { CSSProperties } from 'react'
 import { useTranslation } from 'react-i18next'
-import { BAND_LABEL, matchBand, type MatchSummary } from '../../services/match/matchSummary'
+import { BAND_LABEL, BAND_LABEL_POSSIBLY, matchBand, type MatchSummary } from '../../services/match/matchSummary'
 import type { BuildingRanks } from '../../services/buildings/buildingRank'
 import { RankLines } from './RankLines'
 
@@ -26,7 +26,9 @@ interface Props {
  */
 export function MatchHeader({ score, summary, color, scoreMin, incomplete = false, compact = false, ranks = null }: Props) {
   const { t } = useTranslation('card')
-  const range = incomplete && scoreMin !== undefined && scoreMin < score ? `${scoreMin}–${score}` : String(score)
+  const isRange = incomplete && scoreMin !== undefined && scoreMin < score
+  const range = isRange ? `${scoreMin}–${score}` : String(score)
+  const bandLabel = (isRange ? BAND_LABEL_POSSIBLY : BAND_LABEL)[matchBand(score)]
   const ring = { '--ring-color': color, '--ring-pct': `${score}%` } as CSSProperties
   return (
     <div className={`match-header${compact ? ' match-header--phone' : ''}`} data-testid="match-header">
@@ -36,7 +38,7 @@ export function MatchHeader({ score, summary, color, scoreMin, incomplete = fals
         </div>
         <div className="match-block__text">
           <span className="match-block__label" data-testid="match-label">{t('match.label')}</span>
-          <span className="match-block__band" data-testid="match-band">{BAND_LABEL[matchBand(score)]}</span>
+          <span className="match-block__band" data-testid="match-band">{bandLabel}</span>
           <span className="match-block__meets">
             {summary.total > 0 ? t('match.meets', { met: summary.met, total: summary.total }) : t('match.noneOn')}
           </span>
