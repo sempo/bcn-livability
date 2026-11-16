@@ -5,19 +5,17 @@ import type { BuildingArea } from './buildingData'
 // counts as many times as it has dwellings, so a single-family house does not weigh as much as a block of 100 flats. Counted from one histogram of scores per
 // area, built once per rescoring; the card only reads one bin sum. No general score: the scores are the ones
 // the map shows under the current conditions. A rank is shown only as an award: when the building beats at least
-// `RANK_SHOW_MIN_PCT` of the others in that scope, or is in its top group; otherwise the scope has no line.
+// `RANK_SHOW_MIN_PCT` of the homes in that scope; otherwise the scope has no line. Homes with the same score are not
+// beaten, so a score shared by most of a barri (a plateau) earns nothing.
 
 /** Scores run 0–100. */
 export const SCORE_BINS = 101
 
-/** A scope gets a line only from this share (percent) of homes beaten; the top group always does. */
+/** A scope gets a line only from this share (percent) of homes beaten. */
 export const RANK_SHOW_MIN_PCT = Number(import.meta.env.VITE_RANK_SHOW_MIN_PCT ?? 70)
 
 /** Below this many buildings a barri is too small to rank in (the same limit as the ranked list of areas, 051). */
 export const RANK_MIN_BUILDINGS = Number(import.meta.env.VITE_AREA_MIN_BUILDINGS ?? 50)
-
-/** A lone best building among thousands is not "tied": a tie needs this share of the scope at the top score. */
-const TIE_MIN_SHARE = 0.02
 
 /** Histograms of one kind: per area, Barcelona, and the whole data. */
 export interface ScopeHistograms {
@@ -30,7 +28,7 @@ export interface ScopeHistograms {
 }
 
 export interface ScoreHistograms extends ScopeHistograms {
-  /** Buildings (not homes) per score: the size limit of a barri and the "more than one building" rule of a tie. */
+  /** Buildings (not homes) per score: the size limit of a barri. */
   buildings: ScopeHistograms
 }
 
@@ -81,34 +79,22 @@ export interface Rank {
   pct: number
   /** Homes in the scope. */
   n: number
-  /** The building is in the top group (the highest score of the scope, shared by enough buildings). */
-  tied: boolean
-  /** With `tied`: percent of the scope that has that same top score. */
-  samePct: number
 }
 
-/**
- * The rank of `score` in a histogram; null when the scope is empty. `buildings` is the histogram of building counts
- * of the same scope: a top group needs more than one building (one block of many flats is not a tie). Without it the
- * entries of `hist` are taken as buildings.
- */
-export function rankIn(hist: Uint32Array, score: number, buildings: Uint32Array = hist): Rank | null {
+/** The rank of `score` in a histogram of homes; null when the scope is empty. */
+export function rankIn(hist: Uint32Array, score: number): Rank | null {
   let n = 0
   let below = 0
-  let max = -1
   for (let s = 0; s < hist.length; s++) {
-    if (hist[s] === 0) continue
     n += hist[s]
-    max = s
     if (s < score) below += hist[s]
   }
   if (n === 0) return null
-  const tied = score === max && hist[max] / n >= TIE_MIN_SHARE && buildings[max] > 1
-  return { pct: Math.min(99, Math.floor((100 * below) / n)), n, tied, samePct: Math.round((100 * hist[max]) / n) }
+  return { pct: Math.min(99, Math.floor((100 * below) / n)), n }
 }
 
-/** Worth an award: in the top group, or beating at least `minPct` of the others. */
-export const earnsAward = (r: Rank, minPct = RANK_SHOW_MIN_PCT) => r.tied || r.pct >= minPct
+/** Worth an award: beating at least `minPct` of the homes of the scope. */
+export const earnsAward = (r: Rank, minPct = RANK_SHOW_MIN_PCT) => r.pct >= minPct
 
 export interface BuildingRanks {
   /** The barri (or municipality); null when it has too few buildings or the building does not stand out there. */
@@ -129,9 +115,9 @@ export function buildingRanks(
   if (!area) return null
   const scope = area.kind === 'barri' ? 'barcelona' : 'metro'
   const wideRank = scope === 'barcelona'
-    ? rankIn(h.barcelona, score, h.buildings.barcelona)
-    : rankIn(h.all, score, h.buildings.all)
-  const own = rankIn(h.areas[areaIndex!], score, h.buildings.areas[areaIndex!])
+    ? rankIn(h.barcelona, score)
+    : rankIn(h.all, score)
+  const own = rankIn(h.areas[areaIndex!], score)
   const bigEnough = histTotal(h.buildings.areas[areaIndex!]) >= minBuildings
   const local = own && bigEnough && earnsAward(own, minPct) ? { name: area.name, kind: area.kind, rank: own } : null
   const wide = wideRank && earnsAward(wideRank, minPct) ? { scope, rank: wideRank } as const : null

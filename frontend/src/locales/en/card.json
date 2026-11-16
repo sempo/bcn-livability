@@ -233,13 +233,11 @@
   "rank": {
     "heading": "For your conditions",
     "better": "This home is better than {{pct}}% of homes {{place}}",
-    "tied": "This home is among the best {{place}}: {{pct}}% of homes fit as well",
     "incomplete": "No rank: some of your conditions have no data for this building.",
     "in": "in {{name}}",
     "inEl": "in el {{name}}",
     "inEls": "in els {{name}}",
     "inMetro": "in the Barcelona area",
-    "tileTied": "of homes {{place}} fit as well. Among the best.",
     "tileBetter": "of homes {{place}} are a weaker match."
   },
   "share": {

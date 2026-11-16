@@ -69,8 +69,7 @@ export function profileOf(settings: UrlSettings, defaults: UrlSettings, presets:
   }) ?? null
 }
 
-const rankSentence = (r: Rank, place: string) =>
-  r.tied ? i18n.t('card:rank.tied', { pct: r.samePct, place }) : i18n.t('card:rank.better', { pct: r.pct, place })
+const rankSentence = (r: Rank, place: string) => i18n.t('card:rank.better', { pct: r.pct, place })
 
 /** The rank lines of a building picture: only the scopes where the building stands out, in the page language. */
 export function rankTexts(r: BuildingRanks): string[] {

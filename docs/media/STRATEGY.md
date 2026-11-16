@@ -31,7 +31,7 @@ the rest of its barri and of the city.**
    - "Meets 3 of 4 of your conditions" and the row for each condition (exists, 050; stays in plain sight).
    - **"This home is better than 80% of homes in la Vila de Gràcia"** and **"… better than 64% of homes in
      Barcelona"** (built, 070). Each is an award with an icon, shown only from a threshold (`VITE_RANK_SHOW_MIN_PCT`,
-     70) or for the top group, and the barri and the city are judged separately. Below it the line is absent: no
+     70), and the barri and the city are judged separately. Below it the line is absent: no
      scale, no words, nothing that reads as a verdict. The wording per language is in
      [070](../features/070-building-rank-in-barri-and-city.md).
    - Save image / Share (exists, 063); the award lines go on the picture.
@@ -107,7 +107,7 @@ The software is not rebuilt. The right tools are made more visible.
 |---|---|
 | The site fails during the spike | A1 and A2 first |
 | A percentile without its conditions misleads (the same building gets different numbers for different people) | the profile or the conditions are always on the card and on the picture |
-| A perfect building reads as mediocre when many buildings are perfect | tie rule in 070 |
+| A perfect building reads as mediocre when many buildings are perfect | no award when a wide group shares the top score: nothing is said rather than "among the best of 93%" (070, changed 2026-11-16) |
 | A result contradicts what residents know (night-life noise, safety are not measured) | model limits stated in the UI and on the method page; "I don't agree" later |
 | A low result is not shared | accepted; the tone of the card stays neutral, not a verdict on the person |
 | Wrong data on a public number | outlier checks before launch (the "beach" case) |

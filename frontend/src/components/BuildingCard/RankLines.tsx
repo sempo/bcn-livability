@@ -4,11 +4,10 @@ import type { BuildingRanks, Rank } from '../../services/buildings/buildingRank'
 
 function RankTile({ place, rank, id }: { place: string; rank: Rank; id: string }) {
   const { t } = useTranslation('card')
-  const pct = rank.tied ? rank.samePct : rank.pct
   return (
     <div className="rank-tile" data-testid={`rank-${id}`}>
-      <b>{pct}%</b>
-      <span>{rank.tied ? t('rank.tileTied', { place }) : t('rank.tileBetter', { place })}</span>
+      <b>{rank.pct}%</b>
+      <span>{t('rank.tileBetter', { place })}</span>
     </div>
   )
 }

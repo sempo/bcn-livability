@@ -45,7 +45,6 @@ describe('rankIn', () => {
     const r = rankIn(hist({ 20: 10, 60: 10, 80: 10, 95: 10 }), 80)!
     expect(r.pct).toBe(50)
     expect(r.n).toBe(40)
-    expect(r.tied).toBe(false)
   })
   it('rounds down so the line never overstates', () => {
     expect(rankIn(hist({ 10: 2, 20: 1 }), 20)!.pct).toBe(66)
@@ -54,24 +53,12 @@ describe('rankIn', () => {
     const r = rankIn(hist({ 20: 1, 50: 1, 90: 98 }), 50)!
     expect(r.pct).toBe(1)
   })
-  it('a building in the top group of many equal ones says how many fit as well, not "better than"', () => {
+  it('a building in a wide top group beats only the homes below it, not the ones that tie with it', () => {
     // 36% score below 100, 64% score exactly 100
-    const r = rankIn(hist({ 40: 36, 100: 64 }), 100)!
-    expect(r.tied).toBe(true)
-    expect(r.samePct).toBe(64)
+    expect(rankIn(hist({ 40: 36, 100: 64 }), 100)!.pct).toBe(36)
   })
-  it('the top group is the maximum score of the scope, not 100', () => {
-    const r = rankIn(hist({ 40: 50, 88: 50 }), 88)!
-    expect(r.tied).toBe(true)
-    expect(r.samePct).toBe(50)
-  })
-  it('a lone best building is "better than 99%", not a tie', () => {
-    const r = rankIn(hist({ 40: 99, 100: 1 }), 100)!
-    expect(r.tied).toBe(false)
-    expect(r.pct).toBe(99)
-  })
-  it('a score lower than the maximum is never a tie', () => {
-    expect(rankIn(hist({ 70: 5, 100: 5 }), 70)!.tied).toBe(false)
+  it('a lone best building is "better than 99%"', () => {
+    expect(rankIn(hist({ 40: 99, 100: 1 }), 100)!.pct).toBe(99)
   })
   it('is null for an empty scope', () => {
     expect(rankIn(new Uint32Array(SCORE_BINS), 50)).toBeNull()
@@ -79,11 +66,10 @@ describe('rankIn', () => {
 })
 
 describe('earnsAward', () => {
-  const r = (pct: number, tied = false) => ({ pct, n: 100, tied, samePct: 0 })
-  it('is true from the threshold up, and for the top group at any percentage', () => {
+  const r = (pct: number) => ({ pct, n: 100 })
+  it('is true only from the threshold up', () => {
     expect(earnsAward(r(70), 70)).toBe(true)
     expect(earnsAward(r(69), 70)).toBe(false)
-    expect(earnsAward(r(10, true), 70)).toBe(true)
     expect(earnsAward(r(0), 70)).toBe(false)
   })
 })
@@ -157,13 +143,12 @@ describe('homes, not buildings (TODO-073)', () => {
     expect(rankIn(h.areas[0], 60, h.buildings.areas[0])!.n).toBe(100)
   })
 
-  it('one large block at the top is not a tie: a top group needs more than one building', () => {
-    const { scores, areaCol } = cols([...many(0, 30, 60), ...many(0, 100, 1)])
-    const homes = Float32Array.from([...Array(60).fill(1), 40])
-    const h = scoreHistograms(scores, areaCol, AREAS, homes)
-    const r = rankIn(h.areas[0], 100, h.buildings.areas[0])!
-    expect(r.tied).toBe(false)
-    expect(r.pct).toBe(60)
+  it('a plateau is not an award: the best score shared by most of the barri earns no line', () => {
+    // 7 buildings at 40, 93 at 63 (the top): a building at 63 beats 7%, under the threshold.
+    const { scores, areaCol } = cols([...many(0, 40, 7), ...many(0, 63, 93)])
+    const h = scoreHistograms(scores, areaCol, AREAS)
+    expect(rankIn(h.areas[0], 63, h.buildings.areas[0])!.pct).toBe(7)
+    expect(buildingRanks(h, AREAS, 0, 63, 50, 70)?.local ?? null).toBeNull()
   })
 
   it('the minimum size of a barri still counts buildings', () => {
