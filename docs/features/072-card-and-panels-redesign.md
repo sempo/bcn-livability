@@ -38,7 +38,7 @@ CSS in `frontend/src/index.css`; shared tokens (hairline, field grey, ink) as va
 
 ## i18n
 
-Reuse existing keys. New: two rank-tile sentences, climate verdict "−{{n}} pts · {{names}}", short strip labels,
+Reuse existing keys. New: two rank-tile sentences, climate verdict "{{names}}" (the points are only in the amber circle), short strip labels,
 `conditions:short.*` if missing. Keep en, ca, es in sync (`locales.test.ts`).
 
 ## As built

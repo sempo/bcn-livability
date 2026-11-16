@@ -148,7 +148,7 @@
     "moreAddresses_one": "+{{count}} more address",
     "moreAddresses_other": "+{{count}} more addresses",
     "fewerAddresses": "Show fewer",
-    "climateVerdict": "−{{n}} pts · {{names}}",
+    "climateVerdict": "{{names}}",
     "noPenalty": "No points lost"
   },
   "match": {
