@@ -49,14 +49,14 @@
     "tickOne": "Marca al menos una. El mapa conserva tu última elección hasta entonces."
   },
   "sentence": {
-    "noise": "Con no más ruido que <limit/> fuera de mi ventana",
+    "noise": "Con no más ruido que <limit/> en el lado calle",
     "poiAccess": "<services/> a menos de <limit/> a pie",
     "cityCore": "<places/> a menos de <limit/> a pie",
     "openPrice": "Un piso de <area/> cuesta hasta <budget/> de media",
     "localsOpinion": "Los vecinos valoran la zona con al menos <limit/> sobre 10",
     "age": "Construido en <eras/>",
     "risk": "<level/> el riesgo de inundación e incendio",
-    "noiseTitle": "¿Qué tan tranquilo debe ser fuera de tu ventana?",
+    "noiseTitle": "¿Qué tan tranquilo debe ser el lado calle?",
     "walkTitle": "¿Cuánto caminarías para tus recados diarios?",
     "centreTitle": "¿Qué tan cerca del centro?",
     "localsTitle": "¿Qué tan contentos deben estar los vecinos con la zona?",

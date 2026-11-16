@@ -12,7 +12,8 @@ Outputs (frontend/public/data/):
   buildings-scores.bin.gz   score inputs per building, one little-endian typed array per column (see meta);
   buildings-positions.bin.gz  lng / lat of each building. Format: scripts/building_blob.py
   buildings-meta.json       columns (name, type, scale, offset, sentinel, file, layout), areas (barri / municipality: code,
-                            name, price), price bounds, categories, landmarks
+                            name, price), price bounds, categories, landmarks, minutes_cap (how far the minutes
+                            columns reach, TODO-073)
   buildings-detail.pmtiles  z14 only — layer `d`: one point per building with the card fields;
                             layer `f`: the facade noise points of stage 2
 Review: data/buildings/nonresidential.gpkg — buildings left out as clearly not housing, with the reason.
@@ -35,6 +36,7 @@ import pyogrio
 import shapely
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from building_access import CITY_CORE_MAX_MIN, WALK_MIN_RMAX_M, WALK_SPEED_M_MIN  # noqa: E402
 from building_access import OUT_GPKG as ACCESS_GPKG  # noqa: E402
 from building_blob import FILES, write_files  # noqa: E402
 from building_exposure import OUT_GPKG as EXPOSURE_GPKG  # noqa: E402
@@ -176,6 +178,18 @@ def clean(v):
     return v.item() if hasattr(v, "item") else v
 
 
+def dwelling_weight(dwellings):
+    """Dwellings of each building for the dwelling-weighted ranks and shares (TODO-073); at least 1, so a student
+    residence (0 dwellings in Catastro) or a building with no count still counts as one home."""
+    d = pd.to_numeric(pd.Series(dwellings), errors="coerce").fillna(0).to_numpy(float)
+    return np.maximum(d, 1)
+
+
+def minutes_cap():
+    """How far the minutes columns reach: beyond it a building has no value (TODO-073)."""
+    return {"walk": round(WALK_MIN_RMAX_M / WALK_SPEED_M_MIN, 2), "cityCore": CITY_CORE_MAX_MIN}
+
+
 def main():
     b = gpd.read_file(BUILDINGS_GPKG, layer="buildings")
     e = pyogrio.read_dataframe(EXPOSURE_GPKG, layer="exposure", read_geometry=False)
@@ -207,8 +221,12 @@ def main():
                ("lden_avg", "u16", 10, x["lden_avg"]), ("river_zone", "u16", 1, x["river_zone"]),
                ("street_t10_cm", "u16", 1, x["street_t10_cm"]), ("street_t100_cm", "u16", 1, x["street_t100_cm"]),
                ("fire_hazard", "u16", 1000, x["fire_hazard"]), ("area", "u16", 1, np.where(area >= 0, area, np.nan)),
-               ("fire_wui", "u8", 1, x["fire_wui"]), ("year_built", "u16", 1, x["year_built"])]
-    # Walking minutes to the nearest service of each category (null beyond WALK_RMAX_M): the walkability condition
+               ("fire_wui", "u8", 1, x["fire_wui"]), ("year_built", "u16", 1, x["year_built"]),
+               # TODO-073: noise is scored on the street side (null = no street side; the app falls back to lden_avg),
+               # and ranks and shares are weighted by dwellings.
+               ("lden_street", "u16", 10, x["lden_street"]),
+               ("dwellings", "u16", 1, dwelling_weight(x["dwellings"]))]
+    # Walking minutes to the nearest service of each category (null beyond WALK_MIN_RMAX_M): the services condition
     # of 049 ("everyday services within N min").
     columns += [(f"min_{c}", "u8", 1, x[f"min_{c}"]) for c in cats]
     columns += [(f"cc_{lm}", "u8", 1, x[f"cc_{lm}"]) for lm in landmarks]
@@ -218,7 +236,7 @@ def main():
         "sources": source_dates({"catastro": BUILDINGS_GPKG, "osm": ACCESS_GPKG, "flood-aca": EXPOSURE_GPKG,
                                  "wildfire": EXPOSURE_GPKG, "street-flooding": EXPOSURE_GPKG, "prices": PRICES_GPKG}),
         "areas": [{k: clean(v) for k, v in r.items()} for r in areas.to_dict("records")],
-        "price_bounds": bounds, "categories": cats, "landmarks": landmarks,
+        "price_bounds": bounds, "categories": cats, "landmarks": landmarks, "minutes_cap": minutes_cap(),
         "river_zone": "10 / 100 / 500 = ACA return period; sentinel = outside every zone"})
     (PUBLIC / "buildings-meta.json").write_text(json.dumps(meta, ensure_ascii=False, separators=(",", ":")))
 

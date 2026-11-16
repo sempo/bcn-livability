@@ -6,7 +6,7 @@ import { ActionIcon, Group, Paper, Stack, Text, UnstyledButton } from '@mantine/
 import { settingsOf, URL_DEFAULTS, useStore } from '../../store'
 import { valueOf } from '../../services/buildings/buildingData'
 import { useBuildingData } from '../../hooks/useBuildingData'
-import { buildingArea, scoreBuilding } from '../../services/buildings/buildingScore'
+import { buildingArea, scoreBuilding, scoredNoise } from '../../services/buildings/buildingScore'
 import { loadBuildingDetail, type BuildingDetailResult } from '../../services/buildings/buildingDetail'
 import { prettyAddress, prettyAddresses } from '../../services/buildings/address'
 import { eraOf } from '../../services/buildings/buildingAge'
@@ -114,7 +114,7 @@ export function BuildingCard({ embedded = false }: { embedded?: boolean }) {
     weights, conditions, enabledLandmarkIds, enabledCategories, riskStrengths, ageEras, vibe,
   })
   const { score, components, penalties } = composite
-  const lden = valueOf(data, 'lden_avg', selected)
+  const lden = scoredNoise(data, selected)
   const services = SERVICE_CATEGORIES.filter((c) => enabledCategories.includes(c.id))
     .map((cat) => ({ cat, minutes: valueOf(data, `min_${cat.id}`, selected) }))
   const placeMinutes = enabledLandmarkIds.map((id) => valueOf(data, `cc_${id}`, selected))
@@ -146,7 +146,9 @@ export function BuildingCard({ embedded = false }: { embedded?: boolean }) {
     localsOpinion: barri ? localsParts(barri.satisfAdj, conditions.localsMin) : undefined,
     age: ageParts(yearBuilt !== null ? eraOf(yearBuilt).name : null),
   })
-  const ranks = histograms && !composite.hasGap && summary.total > 0
+  // No award when the budget ceiling set the score (TODO-073): in an expensive barri many homes share the ceiling,
+  // and "among the best" would praise a home that is over the budget.
+  const ranks = histograms && !composite.hasGap && composite.budgetCap === 0 && summary.total > 0
     ? buildingRanks(histograms, data.meta.areas, valueOf(data, 'area', selected), score) : null
   const riskText = riskLine(penalties, { flood: d?.river_zone ? t('river.zoneYear', { year: d.river_zone }) : undefined })
   const landmarks = enabledLandmarkIds
@@ -163,7 +165,7 @@ export function BuildingCard({ embedded = false }: { embedded?: boolean }) {
     <Stack gap="sm">
       <MatchHeader
         score={score} scoreMin={composite.scoreMin} incomplete={composite.hasGap}
-        summary={summary} color={color} compact={embedded} ranks={ranks}
+        summary={summary} color={color} compact={embedded} ranks={ranks} overBudget={composite.budgetCap > 0}
       />
 
       {d && (

@@ -3,6 +3,7 @@
  * Baked by scripts/build_neighbourhood_vibe.py into public/data/barri-vibe.json.
  */
 import { lazyLabels } from '../../i18n/format'
+import { dataUrl } from '../dataUrl'
 
 export const PROBLEM_IDS = [
   'insecurity', 'cleanliness', 'noise', 'housing', 'tourism', 'incivility', 'drugs_squats', 'maintenance', 'parking', 'traffic',
@@ -52,7 +53,7 @@ let cache: Promise<BarriVibeData> | null = null
 
 export function loadBarriVibe(): Promise<BarriVibeData> {
   if (cache) return cache
-  cache = fetch(`${import.meta.env.BASE_URL}data/barri-vibe.json`)
+  cache = fetch(dataUrl('barri-vibe.json'))
     .then((r) => {
       if (!r.ok) throw new Error(`Failed to load barri vibe: ${r.status}`)
       return r.json() as Promise<BarriVibeData>

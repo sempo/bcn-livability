@@ -71,6 +71,17 @@ class TestColumns(unittest.TestCase):
         self.assertAlmostEqual(float(lng[0]), 2.17, places=5)
         self.assertTrue(np.isnan(lng[1]))
 
+    def test_dwelling_weight_at_least_one(self):
+        """Ranks and shares count homes (TODO-073); a student residence (0 dwellings) still counts as one."""
+        self.assertEqual(bt.dwelling_weight(pd.Series([12, 0, None, 1])).tolist(), [12, 1, 1, 1])
+
+    def test_minutes_cap_covers_the_sliders(self):
+        """The app's sliders go to 15 min (services) and 60 min (City Core), and a place scores 0 at twice the
+        limit: the data must reach that far, or the score drops to 0 with a cliff (TODO-073)."""
+        cap = bt.minutes_cap()
+        self.assertGreaterEqual(cap["walk"], 2 * 15)
+        self.assertGreaterEqual(cap["cityCore"], 2 * 60)
+
     def test_height_from_floors(self):
         self.assertEqual(bt.height_m(pd.Series([5, None])).tolist()[0], 15.0)
         self.assertTrue(pd.isna(bt.height_m(pd.Series([5, None])).tolist()[1]))
@@ -117,6 +128,19 @@ class TestGenerated(unittest.TestCase):
         names = {c["name"] for c in meta["columns"]}
         self.assertEqual({f"min_{c}" for c in meta["categories"]} - names, set())
         self.assertFalse(any(n.startswith("walk_") for n in names))
+
+    def test_073_columns(self):
+        """Noise on the street side, homes per building and the reach of the minutes (TODO-073)."""
+        import json
+        from building_blob import read_columns
+        meta = json.loads((bt.PUBLIC / "buildings-meta.json").read_text())
+        cols = {name: arr for name, _, _, arr in read_columns(bt.PUBLIC, meta)}
+        self.assertGreaterEqual(int(cols["dwellings"].min()), 1)
+        self.assertGreater(int(cols["dwellings"].sum()), 1_300_000)
+        street = cols["lden_street"][cols["lden_street"] != 65535] / 10
+        self.assertGreater(len(street), 100_000)
+        self.assertTrue(55 < float(np.median(street)) < 65)
+        self.assertEqual(set(meta["minutes_cap"]), {"walk", "cityCore"})
 
     def test_castle_out_dorms_in(self):
         out = gpd.read_file(bt.NONRES_GPKG)

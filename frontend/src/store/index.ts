@@ -7,7 +7,8 @@ import { ALL_AGE_ERA_IDS } from '../services/buildings/buildingAge'
 import { DEFAULT_CONDITIONS, type Conditions } from '../services/buildings/conditions'
 import { features } from '../features'
 import {
-  ALL_WALK_CATEGORY_IDS, DEFAULT_COMPOSITE_WEIGHTS, type CompositeWeights, type ScoreSettings,
+  ALL_WALK_CATEGORY_IDS, DEFAULT_COMPOSITE_WEIGHTS, DEFAULT_LANDMARK_IDS, DEFAULT_WALK_CATEGORY_IDS,
+  type CompositeWeights, type ScoreSettings,
 } from '../services/buildings/firstVisit'
 import type { AreaRank } from '../services/areas/areaRank'
 import { allowLocals, decodeConfig, type UrlSettings } from '../services/urlConfig'
@@ -216,14 +217,19 @@ function loadConditions(): Conditions {
   }
 }
 
-/** A stored id list, unknown ids dropped; all ids when nothing valid is stored. */
-function loadIds(key: string, all: readonly string[]): readonly string[] {
+/**
+ * A stored id list, unknown ids dropped; `dflt` when nothing valid is stored. With `oldDefaultIsAll`, a stored list
+ * of every id reads as `dflt` too: until TODO-073 "all" was the default of the services and the City Core places,
+ * and the profiles saved it, so such a list almost always means "the default" rather than a choice.
+ */
+export function loadIds(key: string, all: readonly string[], dflt: readonly string[] = all, oldDefaultIsAll = false): readonly string[] {
   try {
     const parsed = JSON.parse(localStorage.getItem(key) ?? 'null') as unknown
     const known = Array.isArray(parsed) ? parsed.filter((id) => all.includes(id)) : []
+    if (oldDefaultIsAll && known.length === all.length && dflt.length < all.length) return dflt
     if (known.length > 0) return known
   } catch { /* ignore */ }
-  return all
+  return dflt
 }
 
 export function readWorkplaceFromStorage(): [number, number] | null {
@@ -303,8 +309,8 @@ function loadBoolKey(key: string, dflt = false): boolean {
 export const URL_DEFAULTS: UrlSettings = {
   weights: DEFAULT_COMPOSITE_WEIGHTS,
   conditions: DEFAULT_CONDITIONS,
-  walkCategories: ALL_WALK_CATEGORY_IDS,
-  landmarkIds: ALL_LANDMARK_IDS,
+  walkCategories: DEFAULT_WALK_CATEGORY_IDS,
+  landmarkIds: DEFAULT_LANDMARK_IDS,
   eras: ALL_AGE_ERA_IDS,
   riskStrengths: DEFAULT_RISK_STRENGTHS,
   order: activeConditions(DEFAULT_COMPOSITE_WEIGHTS, DEFAULT_RISK_STRENGTHS, []),
@@ -378,15 +384,7 @@ export const useStore = create<AppState>((set, get) => {
     mapCenter,
     resultPolygon: workplace ? readIsochroneCache(workplace, minutes) : null,
     noiseLayerVisible: layerFlag('noise', 'noiseLayerVisible'),
-    enabledLandmarkIds: url ? url.landmarkIds : (() => {
-      try {
-        const raw = localStorage.getItem(CITY_CORE_LANDMARKS_KEY)
-        if (!raw) return ALL_LANDMARK_IDS
-        const parsed = JSON.parse(raw) as unknown
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed as string[]
-      } catch { /* ignore */ }
-      return ALL_LANDMARK_IDS
-    })(),
+    enabledLandmarkIds: url ? url.landmarkIds : loadIds(CITY_CORE_LANDMARKS_KEY, ALL_LANDMARK_IDS, DEFAULT_LANDMARK_IDS, true),
     setWorkplace: (workplace) => {
       try {
         if (workplace) localStorage.setItem(WORKPLACE_KEY, JSON.stringify(workplace))
@@ -487,7 +485,7 @@ export const useStore = create<AppState>((set, get) => {
     },
     streetFloodingReturnPeriod: 't10',
     setStreetFloodingReturnPeriod: (streetFloodingReturnPeriod) => set({ streetFloodingReturnPeriod }),
-    enabledWalkCategories: url ? url.walkCategories : loadIds(WALK_CATEGORIES_KEY, ALL_WALK_CATEGORY_IDS),
+    enabledWalkCategories: url ? url.walkCategories : loadIds(WALK_CATEGORIES_KEY, ALL_WALK_CATEGORY_IDS, DEFAULT_WALK_CATEGORY_IDS, true),
     setEnabledWalkCategories: (ids) => {
       try { localStorage.setItem(WALK_CATEGORIES_KEY, JSON.stringify(ids)) } catch { /* ignore */ }
       set({ enabledWalkCategories: ids })

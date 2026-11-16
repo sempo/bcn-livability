@@ -1,5 +1,7 @@
 # 046 — Building-level Livability Index
 
+**Changed by 073 (2026-11-16):** new score columns `lden_street` and `dwellings` and the meta field `minutes_cap`; `min_*` reach 2,400 m (30 min) and `cc_*` 120 min in the pipeline (shipped files: still 1,500 m / 90 min until the next full run).
+
 **Status:** Done 2026-11-04. Stages 1–4 and step 6 (hexes removed) are done; 3b (slope) is not needed for now;
 stage 5 moved to 047 (building age) and TODO-048 (energy certificates, ground-floor premises). Direction
 agreed 2026-10-28; each stage went through plan mode before code.

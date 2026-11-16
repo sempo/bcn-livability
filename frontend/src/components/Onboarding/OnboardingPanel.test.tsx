@@ -39,7 +39,7 @@ describe('OnboardingPanel', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Build your own' }))
     const st = useStore.getState()
     expect(st.onboardingOpen).toBe(true)
-    expect(screen.getByText(/outside my window/)).toBeTruthy()
+    expect(screen.getByText(/on the street side/)).toBeTruthy()
     expect(st.conditionOrder).toEqual(['noise', 'poiAccess', 'openPrice'])
     expect(st.compositeWeights).toMatchObject({ noise: 1, poiAccess: 1, openPrice: 1, cityCore: 0 })
     expect(st.compositeRiskStrengths).toEqual({ flood: 0, fire: 0, street: 0 })

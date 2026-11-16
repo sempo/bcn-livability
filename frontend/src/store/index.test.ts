@@ -305,3 +305,31 @@ describe('selected building and area (TODO-064)', () => {
     expect(useStore.getState().selectedBuilding).toBeNull()
   })
 })
+
+describe('default services and City Core places (TODO-073)', () => {
+  beforeEach(() => localStorage.clear())
+
+  it('reads a saved list; a saved list of every id was the old default and reads as the new one', async () => {
+    const { loadIds } = await import('./index')
+    const all = ['a', 'b', 'c', 'd']
+    const dflt = ['b', 'c']
+    expect(loadIds('k', all, dflt, true)).toEqual(dflt)
+    localStorage.setItem('k', JSON.stringify(['d', 'a']))
+    expect(loadIds('k', all, dflt, true)).toEqual(['d', 'a'])
+    localStorage.setItem('k', JSON.stringify(['a', 'b', 'c', 'd']))
+    expect(loadIds('k', all, dflt, true)).toEqual(dflt)
+    // Without the migration (building eras), "all" stays a choice.
+    expect(loadIds('k', all, all)).toEqual(all)
+    localStorage.setItem('k', JSON.stringify(['zz']))
+    expect(loadIds('k', all, dflt, true)).toEqual(dflt)
+  })
+
+  it('a first visit starts without the beach and with three central places', async () => {
+    const { DEFAULT_LANDMARK_IDS, DEFAULT_WALK_CATEGORY_IDS, firstVisitSettings } = await import('../services/buildings/firstVisit')
+    expect(DEFAULT_WALK_CATEGORY_IDS).not.toContain('beach')
+    expect(DEFAULT_WALK_CATEGORY_IDS).toHaveLength(9)
+    expect(DEFAULT_LANDMARK_IDS).toEqual(['placa_cat', 'barri_gotic', 'pg_gracia'])
+    expect(firstVisitSettings().enabledLandmarkIds).toEqual(DEFAULT_LANDMARK_IDS)
+    expect(firstVisitSettings().enabledCategories).toEqual(DEFAULT_WALK_CATEGORY_IDS)
+  })
+})

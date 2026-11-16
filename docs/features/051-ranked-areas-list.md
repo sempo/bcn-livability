@@ -1,5 +1,7 @@
 # 051 — Ranked list of areas ("Your areas") and area view at low zoom
 
+**Changed by 073 (2026-11-16):** shares and means count homes (dwellings); `n` is homes, `buildings` the count used for `VITE_AREA_MIN_BUILDINGS`.
+
 **Status:** Implemented 2026-11-12, checked in the browser (list for the Family profile, click → zoom, area fill below
 z13); on in production (flag `VITE_FEATURE_AREAS`). Since 052 the list has two sections, Barcelona and Metro area.
 Depends on 050 (match bands). Part of the mass-market UX track.

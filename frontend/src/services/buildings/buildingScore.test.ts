@@ -4,7 +4,7 @@ import type { BarriVibeData } from '../localsOpinion/localsOpinion'
 import type { BuildingArea, BuildingData } from './buildingData'
 import { DEFAULT_CONDITIONS } from './conditions'
 import {
-  buildingBundle, buildingRisks, doorWaterSeverity, riverZoneShares, scoreAll, scoreBuilding,
+  buildingBundle, buildingRisks, doorWaterSeverity, riverZoneShares, scoreAll, scoreBuilding, scoredNoise,
   type BuildingSettings,
 } from './buildingScore'
 
@@ -21,6 +21,8 @@ function makeData(rows: Record<string, (number | null)[]>): BuildingData {
     meta: {
       count, columns: [], areas: AREAS, price_bounds: { p5: 2000, p95: 6000 },
       categories: ['supermarket', 'school', 'park'], landmarks: ['sagrada', 'placa_cat'],
+      // The reach of data built since TODO-073: far enough for every slider limit.
+      minutes_cap: { walk: 30, cityCore: 120 },
     },
     count,
     cols,
@@ -49,10 +51,10 @@ const SETTINGS: BuildingSettings = {
 }
 
 describe('building risks', () => {
-  it('river zone → the band penalties of feature 036', () => {
+  it('river zone → the band penalties, by the chance of a flood within 30 years (036, TODO-073)', () => {
     expect(floodRisk(riverZoneShares(10))).toBe(1)
-    expect(floodRisk(riverZoneShares(100))).toBeCloseTo(0.6)
-    expect(floodRisk(riverZoneShares(500))).toBeCloseTo(0.25)
+    expect(floodRisk(riverZoneShares(100))).toBeCloseTo(0.27)
+    expect(floodRisk(riverZoneShares(500))).toBeCloseTo(0.06)
     expect(floodRisk(riverZoneShares(null))).toBe(0)
   })
 
@@ -61,9 +63,9 @@ describe('building risks', () => {
   })
 
   it('street flooding combines the 10- and 100-year rain like the river bands', () => {
-    // T10 30 cm → 0.5; T100 60 cm → 1 → 0.5 × 1 + (1 − 0.5) × 0.6
-    expect(buildingRisks(DATA, 0).street).toBeCloseTo(0.8)
-    expect(buildingRisks(DATA, 1)).toEqual({ flood: expect.closeTo(0.6), fire: expect.closeTo(0.4), street: 0 })
+    // T10 30 cm → 0.5; T100 60 cm → 1 → 0.5 × 1 + (1 − 0.5) × 0.27
+    expect(buildingRisks(DATA, 0).street).toBeCloseTo(0.635)
+    expect(buildingRisks(DATA, 1)).toEqual({ flood: expect.closeTo(0.27), fire: expect.closeTo(0.4), street: 0 })
   })
 })
 
@@ -89,6 +91,14 @@ describe('conditions per building (049)', () => {
     })
   })
 
+  it('data built before TODO-073 reach 19 min: a service then scores 0 there, not at twice the limit', () => {
+    const before = { ...DATA, meta: { ...DATA.meta, minutes_cap: undefined } }
+    // school 12 min with a 10-min limit: 0 at 18.75 min instead of 20 → 77 instead of 80
+    expect(buildingBundle(before, 0, SETTINGS).components.poiAccess).toBe(59)
+    // City Core: 45 min with a 30-min limit is still 0 at 60 min (the old reach was 90)
+    expect(buildingBundle(before, 0, SETTINGS).components.cityCore).toBe(75)
+  })
+
   it('a stricter condition lowers the score; dropping a service changes walkability', () => {
     const strict = scoreBuilding(DATA, 0, { ...SETTINGS, conditions: { ...DEFAULT_CONDITIONS, noiseMaxDb: 55 } })
     expect(strict.components.noise).toBe(26)
@@ -97,8 +107,8 @@ describe('conditions per building (049)', () => {
   })
 
   it('the mean over the conditions that are on, then the street-flooding penalty', () => {
-    // (60 + 100 + 75 + 100 + 70) / 5 = 81; street risk 0.8 at strength 5 → × 0.6
-    expect(scoreBuilding(DATA, 0, SETTINGS)).toMatchObject({ baseScore: 81, score: 49 })
+    // (60 + 100 + 75 + 100 + 70) / 5 = 81; street risk 0.635 at strength 5 → × 0.6825
+    expect(scoreBuilding(DATA, 0, SETTINGS)).toMatchObject({ baseScore: 81, score: 55 })
   })
 
   it("building age against the user's eras (047)", () => {
@@ -138,5 +148,21 @@ describe('scoreAll', () => {
       }
     }
     expect(components!.noise[1]).toBe(255) // building 1 has no noise map
+  })
+})
+
+describe('noise on the street side (TODO-073)', () => {
+  // 0: street 70 dB, mean 60 dB; 1: no street side (inside a block), mean 50 dB; 2: no noise map.
+  const data = makeData({ lden_street: [70, null, null], lden_avg: [60, 50, null], area: [0, 0, 0] })
+
+  it('uses the street side, else the mean over the facades', () => {
+    expect([0, 1, 2].map((i) => scoredNoise(data, i))).toEqual([70, 50, null])
+  })
+
+  it('scores the condition on it: 70 dB is 5 over 65, not 60 within it', () => {
+    const noise = (i: number) => buildingBundle(data, i, SETTINGS).components.noise
+    expect(noise(0)).toBe(50)
+    expect(noise(1)).toBe(100)
+    expect(noise(2)).toBeNull()
   })
 })

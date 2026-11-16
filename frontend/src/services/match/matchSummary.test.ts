@@ -146,6 +146,10 @@ describe('bandShares', () => {
     // bands 85,65,40: great = 100, 90, 85; good = 70, 65; partial = 50; poor = 10, 0
     expect(bandShares(scores).map((p) => Math.round(p))).toEqual([38, 25, 13, 25])
   })
+  it('counts homes when the dwellings are given (TODO-073)', () => {
+    // one house that is a great match, one block of 9 flats that is a poor match
+    expect(bandShares(Uint8Array.from([95, 10]), [85, 65, 40], Float32Array.from([1, 9]))).toEqual([10, 0, 0, 90])
+  })
   it('adds up to 100 and is all zeros without scores', () => {
     const shares = bandShares(Uint8Array.from([100, 50, 0]))
     expect(shares.reduce((a, b) => a + b, 0)).toBeCloseTo(100)

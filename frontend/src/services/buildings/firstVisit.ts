@@ -32,6 +32,32 @@ export const DEFAULT_COMPOSITE_WEIGHTS: CompositeWeights = {
 
 export const ALL_WALK_CATEGORY_IDS: readonly string[] = SERVICE_CATEGORIES.map((c) => c.id)
 
+/**
+ * A comma-separated ENV list of ids, in the order of `all`; unknown ids are dropped. Empty or no known id gives
+ * `fallback`.
+ */
+export function parseIdList(raw: string | undefined, all: readonly string[], fallback: readonly string[]): readonly string[] {
+  const wanted = new Set((raw ?? '').split(',').map((s) => s.trim()).filter(Boolean))
+  const ids = all.filter((id) => wanted.has(id))
+  return ids.length > 0 ? ids : fallback
+}
+
+/**
+ * Services on by default (TODO-073): every category but the beach. Only 2% of Barcelona is within 10 min of a beach,
+ * so with it on the condition was almost never met.
+ */
+export const DEFAULT_WALK_CATEGORY_IDS: readonly string[] = parseIdList(
+  import.meta.env.VITE_WALK_DEFAULT_CATEGORIES, ALL_WALK_CATEGORY_IDS, ALL_WALK_CATEGORY_IDS.filter((id) => id !== 'beach'),
+)
+
+/**
+ * City Core places on by default (TODO-073): three in the centre. With all 13 no building could meet the condition
+ * (at 30 min at most 11 of 13 are within reach).
+ */
+export const DEFAULT_LANDMARK_IDS: readonly string[] = parseIdList(
+  import.meta.env.VITE_CITY_CORE_DEFAULT_LANDMARKS, ALL_LANDMARK_IDS, ['placa_cat', 'barri_gotic', 'pg_gracia'],
+)
+
 /** What the buildings are scored with (no locals' opinion data: that is loaded, not a setting). */
 export type ScoreSettings = Omit<BuildingSettings, 'vibe'>
 
@@ -39,8 +65,8 @@ export function firstVisitSettings(): ScoreSettings {
   return {
     weights: DEFAULT_COMPOSITE_WEIGHTS,
     conditions: DEFAULT_CONDITIONS,
-    enabledLandmarkIds: ALL_LANDMARK_IDS,
-    enabledCategories: ALL_WALK_CATEGORY_IDS,
+    enabledLandmarkIds: DEFAULT_LANDMARK_IDS,
+    enabledCategories: DEFAULT_WALK_CATEGORY_IDS,
     riskStrengths: DEFAULT_RISK_STRENGTHS,
     ageEras: ALL_AGE_ERA_IDS,
   }

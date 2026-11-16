@@ -1,12 +1,12 @@
 import { features } from '../features'
 import i18n from '../i18n'
 import { formatNumber, lazyLabels } from '../i18n/format'
-import { ALL_LANDMARK_IDS } from './cityCore/landmarks'
-import { SERVICE_CATEGORIES } from './walkability/serviceCategories'
 import { ALL_AGE_ERA_IDS } from './buildings/buildingAge'
 import { DEFAULT_CONDITIONS, type Conditions } from './buildings/conditions'
+import { DEFAULT_LANDMARK_IDS, DEFAULT_WALK_CATEGORY_IDS } from './buildings/firstVisit'
 import type { BuildingData } from './buildings/buildingData'
 import { buildingArea } from './buildings/buildingScore'
+import { homeWeight } from './buildings/buildingRank'
 import type { RiskStrengths } from './climateRisk/climateRisk'
 import type { CompositeWeights } from '../store'
 
@@ -69,7 +69,7 @@ export const NOISE_OPTIONS: WordOption[] = parseNumberList(import.meta.env.VITE_
   .map((v) => step(v, () => named('noiseName', v) ?? unit('db', v), () => unit('db', v)))
 export const WALK_OPTIONS: WordOption[] = parseNumberList(import.meta.env.VITE_QUIZ_WALK_OPTIONS, [5, 10, 15])
   .map((v) => step(v, () => unit('min', v)))
-export const CENTRE_OPTIONS: WordOption[] = parseNumberList(import.meta.env.VITE_QUIZ_CENTRE_OPTIONS, [15, 30, 45])
+export const CENTRE_OPTIONS: WordOption[] = parseNumberList(import.meta.env.VITE_QUIZ_CENTRE_OPTIONS, [25, 30, 45])
   .map((v) => step(v, () => unit('min', v)))
 
 // ---- budget: "A [70 m²] flat costs up to [€250,000] on average" ----
@@ -179,7 +179,6 @@ export interface Profile {
   risk?: 'avoid' | 'strong'
 }
 
-const ALL_WALK_IDS: readonly string[] = SERVICE_CATEGORIES.map((c) => c.id)
 const SCORED: (keyof CompositeWeights)[] = ['poiAccess', 'noise', 'cityCore', 'openPrice', 'localsOpinion', 'age']
 
 /** The full settings a profile stands for: conditions not in `order` are off. */
@@ -189,8 +188,8 @@ export function profileToPatch(p: Profile): SettingsPatch {
   return {
     weights,
     conditions: { ...DEFAULT_CONDITIONS, ...p.conditions },
-    walkCategories: p.walkCategories ?? ALL_WALK_IDS,
-    landmarkIds: p.landmarkIds ?? ALL_LANDMARK_IDS,
+    walkCategories: p.walkCategories ?? DEFAULT_WALK_CATEGORY_IDS,
+    landmarkIds: p.landmarkIds ?? DEFAULT_LANDMARK_IDS,
     eras: p.eras ?? ALL_AGE_ERA_IDS,
     riskStrengths: strengthsFor(order.includes('risk') ? p.risk ?? 'avoid' : 'off'),
     order,
@@ -199,31 +198,44 @@ export function profileToPatch(p: Profile): SettingsPatch {
 
 // ---- "≈ N % of homes" next to each budget step ----
 
-const priceCache = new WeakMap<BuildingData, Float32Array>()
-
-/** Area prices (€/m²) of the buildings that have one, ascending. Cached per data set. */
-export function sortedPrices(data: BuildingData): Float32Array {
-  const cached = priceCache.get(data)
-  if (cached) return cached
-  const prices: number[] = []
-  for (let i = 0; i < data.count; i++) {
-    const price = buildingArea(data, i)?.price
-    if (price !== null && price !== undefined) prices.push(price)
-  }
-  const sorted = Float32Array.from(prices).sort()
-  priceCache.set(data, sorted)
-  return sorted
+/** Area prices of the buildings, ascending, with the homes counted up to each (TODO-073: shares are of homes). */
+export interface PriceIndex {
+  /** Area prices (€/m²) of the buildings that have one, ascending. */
+  prices: Float32Array
+  /** `cum[k]` = homes in the first k + 1 buildings of `prices`. */
+  cum: Float64Array
 }
 
-/** Percent (0–100) of the buildings whose area price is at or below `limit`. */
-export function shareUnder(sorted: Float32Array, limit: number): number {
-  if (sorted.length === 0) return 0
+const priceCache = new WeakMap<BuildingData, PriceIndex>()
+
+/** The price index of the buildings that have an area price. Cached per data set. */
+export function sortedPrices(data: BuildingData): PriceIndex {
+  const cached = priceCache.get(data)
+  if (cached) return cached
+  const rows: { price: number; homes: number }[] = []
+  for (let i = 0; i < data.count; i++) {
+    const price = buildingArea(data, i)?.price
+    if (price !== null && price !== undefined) rows.push({ price, homes: homeWeight(data.cols.dwellings, i) })
+  }
+  rows.sort((a, b) => a.price - b.price)
+  const prices = Float32Array.from(rows, (r) => r.price)
+  const cum = new Float64Array(rows.length)
+  let total = 0
+  rows.forEach((r, k) => { total += r.homes; cum[k] = total })
+  const index = { prices, cum }
+  priceCache.set(data, index)
+  return index
+}
+
+/** Percent (0–100) of the homes whose area price is at or below `limit`. */
+export function shareUnder({ prices, cum }: PriceIndex, limit: number): number {
+  if (prices.length === 0) return 0
   let lo = 0
-  let hi = sorted.length
+  let hi = prices.length
   while (lo < hi) {
     const mid = (lo + hi) >> 1
-    if (sorted[mid] <= limit) lo = mid + 1
+    if (prices[mid] <= limit) lo = mid + 1
     else hi = mid
   }
-  return Math.round((100 * lo) / sorted.length)
+  return lo === 0 ? 0 : Math.round((100 * cum[lo - 1]) / cum[cum.length - 1])
 }
