@@ -40,8 +40,8 @@
     "below_other": " Este edificio tiene {{count}} plantas bajo rasante."
   },
   "side": {
-    "street": "Lado calle",
-    "inner": "Lado patio",
+    "street": "Fachada exterior",
+    "inner": "Fachada al patio",
     "line": "{{side}}: {{db}} dB",
     "night": " · noche {{ln}}"
   },
@@ -88,9 +88,9 @@
   },
   "noise": {
     "noMap": "No hay mapa oficial de ruido para este municipio",
-    "scoredStreet": "Lado calle: {{approx}}{{db}} dB — con esto se compara tu condición",
-    "scoredAll": "Todas las fachadas: {{approx}}{{db}} dB (sin lado calle) — con esto se compara tu condición",
-    "quietSide": "Lado tranquilo: patio, {{approx}}{{db}} dB — dentro de tu límite",
+    "scoredStreet": "Fachada exterior: {{approx}}{{db}} dB — con esto se compara tu condición",
+    "scoredAll": "Todas las fachadas: {{approx}}{{db}} dB (sin fachada exterior) — con esto se compara tu condición",
+    "quietSide": "Fachada al patio, tranquila: {{approx}}{{db}} dB — dentro de tu límite",
     "night": " · noche {{ln}}",
     "extremes": "Fachada más ruidosa {{max}} dB · más tranquila {{min}} dB",
     "street": "Calle",
@@ -147,7 +147,6 @@
     "riskStreet": "Inundación en la calle (lluvia intensa)",
     "riskWildfire": "Incendio forestal",
     "penalty": "−{{n}} pts",
-    "peekMeets": "Cumple {{met}} de {{total}}",
     "peekNone": "No hay condiciones activas",
     "details": "Detalles de este edificio",
     "moreAddresses_one": "+{{count}} dirección más",
@@ -159,7 +158,6 @@
   },
   "match": {
     "incomplete": "Datos incompletos: algunas de tus condiciones no tienen datos aquí. La puntuación es un rango, del peor caso (lo que falta cuenta 0) al mejor (lo que falta cuenta 100).",
-    "meets": "Cumple {{met}} de {{total}} de tus condiciones",
     "noneOn": "No hay condiciones activas",
     "overBudget": "Por encima de tu presupuesto: como mucho un encaje parcial",
     "label": "Encaje con tus condiciones",
@@ -239,15 +237,14 @@
   },
   "rank": {
     "heading": "Para tus condiciones",
-    "better": "Esta vivienda es mejor que el {{pct}}% de las viviendas {{place}}",
-    "tied": "Esta vivienda está entre las mejores {{place}}: el {{pct}}% de las viviendas encaja igual de bien",
     "incomplete": "Sin clasificación: algunas de tus condiciones no tienen datos para este edificio.",
     "in": "en {{name}}",
     "inEl": "en el {{name}}",
     "inEls": "en els {{name}}",
     "inMetro": "en el área metropolitana de Barcelona",
-    "tileTied": "de las viviendas {{place}} encaja igual de bien. Entre las mejores.",
-    "tileBetter": "de las viviendas {{place}} encajan peor."
+    "crowded": "Es una zona con mucha vivienda buena, así que destacar en ella cuesta más.",
+    "top": "Top {{tier}}%",
+    "tileOf": "de las viviendas {{place}}"
   },
   "share": {
     "outOf": "sobre 100",

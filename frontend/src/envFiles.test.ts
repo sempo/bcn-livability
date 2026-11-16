@@ -23,7 +23,7 @@ describe('env files', () => {
   it('.env.production keeps the match bands and the search settings', () => {
     const text = readFileSync(resolve(root, '.env.production'), 'utf8')
     expect(text).toMatch(/^VITE_MATCH_BANDS=85,65,40$/m)
-    expect(text).toMatch(/^VITE_RANK_SHOW_MIN_PCT=70$/m)
+    expect(text).toMatch(/^VITE_RANK_TIERS=10,20$/m)
     expect(text).toMatch(/^VITE_SEARCH_MIN_CHARS=\d+$/m)
     expect(text).toMatch(/^VITE_SEARCH_ADDRESS_ZOOM=\d+$/m)
   })

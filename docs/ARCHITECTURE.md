@@ -121,7 +121,7 @@ src/
 │   ├── BuildingCard/              card of the clicked building (`embedded` = inside the sheet): address, facade photo (flag), Catastro link, facts,
 │   │                              below-ground uses, per-condition scores, noise by facade side, climate risk,
 │   │                              Barri-level / Municipality-level block (price, "What locals say");
-│   │                              MatchHeader.tsx on top: band, "Meets N of M", a row per condition, risk line (050)
+│   │                              MatchHeader.tsx on top: band, a row per condition, risk line (050)
 │   ├── SearchBox/
 │   │   ├── SearchBox.tsx          "Search a neighbourhood or address": areas (areaSearch) + Geoapify address suggestions
 │   │   │                          (debounced); writes the pick to searchStore. Top-left panel, under the brand bar
@@ -289,7 +289,7 @@ buildings whose score changed get a new feature state. Changes to the settings a
    **Boost contrast for this view** (`contrastBoost`, `bcn_contrast_boost`, off by default) brings back the
    fit (032): the ramp spans the buildings whose centroid is in the visible area (`visibleBounds`), ignores the
    extreme 2 % on each side, never spans fewer than 20 points, and is refitted after each map move.
-5. **Hover tooltip** (z14+, not on touch screens): "Good match · 78 — meets 3 of 4", a MapLibre popup after
+5. **Hover tooltip** (z14+, not on touch screens): "Good match · 78" (no "meets N of M" count), a MapLibre popup after
    60 ms of rest on a building.
 
 ### Building card
@@ -297,7 +297,7 @@ buildings whose score changed get a new feature state. Changes to the settings a
 Click a building to open `BuildingCard`. It reads one z14 tile of `buildings-detail.pmtiles` and calls Catastro
 DNPRC for the uses of the floors below ground. The Catastro facade photo is shown only with
 `VITE_FEATURE_FACADE_PHOTO`. Area-only data is labelled **Barri-level** (Barcelona) or **Municipality-level**.
-The card opens with `MatchHeader` (050): the band and score, "Meets N of M of your conditions" and one row per
+The card opens with `MatchHeader` (050): the band and score (no "Meets N of M" count, removed 2026-11-16) and one row per
 condition that is on (✓ met = component 100, ◐ partly = 1–99, ✗ not met = 0, – no data), then the risk line.
 
 ### Best zones (038, public)

@@ -345,7 +345,7 @@ describe('BuildingsLayer (TODO-046)', () => {
     beforeEach(() => { vi.useFakeTimers() })
     afterEach(() => { vi.useRealTimers() })
 
-    it('shows the band, score and conditions met after a short pause, and hides on leave', async () => {
+    it('shows the band and score after a short pause, and hides on leave', async () => {
       vi.useRealTimers()
       const map = makeFakeMap()
       await renderLayer(map)
@@ -355,8 +355,8 @@ describe('BuildingsLayer (TODO-046)', () => {
       act(() => { vi.advanceTimersByTime(100) })
       expect(popups).toHaveLength(1)
       const score = map.states.get(0)!.score
-      expect(popups[0].text).toMatch(/^(Great|Good|Partial|Poor) match · \d+ — meets \d of 4$/)
-      expect(popups[0].text).toContain(`· ${score} `)
+      expect(popups[0].text).toMatch(/^(Great|Good|Partial|Poor) match · \d+$/)
+      expect(popups[0].text).toMatch(new RegExp(`· ${score}$`))
       act(() => handler(map, 'mouseleave', FILL_LAYER_ID)())
       expect(popups[0].removed).toBe(true)
     })
@@ -371,7 +371,7 @@ describe('BuildingsLayer (TODO-046)', () => {
       move(map, 1)
       act(() => { vi.advanceTimersByTime(100) })
       expect(popups).toHaveLength(1)
-      expect(popups[0].text).toContain(`· ${map.states.get(1)!.score} `)
+      expect(popups[0].text).toMatch(new RegExp(`· ${map.states.get(1)!.score}$`))
     })
 
     it('is off below zoom 14 and on touch devices', async () => {

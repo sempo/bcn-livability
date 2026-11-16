@@ -31,8 +31,8 @@ Tokens (`:root` in `index.css`): ink `#1f2937`, dim `#6b7280`, hairline `#eceef0
 underline); **coral marks an action or something to edit** (the "Show me the map" button with ink text, slider fill,
 the underline of an editable word). Coral is not used for small text or links.
 
-- **Card header:** a score ring (92 px, 104 on a phone, 52 in the phone's peek) in the colour of the map scale, the band,
-  "Meets N of M", one row per condition (status mark: ✓ / half circle / ✕ / empty; value, then " / limit" in dim), the
+- **Card header:** a score ring (92 px, 104 on a phone, 52 in the phone's peek) in the colour of the map scale, the band
+  (no "Meets N of M" count: it argued with the band), one row per condition (status mark: ✓ / half circle / ✕ / empty; value, then " / limit" in dim), the
   risk row, 0–2 rank tiles, two grey buttons (Save image, Share) and the "Details about this building" row.
   With incomplete data the ring shows `min–max` on a hatched track.
 - **Details:** the facade photo and a four-column strip of Catastro facts, then one row per section with a 36 px ring
@@ -58,7 +58,8 @@ A white panel over the map, the same type and colours as the app. In priority or
 (or the share of good homes for an area), the place (street without a number, or the barri), "For a family" (only for a
 profile), up to four condition rows (✓ / ◐ / ✗ / ▲, colour and shape both), the brand and the address. 1200×630 for link
 previews (panel on the right), 1080×1350 for the saved image (panel at the bottom). Safe margin 36–60 px, row text 18–34 px.
-The map attribution is on every picture. No "Meets N of M" line. A building picture names the first address with its house number.
+The map attribution is on every picture. No "Meets N of M" line. The rank is drawn as award badges (round star medal beside "Top 10%", "of homes in el Raval"
+under it; gold for Top 10%, silver for Top 20%), not as a sentence; on the small preview the condition rows give way to the tiles. A building picture names the first address with its house number.
 
 ## Layout
 

@@ -7,36 +7,36 @@ import type { MatchSummary } from '../match/matchSummary'
 import {
   areaShareModel, buildingShareModel, MAX_ROWS, profileOf, rankTexts, shareFileName, firstAddress, wrapLines,
 } from './shareImageModel'
-import type { BuildingRanks, Rank } from '../buildings/buildingRank'
+import type { Award, BuildingRanks } from '../buildings/buildingRank'
 
-const rank = (o: Partial<Rank>): Rank => ({ pct: 80, n: 500, tied: false, samePct: 0, ...o })
+const rank = (o: Partial<Award>): Award => ({ above: 50, n: 500, tier: 10, ...o })
 const RANKS: BuildingRanks = {
-  local: { name: 'la Vila de Gràcia', kind: 'barri', rank: rank({ pct: 80 }) },
-  wide: { scope: 'barcelona', rank: rank({ pct: 74 }) },
+  local: { name: 'la Vila de Gràcia', kind: 'barri', rank: rank({ tier: 10 }) },
+  wide: { scope: 'barcelona', rank: rank({ tier: 20 }) },
 }
 
-describe('rank lines on the building picture (TODO-070)', () => {
+describe('rank tiles on the building picture (TODO-070), worded as on the card', () => {
   it('writes the barri and the city lines', () => {
     expect(rankTexts(RANKS)).toEqual([
-      'This home is better than 80% of homes in la Vila de Gràcia',
-      'This home is better than 74% of homes in Barcelona',
+      { value: 'Top 10%', tier: 10, text: 'of homes in la Vila de Gràcia' },
+      { value: 'Top 20%', tier: 20, text: 'of homes in Barcelona' },
     ])
   })
-  it('says "among the best" for the top group, and names a municipality and the metro area', () => {
+  it('names a municipality and the metro area', () => {
     expect(rankTexts({
-      local: { name: 'Badalona', kind: 'muni', rank: rank({ tied: true, samePct: 64 }) },
-      wide: { scope: 'metro', rank: rank({}) },
+      local: { name: 'Badalona', kind: 'muni', rank: rank({ tier: 10 }) },
+      wide: { scope: 'metro', rank: rank({ tier: 20 }) },
     })).toEqual([
-      'This home is among the best in Badalona: 64% of homes fit as well',
-      'This home is better than 80% of homes in the Barcelona area',
+      { value: 'Top 10%', tier: 10, text: 'of homes in Badalona' },
+      { value: 'Top 20%', tier: 20, text: 'of homes in the Barcelona area' },
     ])
   })
   it('writes only the scopes where the building stands out', () => {
-    expect(rankTexts({ local: null, wide: { scope: 'barcelona', rank: rank({ pct: 90 }) } })).toEqual(['This home is better than 90% of homes in Barcelona'])
-    expect(rankTexts({ ...RANKS, wide: null })).toEqual(['This home is better than 80% of homes in la Vila de Gràcia'])
+    expect(rankTexts({ local: null, wide: { scope: 'barcelona', rank: rank({ tier: 20 }) } })).toEqual([{ value: 'Top 20%', tier: 20, text: 'of homes in Barcelona' }])
+    expect(rankTexts({ ...RANKS, wide: null })).toEqual([{ value: 'Top 10%', tier: 10, text: 'of homes in la Vila de Gràcia' }])
   })
   it('skips the barri line when it is not ranked', () => {
-    expect(rankTexts({ ...RANKS, local: null })).toEqual(['This home is better than 74% of homes in Barcelona'])
+    expect(rankTexts({ ...RANKS, local: null })).toEqual([{ value: 'Top 20%', tier: 20, text: 'of homes in Barcelona' }])
   })
   it('carries them on the model, with a heading only when no profile says for whom', () => {
     const base = { address: 'Carrer Perla 20', area: null, score: 80, summary: { met: 0, total: 0, rows: [] }, riskText: null, ranks: RANKS }
@@ -214,14 +214,14 @@ describe('the picture speaks the page language', () => {
   const FAM = { id: 'family', name: 'Family' }
   afterEach(async () => { await setLanguage('en') })
 
-  it.each([['es', 'Para una familia', 'Esta vivienda'], ['ca', 'Per a una família', 'Aquest habitatge']])(
+  it.each([['es', 'Para una familia', 'de las viviendas'], ['ca', 'Per a una família', 'dels habitatges']])(
     'in %s: the rank lines, the heading, the profile and the area texts have no English left', async (lang, family, home) => {
       await setLanguage(lang as 'es' | 'ca')
       const b = buildingShareModel({
         address: 'Carrer Perla 20', area: null, score: 80, summary: { met: 0, total: 0, rows: [] }, riskText: null,
         profile: null, ranks: RANKS,
       })
-      expect(b.ranks.every((r) => r.startsWith(home))).toBe(true)
+      expect(b.ranks.every((r) => r.text.startsWith(home))).toBe(true)
       expect(b.ranksHeading).not.toBe('For your conditions')
       expect(b.bandLabel).not.toMatch(/match/)
       const a = areaShareModel({

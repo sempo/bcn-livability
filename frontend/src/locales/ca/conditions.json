@@ -1,6 +1,6 @@
 {
   "short": {
-    "noise": "Tranquil",
+    "noise": "Poc soroll",
     "poiAccess": "A peu",
     "cityCore": "Centre",
     "openPrice": "Pressupost",
@@ -9,7 +9,7 @@
     "risk": "Riscos"
   },
   "add": {
-    "noise": "Tranquil",
+    "noise": "Poc soroll",
     "poiAccess": "Tot a peu",
     "cityCore": "A prop del centre",
     "openPrice": "Dins del meu pressupost",
@@ -18,7 +18,7 @@
     "risk": "Evitar riscos"
   },
   "label": {
-    "noise": "Tranquil·litat",
+    "noise": "Poc soroll",
     "poiAccess": "Serveis quotidians",
     "cityCore": "Centre",
     "openPrice": "Pressupost",
@@ -113,7 +113,6 @@
     "ageUnknown": "any de construcció desconegut",
     "noData": "sense dades",
     "risk": "Risc: −{{points}} punts — {{names}}",
-    "tooltip": "{{head}} — compleix {{met}} de {{total}}",
     "of": "{{within}} de {{total}}",
     "inMin": "a menys de {{limit}} min",
     "perM2": "{{budget}} per m²"

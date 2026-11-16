@@ -139,17 +139,18 @@ describe('BuildingCard (TODO-046)', () => {
     expect(screen.queryByText('Livability')).not.toBeInTheDocument()
   })
 
-  it('opens with the match summary: band, score, conditions met; no per-condition rows under it (TODO-072)', async () => {
+  it('opens with the match summary: band and score, no "Meets N of M" count; no per-condition rows under it (TODO-072)', async () => {
     await renderCard(0)
     const header = screen.getByTestId('match-header')
-    // the ring comes first, then the label, the band and the meets line
+    // the ring comes first, then the label and the band
     const block = screen.getByTestId('match-block')
     expect(header.firstElementChild).toBe(block)
     expect(block.firstElementChild).toBe(screen.getByTestId('match-ring'))
     expect(screen.getByTestId('match-ring').textContent).toMatch(/^\d+$/)
     expect(screen.getByTestId('match-label').textContent).toBe('Match with your conditions')
     expect(screen.getByTestId('match-band').textContent).toMatch(/^(Great|Good|Partial|Poor) match$/)
-    expect(screen.getByText('Meets 2 of 4 of your conditions')).toBeInTheDocument()
+    // the count read "meets 1 of 3" under a 92 and argued with the band: gone (2026-11-16)
+    expect(screen.queryByText(/Meets/)).not.toBeInTheDocument()
     // the rows duplicated the sections below: gone
     expect(screen.queryByTestId('condition-noise')).not.toBeInTheDocument()
     expect(screen.queryByTestId('risk-line')).not.toBeInTheDocument()
@@ -172,12 +173,12 @@ describe('BuildingCard (TODO-046)', () => {
     expect(last.compareDocumentPosition(strip) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
-  it('a condition without data has no score in its section and is not counted as met (TODO-050)', async () => {
+  it('a condition without data shows no risk line and no count (TODO-050)', async () => {
     useStore.setState({
       compositeWeights: { ...DEFAULT_COMPOSITE_WEIGHTS, localsOpinion: 1 }, compositeRiskStrengths: { flood: 0, fire: 0, street: 0 },
     })
     await renderCard(1)
-    expect(screen.getByText(/^Meets \d of 5 of your conditions$/)).toBeInTheDocument()
+    expect(screen.queryByText(/Meets/)).not.toBeInTheDocument()
     expect(screen.queryByText(/Risk: −/)).not.toBeInTheDocument()
   })
 
@@ -381,8 +382,8 @@ describe('BuildingCard (TODO-046)', () => {
       await renderCard(0)
       const lines = screen.getByTestId('rank-lines')
       expect(lines).toHaveAttribute('data-count', '2')
-      expect(screen.getByTestId('rank-local')).toHaveTextContent(/^\d+%.*of homes in el Raval (fit as well\. Among the best\.|are a weaker match\.)$/)
-      expect(screen.getByTestId('rank-wide')).toHaveTextContent(/^\d+%.*of homes in Barcelona (fit as well\. Among the best\.|are a weaker match\.)$/)
+      expect(screen.getByTestId('rank-local')).toHaveTextContent(/^Top (10|20)%of homes in el Raval$/)
+      expect(screen.getByTestId('rank-wide')).toHaveTextContent(/^Top (10|20)%of homes in Barcelona$/)
       expect(screen.queryByTestId('rank-scale')).not.toBeInTheDocument()
     })
 
@@ -426,7 +427,8 @@ describe('BuildingCard (TODO-046)', () => {
       await act(async () => { fireEvent.click(screen.getByRole('button', { name: /Save image/ })) })
       const model = vi.mocked(renderShareBlob).mock.calls.at(-1)![2]
       expect(model.ranks).toHaveLength(2)
-      expect(model.ranks[0]).toMatch(/in el Raval/)
+      expect(model.ranks[0].text).toMatch(/in el Raval/)
+      expect(model.ranks[0].value).toMatch(/^Top (10|20)%$/)
       expect(model.ranksHeading).toBe('For your conditions')
     })
   })

@@ -94,7 +94,7 @@ Stage A changes no meaning, only errors. A1–A3 are frontend only; A4 and A5 ne
 
 - `computeComposite`: `score` (top) = `(Σ known + 100 · Σ missing weights) / Σ weights`, then the penalties.
   `scoreMin` is unchanged. Every condition missing gives 0–100.
-- "Meets N of M" does not change: a condition without data still reads "– no data" and is not counted as met.
+- A condition without data still reads "– no data". (The "Meets N of M" count was later removed everywhere, 2026-11-16: it read "Meets 1 of 3" under a 92 and argued with the band.)
 - Expected: of the 57,691 buildings with a range, "Poor" falls from 56% to 18% and "Good" rises from 1% to 21%.
 - Update `060-incomplete-data-range.md` ("max" definition) and the comment on `CompositeResult.score`.
 
@@ -156,6 +156,8 @@ Stage A changes no meaning, only errors. A1–A3 are frontend only; A4 and A5 ne
 - "Walkability" → "Services on foot" (condition label, info modal, card block).
 - English first; Spanish and Catalan through the usual process (`docs/TRANSLATING.md`). Internal ids (`poiAccess`,
   `composite*`) do not change.
+- Noise in Spanish and Catalan: "Tranquilidad / Tranquil·litat" → "Poco ruido / Poc soroll", "lado calle" →
+  "fachada exterior" — see [074](074-noise-wording-es-ca.md).
 
 ### C2. Method text
 

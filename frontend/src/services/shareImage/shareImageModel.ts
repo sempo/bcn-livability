@@ -3,7 +3,7 @@ import {
   BAND_COLOR, BAND_LABEL, CONDITION_LABEL, matchBand, type ConditionId, type ConditionStatus, type MatchBandId,
   type MatchSummary,
 } from '../match/matchSummary'
-import type { BuildingRanks, Rank } from '../buildings/buildingRank'
+import type { Award, BuildingRanks } from '../buildings/buildingRank'
 import { PRESETS, profileName } from '../presets'
 import i18n from '../../i18n'
 import { inPlace } from '../../components/BuildingCard/inPlace'
@@ -20,6 +20,15 @@ export type RowStatus = ConditionStatus | 'risk'
 
 export interface ShareRow {
   status: RowStatus
+  text: string
+}
+
+export interface ShareRank {
+  /** "Top 10%" */
+  value: string
+  /** 10 for "Top 10%": the picture colours the badge by it (gold for the narrowest tier). */
+  tier: number
+  /** "of homes in la Vila de Gràcia" */
   text: string
 }
 
@@ -40,8 +49,11 @@ export interface ShareModel {
   bandColor: string
   /** Under the number, for an area ("of homes are a good match"). */
   caption: string | null
-  /** "Barri: la Vila de Gràcia — better than 80% of homes" (TODO-070); empty for an area or without a rank. */
-  ranks: string[]
+  /**
+   * Rank tiles (TODO-070), as on the card: "Top 10%" over "of homes in la Vila de Gràcia" Empty for
+   * an area or without a rank.
+   */
+  ranks: ShareRank[]
   /** "For your conditions" over the rank lines when no profile says for whom; null otherwise. */
   ranksHeading: string | null
   rows: ShareRow[]
@@ -69,14 +81,18 @@ export function profileOf(settings: UrlSettings, defaults: UrlSettings, presets:
   }) ?? null
 }
 
-const rankSentence = (r: Rank, place: string) =>
-  r.tied ? i18n.t('card:rank.tied', { pct: r.samePct, place }) : i18n.t('card:rank.better', { pct: r.pct, place })
+// The card's tile wording (RankLines), not a sentence of its own: "Top 10%" over "of homes in el Raval". The earlier
+// "This home is better than 87% of homes in …" repeated itself, wrapped in es and ca, and read as a verdict on the home
+// to whoever got the picture (decided 2026-11-16).
+const rankTile = (r: Award, place: string): ShareRank => ({
+  value: i18n.t('card:rank.top', { tier: r.tier }), tier: r.tier, text: i18n.t('card:rank.tileOf', { place }),
+})
 
-/** The rank lines of a building picture: only the scopes where the building stands out, in the page language. */
-export function rankTexts(r: BuildingRanks): string[] {
+/** The rank tiles of a building picture: only the scopes where the building stands out, in the page language. */
+export function rankTexts(r: BuildingRanks): ShareRank[] {
   const tt = (key: string, o: { name: string }) => String(i18n.t(`card:${key}` as never, o as never))
   const wide = r.wide?.scope === 'barcelona' ? inPlace(tt, 'Barcelona') : i18n.t('card:rank.inMetro')
-  return [...(r.local ? [rankSentence(r.local.rank, inPlace(tt, r.local.name))] : []), ...(r.wide ? [rankSentence(r.wide.rank, wide)] : [])]
+  return [...(r.local ? [rankTile(r.local.rank, inPlace(tt, r.local.name))] : []), ...(r.wide ? [rankTile(r.wide.rank, wide)] : [])]
 }
 
 interface AreaRef { name: string; kind: 'barri' | 'muni' }

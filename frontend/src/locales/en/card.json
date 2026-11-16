@@ -144,7 +144,6 @@
     "riskStreet": "Street flooding (heavy rain)",
     "riskWildfire": "Wildfire",
     "penalty": "−{{n}} pts",
-    "peekMeets": "Meets {{met}} of {{total}}",
     "peekNone": "No conditions are on",
     "details": "Details about this building",
     "moreAddresses_one": "+{{count}} more address",
@@ -155,7 +154,6 @@
   },
   "match": {
     "incomplete": "Incomplete data: some of your conditions have no data here. The score is a range, from the worst case (missing counts 0) to the best (missing counts 100).",
-    "meets": "Meets {{met}} of {{total}} of your conditions",
     "noneOn": "No conditions are on",
     "overBudget": "Over your budget: at most a partial match",
     "label": "Match with your conditions",
@@ -232,15 +230,14 @@
   },
   "rank": {
     "heading": "For your conditions",
-    "better": "This home is better than {{pct}}% of homes {{place}}",
-    "tied": "This home is among the best {{place}}: {{pct}}% of homes fit as well",
     "incomplete": "No rank: some of your conditions have no data for this building.",
     "in": "in {{name}}",
     "inEl": "in el {{name}}",
     "inEls": "in els {{name}}",
     "inMetro": "in the Barcelona area",
-    "tileTied": "of homes {{place}} fit as well. Among the best.",
-    "tileBetter": "of homes {{place}} are a weaker match."
+    "crowded": "This is an area with a lot of good homes, so it is harder to stand out in it.",
+    "top": "Top {{tier}}%",
+    "tileOf": "of homes {{place}}"
   },
   "share": {
     "outOf": "out of 100",

@@ -56,7 +56,7 @@ in the feature files; the order and dependencies of the planned work are in [ROA
 | # | Feature |
 |---|---|
 | 049 | Conditions in real units ("up to 65 dB is OK for me") |
-| 050 | Match score: "meets N of M of your conditions", match bands |
+| 050 | Match score: match bands, a row per condition ("Meets N of M" count removed 2026-11-16) |
 | 031 | Onboarding: profiles + one sentence |
 | 051 | Ranked list "Your areas" and area view at low zoom |
 | 052 | Conditions editor as sentences, one expert layer at a time |

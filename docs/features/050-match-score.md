@@ -1,5 +1,7 @@
 # 050 — Match score: "meets N of M of your conditions"
 
+**Changed 2026-11-16:** "Meets N of M" count removed everywhere (2026-11-16): card header, phone peek, hover tooltip. A condition counts as met only at 100, so a building at 92 read "Great match · Meets 1 of 3": the count argued with the band and repeated the rows below. No replacement.
+
 **Changed by 073 (2026-11-16):** the budget caps the score (`budgetCeiling`, card line "Over your budget: at most a partial match"); the band shares count homes (dwellings).
 
 **Status:** Done 2026-11-11. First step of the mass-market UX track (031, 051, 052, 053 follow).
@@ -100,5 +102,5 @@ with all conditions at 100 and no risk is `#1a9850` anywhere on the map.
 ## Follow-up: 070 (2026-11-15)
 
 The score line now reads "83 of 100 · Good match" under the label "Match with your conditions", and an award line
-("better than N% of homes in the barri / the city") follows the risk line where the building stands out. See
+("Top 10% / Top 20% of homes in the barri / the city") follows the risk line where the building stands out. See
 `070-building-rank-in-barri-and-city.md`.

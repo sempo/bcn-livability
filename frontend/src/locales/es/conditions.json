@@ -1,6 +1,6 @@
 {
   "short": {
-    "noise": "Tranquilo",
+    "noise": "Poco ruido",
     "poiAccess": "A pie",
     "cityCore": "Centro",
     "openPrice": "Presupuesto",
@@ -9,7 +9,7 @@
     "risk": "Riesgos"
   },
   "add": {
-    "noise": "Tranquilo",
+    "noise": "Poco ruido",
     "poiAccess": "Todo a pie",
     "cityCore": "Cerca del centro",
     "openPrice": "Dentro de mi presupuesto",
@@ -18,7 +18,7 @@
     "risk": "Evitar riesgos"
   },
   "label": {
-    "noise": "Tranquilidad",
+    "noise": "Poco ruido",
     "poiAccess": "Servicios cotidianos",
     "cityCore": "Centro",
     "openPrice": "Presupuesto",
@@ -113,7 +113,6 @@
     "ageUnknown": "año de construcción desconocido",
     "noData": "sin datos",
     "risk": "Riesgo: −{{points}} puntos — {{names}}",
-    "tooltip": "{{head}} — cumple {{met}} de {{total}}",
     "of": "{{within}} de {{total}}",
     "inMin": "a menos de {{limit}} min",
     "perM2": "{{budget}} por m²"

@@ -40,8 +40,8 @@
     "below_other": " Aquest edifici té {{count}} plantes sota rasant."
   },
   "side": {
-    "street": "Costat carrer",
-    "inner": "Costat pati",
+    "street": "Façana exterior",
+    "inner": "Façana de pati",
     "line": "{{side}}: {{db}} dB",
     "night": " · nit {{ln}}"
   },
@@ -88,9 +88,9 @@
   },
   "noise": {
     "noMap": "No hi ha mapa oficial de soroll per a aquest municipi",
-    "scoredStreet": "Costat carrer: {{approx}}{{db}} dB — amb això es compara la teva condició",
-    "scoredAll": "Totes les façanes: {{approx}}{{db}} dB (sense costat carrer) — amb això es compara la teva condició",
-    "quietSide": "Costat tranquil: pati, {{approx}}{{db}} dB — dins del teu límit",
+    "scoredStreet": "Façana exterior: {{approx}}{{db}} dB — amb això es compara la teva condició",
+    "scoredAll": "Totes les façanes: {{approx}}{{db}} dB (sense façana exterior) — amb això es compara la teva condició",
+    "quietSide": "Façana de pati, tranquil·la: {{approx}}{{db}} dB — dins del teu límit",
     "night": " · nit {{ln}}",
     "extremes": "Façana més sorollosa {{max}} dB · més tranquil·la {{min}} dB",
     "street": "Carrer",
@@ -147,7 +147,6 @@
     "riskStreet": "Inundació al carrer (pluja intensa)",
     "riskWildfire": "Incendi forestal",
     "penalty": "−{{n}} pts",
-    "peekMeets": "Compleix {{met}} de {{total}}",
     "peekNone": "No hi ha condicions actives",
     "details": "Detalls d'aquest edifici",
     "moreAddresses_one": "+{{count}} adreça més",
@@ -158,7 +157,6 @@
   },
   "match": {
     "incomplete": "Dades incompletes: algunes de les teves condicions no tenen dades aquí. La puntuació és un rang, del pitjor cas (el que falta compta 0) al millor (el que falta compta 100).",
-    "meets": "Compleix {{met}} de {{total}} de les teves condicions",
     "noneOn": "No hi ha condicions actives",
     "overBudget": "Per sobre del teu pressupost: com a molt un encaix parcial",
     "label": "Encaix amb les teves condicions",
@@ -238,15 +236,14 @@
   },
   "rank": {
     "heading": "Per a les teves condicions",
-    "better": "Aquest habitatge és millor que el {{pct}}% dels habitatges {{place}}",
-    "tied": "Aquest habitatge és dels millors {{place}}: el {{pct}}% dels habitatges hi encaixen igual de bé",
     "incomplete": "Sense classificació: algunes de les teves condicions no tenen dades per a aquest edifici.",
     "in": "a {{name}}",
     "inEl": "al {{name}}",
     "inEls": "als {{name}}",
     "inMetro": "a l'àrea metropolitana de Barcelona",
-    "tileTied": "dels habitatges {{place}} hi encaixen igual de bé. Dels millors.",
-    "tileBetter": "dels habitatges {{place}} encaixen pitjor."
+    "crowded": "És una zona amb molt habitatge bo, així que destacar-hi costa més.",
+    "top": "Top {{tier}}%",
+    "tileOf": "dels habitatges {{place}}"
   },
   "share": {
     "outOf": "sobre 100",

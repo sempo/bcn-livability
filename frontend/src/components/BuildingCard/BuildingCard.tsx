@@ -204,9 +204,7 @@ export function BuildingCard({ embedded = false }: { embedded?: boolean }) {
           </Text>
           <Text size="sm" fw={500} data-testid="peek-match">
             {(shownScore.includes('–') ? BAND_LABEL_POSSIBLY : BAND_LABEL)[matchBand(score)]}
-            <Text span size="sm" fw={500} c="dimmed">
-              {' · '}{summary.total > 0 ? t('ui.peekMeets', { met: summary.met, total: summary.total }) : t('ui.peekNone')}
-            </Text>
+            {summary.total === 0 && <Text span size="sm" fw={500} c="dimmed">{' · '}{t('ui.peekNone')}</Text>}
           </Text>
         </Stack>
         <ActionIcon size={44} radius="md" variant="subtle" color="gray" onClick={() => setSelected(null)}
