@@ -156,6 +156,8 @@ Stage A changes no meaning, only errors. A1–A3 are frontend only; A4 and A5 ne
 - "Walkability" → "Services on foot" (condition label, info modal, card block).
 - English first; Spanish and Catalan through the usual process (`docs/TRANSLATING.md`). Internal ids (`poiAccess`,
   `composite*`) do not change.
+- Noise in Spanish and Catalan: "Tranquilidad / Tranquil·litat" → "Poco ruido / Poc soroll", "lado calle" →
+  "fachada a la calle" — see [074](074-noise-wording-es-ca.md).
 
 ### C2. Method text
 
