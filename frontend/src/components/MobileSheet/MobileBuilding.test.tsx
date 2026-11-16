@@ -132,9 +132,9 @@ describe('Phone: a building in the sheet (TODO-062)', () => {
     expect(sheet()).toHaveAttribute('data-view', 'building')
     expect(sheet()).toHaveAttribute('data-position', 'peek')
     expect(await screen.findByText(/^Carrer Arago 255/)).toBeVisible()
-    expect(screen.getByTestId('peek-match').textContent).toMatch(/^(Great|Good|Partial|Poor) match · Meets \d of \d$/)
+    expect(screen.getByTestId('peek-match').textContent).toMatch(/^(Great|Good|Partial|Poor) match$/)
 
-    // The peek has the small ring, the band and "Meets n of m"; the body opens with the large ring.
+    // The peek has the small ring, and the band; the body opens with the large ring.
     expect(screen.getByTestId('match-ring')).toBeInTheDocument()
     expect(screen.getByTestId('match-band')).toBeInTheDocument()
 

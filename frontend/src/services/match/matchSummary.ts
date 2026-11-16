@@ -6,7 +6,7 @@ import { MATCH_BANDS, type Bands } from './bands'
 import type { CompositeResult, CompositeWeights, ComponentScores } from '../composite/compositeScore'
 
 // Match score (TODO-050): how the Livability score is shown. The score keeps its definition (049); this module
-// only turns it into bands and a "meets N of M of your conditions" summary.
+// only turns it into bands and a per-condition summary (the card's rows).
 
 export type MatchBandId = 'great' | 'good' | 'partial' | 'poor'
 export { DEFAULT_BANDS, MATCH_BANDS, parseBands, type Bands } from './bands'
@@ -106,10 +106,10 @@ export function riskLine(
   return i18n.t('conditions:match.risk', { points, names: names.join(', ') })
 }
 
-/** Hover tooltip on a building: "Good match · 78 — meets 3 of 4"; "~78" when the data is incomplete (060). */
-export function matchTooltip(
-  score: number, summary: Pick<MatchSummary, 'met' | 'total'>, bands: Bands = MATCH_BANDS, incomplete = false,
-): string {
-  const head = `${BAND_LABEL[matchBand(score, bands)]} · ${incomplete ? '~' : ''}${score}`
-  return summary.total > 0 ? i18n.t('conditions:match.tooltip', { head, met: summary.met, total: summary.total }) : head
+/**
+ * Hover tooltip on a building: "Good match · 78"; "~78" when the data is incomplete (060). No "meets N of M" count
+ * (decided 2026-11-16: a condition counts as met only at 100, so a 92 read "meets 1 of 3" and argued with the band).
+ */
+export function matchTooltip(score: number, bands: Bands = MATCH_BANDS, incomplete = false): string {
+  return `${BAND_LABEL[matchBand(score, bands)]} · ${incomplete ? '~' : ''}${score}`
 }

@@ -39,7 +39,10 @@ const flatMap = (color: string) => (ctx: Ctx, slot: { width: number; height: num
 describe('drawShareImage with rank lines (TODO-070)', () => {
   const ranked: ShareModel = {
     ...building,
-    ranks: ['This home is better than 80% of homes in la Vila de Gràcia', 'This home is better than 74% of homes in Barcelona'],
+    ranks: [
+      { value: 'Top 10%', tier: 10, text: 'of homes in la Vila de Gràcia' },
+      { value: 'Top 20%', tier: 20, text: 'of homes in Barcelona' },
+    ],
     ranksHeading: 'For your conditions',
   }
   const draw = async (model: ShareModel, format: 'og' | 'post') => {
@@ -53,9 +56,11 @@ describe('drawShareImage with rank lines (TODO-070)', () => {
     return { canvas, texts }
   }
 
-  it.each(['og', 'post'] as const)('writes both lines and the heading on the %s picture', async (format) => {
+  it.each(['og', 'post'] as const)('writes both tiles and the heading on the %s picture', async (format) => {
     const { texts } = await draw(ranked, format)
     expect(texts).toContain('FOR YOUR CONDITIONS')
+    expect(texts).toContain('Top 10%')
+    expect(texts).toContain('Top 20%')
     expect(texts.join(' ')).toMatch(/in la Vila de Gràcia/)
     expect(texts.join(' ')).toMatch(/in Barcelona/)
   })
@@ -66,10 +71,35 @@ describe('drawShareImage with rank lines (TODO-070)', () => {
     expect(texts.join(' ')).toMatch(/in Barcelona/)
   })
 
+  it('draws one tile across the width, the number beside the text', async () => {
+    const { texts } = await draw({ ...ranked, ranks: ranked.ranks.slice(1) }, 'og')
+    expect(texts).toContain('Top 20%')
+    expect(texts).not.toContain('Top 10%')
+    expect(texts.join(' ')).toMatch(/in Barcelona/)
+  })
+
+  it('keeps both tiles on the small preview and drops condition rows that do not fit, the risk row last', async () => {
+    const crowded = {
+      ...ranked,
+      place: 'Carrer Ferlandina 22, a long address',
+      rows: [
+        { status: 'partly' as const, text: 'Noise: 59 dB, 1 over your 58' },
+        { status: 'met' as const, text: 'Services: 5 of 5 within 10 min' },
+        { status: 'risk' as const, text: 'Risk: −6 points — street flooding' },
+      ],
+    }
+    const { texts } = await draw(crowded, 'og')
+    expect(texts).toContain('Top 10%')
+    expect(texts).toContain('Top 20%')
+    const all = texts.join(' ')
+    expect(all).not.toMatch(/Services: 5 of 5/)
+    if (/Noise: 59/.test(all)) expect(all).toMatch(/Risk: −6/)
+  })
+
   it('still fits with long lines and four rows by shrinking the text', async () => {
     const long = {
       ...ranked,
-      ranks: ranked.ranks.map((r) => `${r} and then some words that make the line wrap onto a second row`),
+      ranks: ranked.ranks.map((r) => ({ ...r, text: `${r.text} And then some words that make the text wrap onto more rows` })),
       rows: Array.from({ length: 4 }, () => ({ status: 'partly' as const, text: 'Everyday services: 4 of 5 within 10 min on foot, and a bit more' })),
     }
     const { canvas } = await draw(long, 'og')

@@ -218,23 +218,105 @@ function layoutRows(
   return { items, between, height: items.reduce((sum, r, i) => sum + r.height + (i > 0 ? between : 0), 0) }
 }
 
+/** Award badge colours: gold for the narrowest tier ("Top 10%"), silver for the wider ones. */
+const BADGE = {
+  gold: { bg: '#fbf3dc', edge: '#e6cf8a', medal: '#f0b323', medalEdge: '#b9830a', star: '#ffffff' },
+  silver: { bg: '#f1f4f8', edge: '#d3dae4', medal: '#9aa6b6', medalEdge: '#6b7889', star: '#ffffff' },
+}
+
 interface RanksLayout {
   heading: string | null
-  lines: string[][]
+  /** Heading line height (the heading is `size * 0.8`). */
   lh: number
+  size: number
+  /** Number size, medal diameter and text size of the badges. */
+  num: number
+  medal: number
+  text: number
+  pad: number
+  badges: { value: string; tier: number; lines: string[] }[]
+  tileW: number
+  tileH: number
+  between: number
   height: number
 }
 
-/** The rank lines (TODO-070) at a font size: each wrapped to at most two lines, with the heading when there is one. */
+/**
+ * The rank badges (TODO-070) at a row font size: an award badge each, a round medal with a star beside "Top 10%", the
+ * place under it. Two stand side by side; one spans the width.
+ */
 function layoutRanks(
   model: ShareModel, size: number, width: number, measure: (weight: number, size: number) => (s: string) => number,
 ): RanksLayout {
-  const lines = model.ranks.map((r) => wrapLines(r, width, measure(600, size), 2))
   const lh = size * 1.3
-  const heading = lines.length > 0 ? model.ranksHeading : null
-  const height = lines.length === 0 ? 0
-    : (heading ? lh : 0) + lines.reduce((sum, l, i) => sum + l.length * lh + (i > 0 ? size * 0.35 : 0), 0)
-  return { heading, lines, lh, height }
+  const heading = model.ranks.length > 0 ? model.ranksHeading : null
+  const text = size * 0.8
+  const pad = size * 0.55
+  const between = size * 0.5
+  const tileW = model.ranks.length === 1 ? width : (width - between) / 2
+  // The number shrinks until the medal and the longest "Top N%" fit on one row of the badge.
+  let num = size * 1.5
+  const fits = (n: number) => n * 1.15 + n * 0.3 + Math.max(0, ...model.ranks.map((r) => measure(700, n)(r.value))) <= tileW - 2 * pad
+  while (num > size && !fits(num)) num -= 2
+  const medal = num * 1.15
+  const badges = model.ranks.map((r) => ({ value: r.value, tier: r.tier, lines: wrapLines(r.text, tileW - 2 * pad, measure(500, text), 3) }))
+  const most = Math.max(0, ...badges.map((t) => t.lines.length))
+  const tileH = 2 * pad + medal + size * 0.25 + most * text * 1.3
+  const height = badges.length === 0 ? 0 : (heading ? lh : 0) + tileH
+  return { heading, lh, size, num, medal, text, pad, badges, tileW, tileH, between, height }
+}
+
+/** A five-pointed star centred on (cx, cy): `R` to the tips, `r` to the inner corners. */
+function drawStar(ctx: Ctx, cx: number, cy: number, R: number, r: number) {
+  ctx.beginPath()
+  for (let i = 0; i < 10; i++) {
+    const a = -Math.PI / 2 + (i * Math.PI) / 5
+    const d = i % 2 === 0 ? R : r
+    ctx.lineTo(cx + d * Math.cos(a), cy + d * Math.sin(a))
+  }
+  ctx.closePath()
+  ctx.fill()
+}
+
+function drawRanks(ctx: Ctx, r: RanksLayout, left: number, y: number) {
+  const { size, num, medal, text, pad } = r
+  if (r.heading) {
+    ctx.font = font(600, size * 0.8)
+    ctx.fillStyle = MUTED
+    ctx.fillText(r.heading.toUpperCase(), left, y + size * 0.8)
+    y += r.lh
+  }
+  r.badges.forEach((b, i) => {
+    const x = left + i * (r.tileW + r.between)
+    const c = b.tier <= 10 ? BADGE.gold : BADGE.silver
+    ctx.fillStyle = c.bg
+    roundRect(ctx, x, y, r.tileW, r.tileH, size * 0.5)
+    ctx.fill()
+    ctx.strokeStyle = c.edge
+    ctx.lineWidth = 2
+    ctx.stroke()
+    // The medal.
+    const mx = x + pad + medal / 2
+    const my = y + pad + medal / 2
+    ctx.beginPath()
+    ctx.arc(mx, my, medal / 2, 0, Math.PI * 2)
+    ctx.fillStyle = c.medal
+    ctx.fill()
+    ctx.strokeStyle = c.medalEdge
+    ctx.lineWidth = Math.max(2, medal * 0.07)
+    ctx.stroke()
+    ctx.fillStyle = c.star
+    drawStar(ctx, mx, my + medal * 0.02, medal * 0.3, medal * 0.125)
+    // "Top 10%" beside it, the place under both.
+    ctx.fillStyle = INK
+    ctx.font = font(700, num)
+    ctx.textBaseline = 'middle'
+    ctx.fillText(b.value, x + pad + medal + num * 0.3, my)
+    ctx.textBaseline = 'alphabetic'
+    ctx.font = font(500, text)
+    const ty = y + pad + medal + size * 0.25
+    b.lines.forEach((l, k) => ctx.fillText(l, x + pad, ty + k * text * 1.3 + text))
+  })
 }
 
 /** The mark, the brand and the address on one line centred on `cy`. The brand drops out when both do not fit. */
@@ -341,12 +423,20 @@ export async function drawShareImage(ctx: Ctx, model: ShareModel, opts: DrawOpti
   let rowSize = m.row.size
   let rows = layoutRows(model, rowSize, rowW(rowSize), measure)
   let ranks = layoutRanks(model, rowSize, inner, measure)
-  while (rowSize > 18) {
-    const free = bottom - top - (headH + plaqueH + ranks.height + rows.height + footH)
-    if (free >= MIN_GAP * (ranks.height > 0 ? 4 : 3)) break
+  const fits = () => bottom - top - (headH + plaqueH + ranks.height + rows.height + footH) >= MIN_GAP * (ranks.height > 0 ? 4 : 3)
+  while (rowSize > 18 && !fits()) {
     rowSize -= 2
     rows = layoutRows(model, rowSize, rowW(rowSize), measure)
     ranks = layoutRanks(model, rowSize, inner, measure)
+  }
+  // Still too tall (the small link preview with two rank tiles): the condition rows go, the last first, the risk row
+  // last of all. The rank tiles say more to whoever gets the picture; the card has every row.
+  let kept = model.rows
+  while (!fits() && kept.length > 0) {
+    const plain = kept.map((r) => r.status !== 'risk').lastIndexOf(true)
+    const drop = plain >= 0 ? plain : kept.length - 1
+    kept = kept.filter((_, i) => i !== drop)
+    rows = layoutRows({ ...model, rows: kept }, rowSize, rowW(rowSize), measure)
   }
   const rowIcon = Math.round(rowSize * 1.15)
   const rowLH = rowSize * 1.25
@@ -388,7 +478,10 @@ export async function drawShareImage(ctx: Ctx, model: ShareModel, opts: DrawOpti
   const textX = numX + numW + pl.gap
   const textW = left + inner - pl.padX - textX
   if (model.kind === 'building') {
-    ctx.font = font(700, pl.label)
+    // A long band name ("Encaje excelente") shrinks to the plaque instead of running past its edge.
+    let labelSize = pl.label
+    while (labelSize > pl.small && measure(700, labelSize)(model.bandLabel) > textW) labelSize -= 2
+    ctx.font = font(700, labelSize)
     ctx.fillText(model.bandLabel, textX, y + plaqueH / 2 - 2)
     ctx.font = font(500, pl.small)
     ctx.fillText(i18n.t('card:share.outOf'), textX, y + plaqueH / 2 + pl.small + 4)
@@ -402,23 +495,8 @@ export async function drawShareImage(ctx: Ctx, model: ShareModel, opts: DrawOpti
 
   // Where the building stands in its barri and the city, for the conditions on the picture.
   if (ranks.height > 0) {
-    ctx.fillStyle = INK
-    if (ranks.heading) {
-      ctx.font = font(600, rowSize * 0.8)
-      ctx.fillStyle = MUTED
-      ctx.fillText(ranks.heading.toUpperCase(), left, y + rowSize * 0.8)
-      y += ranks.lh
-    }
-    ctx.font = font(600, rowSize)
-    ctx.fillStyle = INK
-    ranks.lines.forEach((lines, i) => {
-      if (i > 0) y += rowSize * 0.35
-      for (const l of lines) {
-        ctx.fillText(l, left, y + rowSize)
-        y += ranks.lh
-      }
-    })
-    y += gap
+    drawRanks(ctx, ranks, left, y)
+    y += ranks.height + gap
   }
 
   // Rows.

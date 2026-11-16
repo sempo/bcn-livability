@@ -113,7 +113,6 @@
     "ageUnknown": "año de construcción desconocido",
     "noData": "sin datos",
     "risk": "Riesgo: −{{points}} puntos — {{names}}",
-    "tooltip": "{{head}} — cumple {{met}} de {{total}}",
     "of": "{{within}} de {{total}}",
     "inMin": "a menos de {{limit}} min",
     "perM2": "{{budget}} por m²"

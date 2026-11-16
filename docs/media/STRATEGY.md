@@ -30,8 +30,8 @@ the rest of its barri and of the city.**
      the wording becomes explicit).
    - "Meets 3 of 4 of your conditions" and the row for each condition (exists, 050; stays in plain sight).
    - **"This home is better than 80% of homes in la Vila de Gràcia"** and **"… better than 64% of homes in
-     Barcelona"** (built, 070). Each is an award with an icon, shown only from a threshold (`VITE_RANK_SHOW_MIN_PCT`,
-     70), and the barri and the city are judged separately. Below it the line is absent: no
+     Barcelona"** (built, 070). Each is an award with an icon, shown only inside a tier (`VITE_RANK_TIERS`,
+     "Top 10%" / "Top 20%" since 2026-11-16), and the barri and the city are judged separately. Below it the line is absent: no
      scale, no words, nothing that reads as a verdict. The wording per language is in
      [070](../features/070-building-rank-in-barri-and-city.md).
    - Save image / Share (exists, 063); the award lines go on the picture.
