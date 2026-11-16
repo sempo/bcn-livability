@@ -17,7 +17,7 @@ import { features } from '../../features'
 import { LocalsSay, LandmarkRow, NoiseBar, NoiseLabel, RiskRow } from './cardParts'
 import { scoreColor } from './cardColors'
 import { fireText } from './cardText'
-import { countWithin, doorWaterText, noiseVsLimit, priceVsBudget, ratingVsMin, riverText, sideText } from './buildingCardText'
+import { countWithin, doorWaterText, noiseVsLimit, priceVsBudget, quietSide, ratingVsMin, riverText, sideText } from './buildingCardText'
 
 const fmt = (n: number) => formatNumber(n, { maximumFractionDigits: 0 })
 
@@ -134,25 +134,34 @@ function BuildingStrip({ d }: { d: BuildingDetail }) {
   )
 }
 
-function NoiseBody({ d, facades }: { d: BuildingDetail; facades: BuildingDetailResult['facades'] }) {
+function NoiseBody({ d, facades, limit }: { d: BuildingDetail; facades: BuildingDetailResult['facades']; limit: number }) {
   const { t } = useTranslation('card')
   const { t: tl } = useTranslation('legal')
   const [facadesOpen, setFacadesOpen] = useState(false)
   if (d.lden_avg === undefined) return <Text size="xs" c="dimmed">{t('noise.noMap')}</Text>
   const sica = d.noise_src === 'sica_2022'
   const approx = sica ? '≈ ' : ''
+  // The level the condition is checked against (TODO-073): the street side, else every facade.
+  const street = d.lden_street !== undefined
+  const lden = d.lden_street ?? d.lden_avg
+  const ln = street ? d.ln_street : d.ln_avg
+  const quiet = quietSide(d, limit)
   const groups = [...facades].sort((a, b) => b.lden - a.lden)
   const hasFacades = groups.length > 0 || (d.f17_lden_max ?? 0) > 0 || (d.f17_leisure_ln_max ?? 0) > 0
   return (
     <div className="noise-body">
       <div className="noise-body__top">
-        <b className="noise-body__db">{approx}{Math.round(d.lden_avg)} dB</b>
-        <NoiseLabel lden={d.lden_avg} />
+        <b className="noise-body__db">{approx}{Math.round(lden)} dB</b>
+        <NoiseLabel lden={lden} />
       </div>
       <Text size="xs" c="dimmed">
-        {t('noise.typical', { approx, db: Math.round(d.lden_avg) })}{d.ln_avg !== undefined && t('noise.night', { ln: Math.round(d.ln_avg) })}
+        {t(street ? 'noise.scoredStreet' : 'noise.scoredAll', { approx, db: Math.round(lden) })}
+        {ln !== undefined && t('noise.night', { ln: Math.round(ln) })}
       </Text>
-      <NoiseBar lden={d.lden_avg} />
+      {quiet !== null && (
+        <Text size="xs" data-testid="quiet-side">{t('noise.quietSide', { approx, db: Math.round(quiet) })}</Text>
+      )}
+      <NoiseBar lden={lden} />
       <Text size="xs" c="dimmed">{t('noise.who')}</Text>
       {[sideText('street', d.lden_street, d.ln_street), sideText('inner', d.lden_inner, d.ln_inner)]
         .filter((line): line is string => line !== null)
@@ -243,7 +252,7 @@ export function DetailsView(p: DetailsViewProps) {
         verdict={weights.noise > 0 && p.lden !== null ? noiseVsLimit(p.lden, conditions.noiseMaxDb)
           : p.lden !== null ? `${Math.round(p.lden)} dB` : undefined}
         open={open.noise} onToggle={() => toggle('noise')}>
-        {d ? <NoiseBody d={d} facades={p.facades} /> : <Text size="xs" c="dimmed">{t('ui.loading')}</Text>}
+        {d ? <NoiseBody d={d} facades={p.facades} limit={conditions.noiseMaxDb} /> : <Text size="xs" c="dimmed">{t('ui.loading')}</Text>}
       </Section>
 
       {weights.cityCore > 0 && (

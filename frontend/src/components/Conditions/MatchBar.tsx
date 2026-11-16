@@ -1,15 +1,18 @@
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useStore } from '../../store'
+import { useHomes } from '../../hooks/useHomes'
 import { hasConditions } from '../../services/composite/compositeScore'
-import { BAND_COLOR, BAND_ORDER, bandShares } from '../../services/match/matchSummary'
+import { BAND_COLOR, BAND_ORDER, MATCH_BANDS, bandShares } from '../../services/match/matchSummary'
 
 /** Share of homes per match band (Great / Good / Partial / Poor), from the scores the map is showing. */
 export function MatchBar() {
   const { t } = useTranslation('editor')
   const scores = useStore((s) => s.buildingScores)
   const anyCondition = useStore((s) => hasConditions(s.compositeWeights, s.compositeRiskStrengths))
-  const shares = useMemo(() => (scores ? bandShares(scores) : null), [scores])
+  // Homes, not buildings (TODO-073).
+  const homes = useHomes()
+  const shares = useMemo(() => (scores ? bandShares(scores, MATCH_BANDS, homes) : null), [scores, homes])
   // Nothing to judge without a condition (061): a bar of "Poor" would be a verdict on nothing. The editor above
   // already says "No conditions yet. Add one below and the map will colour in."
   if (!anyCondition || !shares) return null

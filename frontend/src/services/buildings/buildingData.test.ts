@@ -120,15 +120,15 @@ describe('format 2: two files, byte planes (058)', () => {
       const fullMeta = { ...meta, areas: [], price_bounds: { p5: 1, p95: 2 }, categories: [], landmarks: [] }
       const fetchMock = vi.fn((url: string, init?: RequestInit) => {
         void init
-        const body = url.endsWith('meta.json') ? JSON.stringify(fullMeta)
-          : url.endsWith('scores.bin.gz') ? gzipSync(new Uint8Array(scores))
+        const body = url.split('?')[0].endsWith('meta.json') ? JSON.stringify(fullMeta)
+          : url.split('?')[0].endsWith('scores.bin.gz') ? gzipSync(new Uint8Array(scores))
             : gzipSync(new Uint8Array(positions))
         return Promise.resolve(new Response(body))
       })
       vi.stubGlobal('fetch', fetchMock)
       return fetchMock
     }
-    const names = (m: ReturnType<typeof stubFiles>) => m.mock.calls.map((c) => String(c[0]).split('/').pop())
+    const names = (m: ReturnType<typeof stubFiles>) => m.mock.calls.map((c) => String(c[0]).split('?')[0].split('/').pop())
 
     it('loadScores brings the meta and the scores only, the scores with high priority', async () => {
       const fetchMock = stubFiles()
@@ -182,7 +182,7 @@ describe('loadBuildings', () => {
   it('fetches meta and gzipped scores once', async () => {
     const { meta, buf } = blob()
     const gz = gzipSync(new Uint8Array(buf))
-    const fetchMock = vi.fn((url: string) => Promise.resolve(url.endsWith('.json')
+    const fetchMock = vi.fn((url: string) => Promise.resolve(url.split('?')[0].endsWith('.json')
       ? new Response(JSON.stringify({ ...meta, areas: [], price_bounds: { p5: 1, p95: 2 }, categories: ['park'], landmarks: [] }))
       : new Response(gz)))
     vi.stubGlobal('fetch', fetchMock)
@@ -196,7 +196,7 @@ describe('loadBuildings', () => {
   it('keeps the raw blob and hands out copies of it (for the scoring worker)', async () => {
     const { meta, buf } = blob()
     expect(copyRawScores()).toBeNull()
-    vi.stubGlobal('fetch', vi.fn((url: string) => Promise.resolve(url.endsWith('.json')
+    vi.stubGlobal('fetch', vi.fn((url: string) => Promise.resolve(url.split('?')[0].endsWith('.json')
       ? new Response(JSON.stringify({ ...meta, areas: [], price_bounds: { p5: 1, p95: 2 }, categories: [], landmarks: [] }))
       : new Response(buf.slice(0)))))
     const data = await loadBuildings()

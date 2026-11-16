@@ -1,5 +1,7 @@
 # 031 — Onboarding: profiles and one sentence ("Where would you like to live?")
 
+**Changed by 073 (2026-11-16):** the City profile is 25 min to the centre (was 15: almost no home met it with the three central places; 20 still failed the audit guard), and the centre steps of the sentence are 25 / 30 / 45 min. Profiles without their own list now get the default services (no beach) and the three central places.
+
 **Status:** Implemented 2026-11-12, checked in the browser at 375 px and 1440 px; on in production together with 052
 (flag `VITE_FEATURE_ONBOARDING`). Redesigned 2026-11-12: the multi-screen quiz (tiles → one follow-up screen per
 tile → risks → done) is replaced by **profiles + one editable sentence**. Mock-up reviewed and approved

@@ -219,6 +219,40 @@ describe('BuildingCard (TODO-046)', () => {
     expect(screen.getByText('none nearby')).toBeInTheDocument() // park: out of walking reach
   })
 
+  it('leads the noise block with the street side and names the quiet courtyard (TODO-073)', async () => {
+    await renderCard(0)
+    openAll()
+    expect(screen.getByText(/^Street side: 71 dB — what your condition is checked against/)).toBeInTheDocument()
+    expect(screen.getByTestId('quiet-side').textContent).toBe('Quiet side: courtyard, 52 dB — within your limit')
+  })
+
+  it('a building without a street side is checked on all its facades, with no quiet-side line (TODO-073)', async () => {
+    await renderCard(1)
+    openAll()
+    expect(screen.getByText(/^All facades: ≈ 60 dB \(no street side\)/)).toBeInTheDocument()
+    expect(screen.queryByTestId('quiet-side')).not.toBeInTheDocument()
+  })
+
+  it('says when the budget ceiling lowered the score (TODO-073)', async () => {
+    // Quiet (64 dB within 65) and of a liked era (1890), but €4,000/m² against a budget of €1,500: mean 67 → 64.
+    useStore.setState({
+      compositeWeights: { poiAccess: 0, noise: 1, cityCore: 0, openPrice: 1, localsOpinion: 0, age: 1 },
+      conditions: { ...DEFAULT_CONDITIONS, priceMaxEurM2: 1500 },
+      compositeRiskStrengths: { flood: 0, fire: 0, street: 0 },
+      ageEras: ['before-1900'],
+    })
+    await renderCard(0)
+    expect(screen.getByTestId('over-budget').textContent).toBe('Over your budget: at most a partial match')
+    expect(Number(screen.getByTestId('match-ring').textContent)).toBeLessThanOrEqual(64)
+    // Many homes of an expensive barri share the ceiling: no "among the best" for a home over the budget.
+    expect(screen.queryByTestId('rank-lines')).not.toBeInTheDocument()
+  })
+
+  it('no budget line within the budget (TODO-073)', async () => {
+    await renderCard(0)
+    expect(screen.queryByTestId('over-budget')).not.toBeInTheDocument()
+  })
+
   it('says how the building meets each condition that is on (049)', async () => {
     useStore.setState({ compositeWeights: { ...DEFAULT_COMPOSITE_WEIGHTS, localsOpinion: 1 } })
     await renderCard(0)
@@ -281,7 +315,7 @@ describe('BuildingCard (TODO-046)', () => {
 
     it('every section is closed at first', async () => {
       await renderCard(0)
-      for (const title of ['Noise', 'Climate risk', 'Walkability', 'City Core Access']) {
+      for (const title of ['Noise', 'Climate risk', 'Services on foot', 'City Core Access']) {
         expect(row(title)).toHaveAttribute('aria-expanded', 'false')
       }
       expect(screen.queryByText('none nearby')).not.toBeInTheDocument()
@@ -291,10 +325,10 @@ describe('BuildingCard (TODO-046)', () => {
     it('a tap opens and closes one section, the others keep their state', async () => {
       await renderCard(0)
       fireEvent.click(row('Noise'))
-      fireEvent.click(row('Walkability'))
+      fireEvent.click(row('Services on foot'))
       expect(screen.getByText('none nearby')).toBeInTheDocument()
       expect(row('Noise')).toHaveAttribute('aria-expanded', 'true')
-      fireEvent.click(row('Walkability'))
+      fireEvent.click(row('Services on foot'))
       expect(screen.queryByText('none nearby')).not.toBeInTheDocument()
       fireEvent.click(row('Noise'))
       expect(screen.queryByText(/Street side: 71 dB/)).not.toBeInTheDocument()
@@ -302,7 +336,7 @@ describe('BuildingCard (TODO-046)', () => {
 
     it('shows the verdict of every section on its closed row, with the ring score', async () => {
       await renderCard(0)
-      const walk = row('Walkability')
+      const walk = row('Services on foot')
       expect(walk).toHaveTextContent('1 of 2 services within 10 min')
       expect(walk.querySelector('.section-ring')).toHaveTextContent(/^\d+$/)
       expect(row('Noise')).toHaveTextContent('64 dB — within your 65 dB')

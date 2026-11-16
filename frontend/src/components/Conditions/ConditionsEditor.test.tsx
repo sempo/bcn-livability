@@ -13,7 +13,7 @@ describe('ConditionsEditor', () => {
     renderWithMantine(<ConditionsEditor />)
     const rows = screen.getAllByLabelText(/^Priority \d$/)
     expect(rows.map((r) => r.textContent)).toEqual(['1', '2', '3', '4', '5'])
-    expect(screen.getByText(/outside my window/)).toBeTruthy()
+    expect(screen.getByText(/on the street side/)).toBeTruthy()
     expect(screen.getByText(/flood and wildfire risk/)).toBeTruthy()
   })
 

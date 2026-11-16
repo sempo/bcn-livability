@@ -18,7 +18,7 @@ describe('SentenceRow', () => {
 
   it('noise: shows the word for the limit and sets the limit from a step', () => {
     renderWithMantine(<SentenceRow condition="noise" />)
-    expect(screen.getByText(/No louder than/).textContent).toBe('No louder than normal city noise outside my window')
+    expect(screen.getByText(/No louder than/).textContent).toBe('No louder than normal city noise on the street side')
     pick('normal city noise', /a calm street/)
     expect(useStore.getState().conditions.noiseMaxDb).toBe(58)
     expect(JSON.parse(localStorage.getItem('bcn_conditions')!).noiseMaxDb).toBe(58)
@@ -63,8 +63,8 @@ describe('SentenceRow', () => {
   it('centre: places word and minutes word', () => {
     renderWithMantine(<SentenceRow condition="cityCore" />)
     expect(screen.getByRole('button', { name: 'The centre' })).toBeTruthy()
-    pick('30 min', '15 min')
-    expect(useStore.getState().conditions.cityCoreMaxMin).toBe(15)
+    pick('30 min', '25 min')
+    expect(useStore.getState().conditions.cityCoreMaxMin).toBe(25)
     act(() => useStore.setState({ enabledLandmarkIds: ['sagrada', 'barceloneta', 'glories'] }))
     expect(screen.getByRole('button', { name: 'My 3 places' })).toBeTruthy()
   })

@@ -12,7 +12,8 @@
     "test:watch": "vitest",
     "typecheck": "tsc -b --noEmit",
     "check:bundle": "node scripts/check-bundle-size.mjs",
-    "update:basemap": "node scripts/update-basemap-style.mjs"
+    "update:basemap": "node scripts/update-basemap-style.mjs",
+    "audit:score": "node scripts/score-audit.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.98.0",

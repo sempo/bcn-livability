@@ -19,6 +19,7 @@ import { ensureHatchImages, HATCH_THIN } from '../Map/hatchPattern'
 import { pickNearest } from '../../services/locate'
 import { DOUBLE_TAP_GRACE_MS, TAP_TOLERANCE_PX } from '../../services/phoneConfig'
 import { commitAfterGrace } from './doubleTapGrace'
+import { dataUrl } from '../../services/dataUrl'
 
 // Building-level Livability Index (TODO-046). Tiles carry only geometry and a numeric feature id (= row of the
 // score columns): dots up to z13, footprints from z14. Scores are computed in JS and set as feature state.
@@ -30,7 +31,7 @@ export const FILL_LAYER_ID = 'buildings-fill'
 export const HATCH_LAYER_ID = 'buildings-hatch'
 export const HOVER_LAYER_ID = 'buildings-hover-outline'
 const LAYER_IDS = [DOT_LAYER_ID, FILL_LAYER_ID, HATCH_LAYER_ID, HOVER_LAYER_ID]
-const PMTILES_URL = `pmtiles://${import.meta.env.BASE_URL}data/buildings.pmtiles`
+const PMTILES_URL = `pmtiles://${dataUrl('buildings.pmtiles')}`
 /** Pause after the last settings change before rescoring (scoring all buildings takes ~0.4 s). */
 const RESCORE_DELAY_MS = 150
 /** Hover tooltip (TODO-050): footprints only (z14+), after the pointer rests on a building. */
@@ -202,7 +203,10 @@ export function BuildingsLayer() {
     if (components) {
       const on = (Object.keys(components) as ConditionId[]).filter((k) => (scored.weights[k] ?? 0) > 0)
       useStore.getState().setAreaRanks(
-        rankAreas(score, scored.buildings.cols.area, scored.buildings.meta.areas, components, on, undefined, undefined, gap),
+        rankAreas(
+          score, scored.buildings.cols.area, scored.buildings.meta.areas, components, on, undefined, undefined, gap, undefined,
+          scored.buildings.cols.dwellings,
+        ),
       )
     }
     recolorRef.current()

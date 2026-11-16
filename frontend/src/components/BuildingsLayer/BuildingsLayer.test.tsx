@@ -10,7 +10,7 @@ const DATA: BuildingData = {
   meta: {
     count: 2, columns: [], price_bounds: { p5: 2000, p95: 6000 },
     areas: [{ code: '01', name: 'el Raval', kind: 'barri', price: 4000 }, { code: '08101', name: 'Hospitalet', kind: 'muni', price: 2500 }],
-    categories: ['supermarket', 'park'], landmarks: ['sagrada'],
+    categories: ['supermarket', 'park'], landmarks: ['sagrada'], minutes_cap: { walk: 30, cityCore: 120 },
   },
   count: 2,
   cols: {

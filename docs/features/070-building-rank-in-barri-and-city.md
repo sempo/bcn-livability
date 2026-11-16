@@ -1,5 +1,7 @@
 # 070 — Building card for the launch: explicit match, awards in the barri and in the city, details folded
 
+**Changed by 073 (2026-11-16):** "better than N% of homes" counts dwellings; the barri size limit and the "more than one building" rule of a tie still count buildings.
+
 **Status:** Implemented (2026-11-15). Agreed with the owner on 2026-11-15 as the product change the media launch
 needs (`docs/media/STRATEGY.md`). Extends 050 (match header), 062 (phone sheet), 063 (share image). The first design
 (a scale and a word under each rank) was replaced the same day after the owner saw it: see "Decisions".

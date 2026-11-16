@@ -52,7 +52,7 @@
     },
     "city": {
       "name": "Vida urbana",
-      "blurb": "15 min al centre, bars i metro a la porta"
+      "blurb": "25 min al centre, bars i metro a la porta"
     },
     "retiree": {
       "name": "Persona jubilada",
@@ -66,7 +66,7 @@
     "school": "Escola",
     "kindergarten": "Llar d'infants",
     "clinic": "CAP",
-    "metro": "Metro",
+    "metro": "Estació de metro",
     "cafe": "Cafeteria",
     "restaurant": "Restaurant",
     "beach": "Platja"

@@ -57,7 +57,7 @@ export function rankProfiles(files: ShareFiles, profiles: readonly Profile[] = P
     const settings = profile ? scoreSettingsOfProfile(profile) : firstVisitSettings()
     const { score, gap, components } = scoreAll(data, { ...settings, vibe: files.vibe }, true)
     const on = (Object.keys(components!) as ConditionId[]).filter((k) => (settings.weights[k] ?? 0) > 0)
-    return { profile, ranks: rankAreas(score, cols.area, meta.areas, components!, on, undefined, undefined, gap) }
+    return { profile, ranks: rankAreas(score, cols.area, meta.areas, components!, on, undefined, undefined, gap, undefined, cols.dwellings) }
   }
   return { results: [null, ...profiles].map(run), join }
 }

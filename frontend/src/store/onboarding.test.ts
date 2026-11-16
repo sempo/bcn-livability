@@ -114,7 +114,7 @@ describe('applySettings', () => {
     const s = await freshStore()
     s.getState().applySettings(profileToPatch(PRESETS.find((p) => p.id === 'city')!))
     const again = await freshStore()
-    expect(again.getState().conditions.cityCoreMaxMin).toBe(15)
+    expect(again.getState().conditions.cityCoreMaxMin).toBe(25)
     expect(again.getState().conditionOrder).toEqual(['cityCore', 'poiAccess', 'noise'])
     expect(again.getState().onboardingOpen).toBe(false)
   })

@@ -132,7 +132,7 @@ describe('App (integration) - first visit (TODO-031)', () => {
     expect(screen.getByText('Your conditions')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Start from a profile' })).toBeInTheDocument()
     // the new panel: the same sentences, now as the controls
-    expect(screen.getByText(/outside my window/)).toBeInTheDocument()
+    expect(screen.getByText(/on the street side/)).toBeInTheDocument()
     expect(screen.getByRole('radio', { name: 'Noise' })).toBeInTheDocument()
   })
 

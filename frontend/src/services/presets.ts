@@ -40,7 +40,7 @@ const BASE: Profile[] = [
   {
     id: 'city',
     order: ['cityCore', 'poiAccess', 'noise'],
-    conditions: { cityCoreMaxMin: 15, walkMaxMin: 5, noiseMaxDb: 65 },
+    conditions: { cityCoreMaxMin: 25, walkMaxMin: 5, noiseMaxDb: 65 },
     walkCategories: ['cafe', 'restaurant', 'metro'],
   },
   {

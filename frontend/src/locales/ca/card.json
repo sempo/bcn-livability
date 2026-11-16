@@ -88,7 +88,9 @@
   },
   "noise": {
     "noMap": "No hi ha mapa oficial de soroll per a aquest municipi",
-    "typical": "Finestra típica: {{approx}}{{db}} dB",
+    "scoredStreet": "Costat carrer: {{approx}}{{db}} dB — amb això es compara la teva condició",
+    "scoredAll": "Totes les façanes: {{approx}}{{db}} dB (sense costat carrer) — amb això es compara la teva condició",
+    "quietSide": "Costat tranquil: pati, {{approx}}{{db}} dB — dins del teu límit",
     "night": " · nit {{ln}}",
     "extremes": "Façana més sorollosa {{max}} dB · més tranquil·la {{min}} dB",
     "street": "Carrer",
@@ -155,9 +157,10 @@
     "noPenalty": "Cap punt perdut"
   },
   "match": {
-    "incomplete": "Dades incompletes: algunes de les teves condicions no tenen dades aquí. La puntuació és un rang, del pitjor cas (el que falta compta 0) al millor (el que falta s'ignora).",
+    "incomplete": "Dades incompletes: algunes de les teves condicions no tenen dades aquí. La puntuació és un rang, del pitjor cas (el que falta compta 0) al millor (el que falta compta 100).",
     "meets": "Compleix {{met}} de {{total}} de les teves condicions",
     "noneOn": "No hi ha condicions actives",
+    "overBudget": "Per sobre del teu pressupost: com a molt un encaix parcial",
     "label": "Encaix amb les teves condicions",
     "score": "{{score}} de 100",
     "status": {

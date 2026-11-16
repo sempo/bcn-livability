@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { SCORE_BINS, earnsAward, rankIn, scoreHistograms, buildingRanks } from './buildingRank'
+import { SCORE_BINS, earnsAward, homeWeight, rankIn, scoreHistograms, buildingRanks } from './buildingRank'
 import type { BuildingArea } from './buildingData'
 
 const AREAS: BuildingArea[] = [
@@ -134,5 +134,43 @@ describe('buildingRanks', () => {
   it('is null without an area or a scope', () => {
     expect(buildingRanks(h, AREAS, null, 80)).toBeNull()
     expect(buildingRanks(h, AREAS, 9, 80)).toBeNull()
+  })
+})
+
+describe('homes, not buildings (TODO-073)', () => {
+  it('a building counts as many homes as it has dwellings, at least one', () => {
+    expect(homeWeight(undefined, 0)).toBe(1)
+    expect(homeWeight(Float32Array.from([12, 0, NaN]), 0)).toBe(12)
+    expect(homeWeight(Float32Array.from([12, 0, NaN]), 1)).toBe(1)
+    expect(homeWeight(Float32Array.from([12, 0, NaN]), 2)).toBe(1)
+  })
+
+  it('one block of 90 flats outweighs nine houses: the rank is a share of homes', () => {
+    // el Raval: nine houses at 30, one block of 90 flats at 60. A house at 80 beats 99 of 100 homes either way;
+    // a home in the block beats 9% of the homes, not 90% of the buildings.
+    const { scores, areaCol } = cols([...many(0, 30, 9), ...many(0, 60, 1), ...many(0, 80, 1)])
+    const homes = Float32Array.from([...Array(9).fill(1), 90, 1])
+    const h = scoreHistograms(scores, areaCol, AREAS, homes)
+    expect(h.areas[0][60]).toBe(90)
+    expect(h.buildings.areas[0][60]).toBe(1)
+    expect(rankIn(h.areas[0], 60, h.buildings.areas[0])!.pct).toBe(9)
+    expect(rankIn(h.areas[0], 60, h.buildings.areas[0])!.n).toBe(100)
+  })
+
+  it('one large block at the top is not a tie: a top group needs more than one building', () => {
+    const { scores, areaCol } = cols([...many(0, 30, 60), ...many(0, 100, 1)])
+    const homes = Float32Array.from([...Array(60).fill(1), 40])
+    const h = scoreHistograms(scores, areaCol, AREAS, homes)
+    const r = rankIn(h.areas[0], 100, h.buildings.areas[0])!
+    expect(r.tied).toBe(false)
+    expect(r.pct).toBe(60)
+  })
+
+  it('the minimum size of a barri still counts buildings', () => {
+    // 10 buildings with 100 homes each: 1,000 homes but only 10 buildings, under a minimum of 50.
+    const { scores, areaCol } = cols([...many(0, 20, 9), ...many(0, 90, 1)])
+    const h = scoreHistograms(scores, areaCol, AREAS, Float32Array.from(Array(10).fill(100)))
+    expect(buildingRanks(h, AREAS, 0, 90, 50, 50)?.local ?? null).toBeNull()
+    expect(buildingRanks(h, AREAS, 0, 90, 10, 50)!.local!.rank.pct).toBe(90)
   })
 })

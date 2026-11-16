@@ -5,7 +5,7 @@
   },
   "matchSwitch": {
     "label": "Show match colours",
-    "about": "About Livability Index",
+    "about": "About the match score",
     "hatched": "Hatched = incomplete data (score is a range, colour shows the best case)"
   },
   "layers": {

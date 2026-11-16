@@ -2,7 +2,7 @@
  * Livability score of a building: how well it meets the user's conditions (049), each component scored by
  * services/buildings/conditions.ts from the building's columns:
  * - walkability: walking minutes from the entrance to each service category the user keeps;
- * - noise: the facade-length-weighted Lden of the building;
+ * - noise: the Lden on the street side of the building, or over every facade when it has none (TODO-073);
  * - City Core: walking minutes to each landmark the user keeps;
  * - price and Locals' opinion: the building's barri (Barcelona) or municipality;
  * - building age: the year built against the eras the user likes (047);
@@ -13,7 +13,7 @@ import {
   fireRisk, floodRisk, streetFloodRisk, type Risks, type RiskStrengths,
 } from '../climateRisk/climateRisk'
 import type { BarriVibeData } from '../localsOpinion/localsOpinion'
-import { valueOf, type BuildingArea, type BuildingData } from './buildingData'
+import { minutesCapOf, valueOf, type BuildingArea, type BuildingData } from './buildingData'
 import { ageScore } from './buildingAge'
 import {
   localsCondition, minutesShare, noiseCondition, priceCondition, type Conditions,
@@ -72,14 +72,24 @@ function minutesTo(data: BuildingData, i: number, prefix: string, ids: readonly 
   return ids.map((id) => valueOf(data, `${prefix}${id}`, i))
 }
 
+/**
+ * The noise level the condition is checked against (TODO-073): the street side, as the EU noise directive assesses
+ * the most exposed side, not the mean over street and courtyard (no window has the mean level). A building with no
+ * street side (inside a block, or detached in a garden) uses the mean over its facades. Null = no noise map.
+ */
+export function scoredNoise(data: BuildingData, i: number): number | null {
+  return valueOf(data, 'lden_street', i) ?? valueOf(data, 'lden_avg', i)
+}
+
 export function buildingBundle(data: BuildingData, i: number, s: Omit<BuildingSettings, 'weights' | 'riskStrengths'>): ScoreInputs {
   const area = buildingArea(data, i)
   const barri = area?.kind === 'barri' ? s.vibe?.barris[area.code] : undefined
+  const cap = minutesCapOf(data.meta)
   return {
     components: {
-      poiAccess: minutesShare(minutesTo(data, i, 'min_', s.enabledCategories), s.conditions.walkMaxMin),
-      noise: noiseCondition(valueOf(data, 'lden_avg', i), s.conditions),
-      cityCore: minutesShare(minutesTo(data, i, 'cc_', s.enabledLandmarkIds), s.conditions.cityCoreMaxMin),
+      poiAccess: minutesShare(minutesTo(data, i, 'min_', s.enabledCategories), s.conditions.walkMaxMin, cap.walk),
+      noise: noiseCondition(scoredNoise(data, i), s.conditions),
+      cityCore: minutesShare(minutesTo(data, i, 'cc_', s.enabledLandmarkIds), s.conditions.cityCoreMaxMin, cap.cityCore),
       openPrice: priceCondition(area?.price ?? null, s.conditions),
       localsOpinion: barri ? localsCondition(barri.satisfAdj, s.conditions) : null,
       age: ageScore(valueOf(data, 'year_built', i), s.ageEras),

@@ -85,7 +85,9 @@
   },
   "noise": {
     "noMap": "No official noise map for this municipality",
-    "typical": "Typical window: {{approx}}{{db}} dB",
+    "scoredStreet": "Street side: {{approx}}{{db}} dB — what your condition is checked against",
+    "scoredAll": "All facades: {{approx}}{{db}} dB (no street side) — what your condition is checked against",
+    "quietSide": "Quiet side: courtyard, {{approx}}{{db}} dB — within your limit",
     "night": " · night {{ln}}",
     "extremes": "Loudest facade {{max}} dB · quietest {{min}} dB",
     "street": "Street",
@@ -107,7 +109,7 @@
   },
   "section": {
     "building": "Building",
-    "walkability": "Walkability",
+    "walkability": "Services on foot",
     "noise": "Noise",
     "cityCore": "City Core Access",
     "age": "Building age",
@@ -152,9 +154,10 @@
     "noPenalty": "No points lost"
   },
   "match": {
-    "incomplete": "Incomplete data: some of your conditions have no data here. The score is a range, from the worst case (missing counts 0) to the best (missing ignored).",
+    "incomplete": "Incomplete data: some of your conditions have no data here. The score is a range, from the worst case (missing counts 0) to the best (missing counts 100).",
     "meets": "Meets {{met}} of {{total}} of your conditions",
     "noneOn": "No conditions are on",
+    "overBudget": "Over your budget: at most a partial match",
     "label": "Match with your conditions",
     "score": "{{score}} of 100",
     "status": {

@@ -84,13 +84,13 @@ describe('loadAreaStart', () => {
   afterEach(() => vi.unstubAllGlobals())
 
   const stub = (start: Response) => vi.stubGlobal('fetch', vi.fn((url: string) =>
-    Promise.resolve(url.endsWith('area-start.json') ? start : new Response(JSON.stringify(meta)))))
+    Promise.resolve(url.split('?')[0].endsWith('area-start.json') ? start : new Response(JSON.stringify(meta)))))
 
   it('gives the file when it fits the building data, once', async () => {
     stub(new Response(JSON.stringify(file)))
     await expect(loadAreaStart()).resolves.toEqual(file)
     await loadAreaStart()
-    expect(vi.mocked(fetch).mock.calls.filter((c) => String(c[0]).endsWith('area-start.json'))).toHaveLength(1)
+    expect(vi.mocked(fetch).mock.calls.filter((c) => String(c[0]).split('?')[0].endsWith('area-start.json'))).toHaveLength(1)
   })
 
   it('gives null without a file (dev server), with a stale one, or when offline', async () => {

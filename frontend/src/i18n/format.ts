@@ -17,3 +17,8 @@ export function lazyLabels<K extends string>(prefix: string, keys: readonly K[])
   for (const k of keys) Object.defineProperty(out, k, { enumerable: true, get: () => i18n.t(`${prefix}.${k}` as never) })
   return out
 }
+
+/** "a, b and c" the way the page language joins a list. */
+export function formatList(items: readonly string[]): string {
+  return new Intl.ListFormat(i18n.language || 'en', { style: 'long', type: 'conjunction' }).format(items)
+}

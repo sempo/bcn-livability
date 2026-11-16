@@ -22,7 +22,7 @@ The product has two modes in one codebase, separated by feature flags (`docs/FEA
 
 ### User flow
 
-1. The user opens the map. The Livability Index is on, with default conditions. A search box jumps to a district, barri, municipality or an address (address suggestions need the Geoapify key).
+1. The user opens the map. The match score is on, with default conditions. A search box jumps to a district, barri, municipality or an address (address suggestions need the Geoapify key).
 2. In the panel the user turns conditions on or off and sets each limit in real units. The panel shows what each
    setting means in words, for example "Up to 65 dB is OK for me — like a busy street" or "I'm ready to pay up
    to €4,000/m²".
@@ -39,15 +39,16 @@ Each condition scores 100 when the building meets it and falls linearly to 0 bey
 
 | Condition | Meaning | Default |
 |---|---|---|
-| Walkability | chosen everyday services (supermarket, pharmacy, park, school, kindergarten, clinic, metro, café, restaurant, beach) within N min walk along the streets | on, 10 min |
-| Noise outside the window | facade-length-weighted Lden of the building (Barcelona 2022 map; 14 AMB municipalities: SICA 2022) | on, 65 dB |
-| City Core Access | chosen landmarks (13 places) within N min walk | on, 30 min |
-| Market Price | official INCASOL sale €/m² of the barri or municipality, not of a specific flat | on, €4,000/m² |
+| Services on foot | chosen everyday services (supermarket, pharmacy, park, school, kindergarten, clinic, metro station, café, restaurant; beach on request) within N min walk along the streets | on, 10 min |
+| Noise on the street side | Lden on the street side of the building, else over all its facades (Barcelona 2022 map; 14 AMB municipalities: SICA 2022) | on, 65 dB |
+| City Core Access | chosen places within N min walk (Plaça Catalunya, Barri Gòtic, Passeig de Gràcia by default; 13 to choose from) | on, 30 min |
+| Market Price | official INCASOL sale €/m² of the barri or municipality, not of a specific flat; a hard condition: over it a home is at most a partial match | on, €4,000/m² |
 | Locals' opinion | residents' satisfaction with their barri, municipal survey; Barcelona city only | off, 7.5 / 10 |
 | Building age | year built inside the eras the user likes | off |
 
-The index is the **mean over the conditions that are on**. A condition that is on but has no data counts 0 and
-the building gets a black outline. Climate risks are **penalties**, not averaged in: river flooding, wildfire
+The match score (called the Livability Index until 073) is the **mean over the conditions that are on**. A
+condition that is on but has no data makes the score a range (it counts 0 to 100) and the building is hatched.
+Shares and ranks ("better than N% of homes") count homes (dwellings), not buildings. Climate risks are **penalties**, not averaged in: river flooding, wildfire
 and street flooding in heavy rain reduce the score of exposed buildings only, by a strength the user sets.
 
 ### Principles
