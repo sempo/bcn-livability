@@ -1662,3 +1662,29 @@ button.section-row:hover { background: var(--field); }
   .strength-check { padding: 14px; margin: -14px -8px -14px -14px; }
   .strength-slider { height: 44px; display: flex; align-items: center; }
 }
+
+/* "Find your one building" funnel (TODO-076, prototype) */
+.funnel-panel { display: flex; flex-direction: column; gap: 12px; padding: 18px; border-radius: 16px; min-height: 0; overflow-y: auto; }
+.funnel-panel__top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.funnel-panel h2 { margin: 0; font-size: 20px; line-height: 1.25; font-weight: 600; color: var(--ink); }
+.funnel-panel h3 { margin: 0; font-size: 16px; font-weight: 600; color: var(--ink); }
+.funnel-panel__badge { margin-left: 6px; padding: 1px 6px; border-radius: 6px; font-size: 11px; font-weight: 500; vertical-align: middle; background: #fff4e6; color: #d9480f; }
+.funnel-panel__sub { margin: 0; font-size: 13px; line-height: 1.45; color: #6b7280; }
+.funnel-panel__note { margin: 0; font-size: 12px; line-height: 1.4; color: #6b7280; }
+.funnel-panel__link { border: 0; background: none; padding: 0; font: inherit; font-size: 13px; color: #1c7ed6; cursor: pointer; }
+.funnel-panel__link:disabled { color: #adb5bd; cursor: default; }
+.funnel-panel__path { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.funnel-panel__path li { display: grid; grid-template-columns: 64px 1fr; column-gap: 8px; font-size: 13px; color: var(--ink); }
+.funnel-panel__count { font-variant-numeric: tabular-nums; font-weight: 600; text-align: right; }
+.funnel-panel__wish { font-weight: 500; }
+.funnel-panel__fact { grid-column: 2; font-size: 12px; color: #6b7280; }
+.funnel-panel__prompt { margin: 0; font-size: 15px; font-weight: 600; color: var(--ink); }
+.funnel-panel__step { font-size: 12px; font-weight: 400; color: #6b7280; }
+.funnel-panel__wishes { display: flex; flex-wrap: wrap; gap: 6px; }
+.funnel-panel__wish-btn { border: 1px solid #ced4da; border-radius: 999px; background: #fff; padding: 5px 11px; font: inherit; font-size: 13px; color: var(--ink); cursor: pointer; }
+.funnel-panel__wish-btn:hover:not(:disabled) { border-color: #e8590c; color: #d9480f; }
+.funnel-panel__wish-btn:disabled { color: #adb5bd; border-style: dashed; cursor: not-allowed; }
+.funnel-panel__result { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 12px; background: #fff4e6; }
+.funnel-panel__ranks { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 3px; font-size: 13px; }
+.funnel-panel__ranks li { display: flex; justify-content: space-between; gap: 8px; }
+.funnel-panel__actions { display: flex; gap: 16px; }

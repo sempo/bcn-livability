@@ -333,3 +333,32 @@ describe('default services and City Core places (TODO-073)', () => {
     expect(firstVisitSettings().enabledCategories).toEqual(DEFAULT_WALK_CATEGORY_IDS)
   })
 })
+
+describe('funnel (TODO-076)', () => {
+  beforeEach(() => useStore.setState({ funnelOpen: true, funnelPicks: [], funnelSea: false, selectedBuilding: null }))
+
+  it('keeps the picks in order, each wish once', () => {
+    const s = useStore.getState()
+    s.pickFunnelWish('quiet')
+    s.pickFunnelWish('metro')
+    s.pickFunnelWish('quiet')
+    expect(useStore.getState().funnelPicks).toEqual(['quiet', 'metro'])
+  })
+
+  it('Back drops the last pick; Start again drops the picks, the sea and the open card', () => {
+    const s = useStore.getState()
+    s.pickFunnelWish('quiet')
+    s.pickFunnelWish('metro')
+    s.undoFunnelWish()
+    expect(useStore.getState().funnelPicks).toEqual(['quiet'])
+    s.setFunnelSea(true)
+    s.setSelectedBuilding(12)
+    s.resetFunnel()
+    expect(useStore.getState()).toMatchObject({ funnelPicks: [], funnelSea: false, selectedBuilding: null })
+  })
+
+  it('opens and closes', () => {
+    useStore.getState().setFunnelOpen(false)
+    expect(useStore.getState().funnelOpen).toBe(false)
+  })
+})

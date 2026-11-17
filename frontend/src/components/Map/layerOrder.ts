@@ -35,6 +35,10 @@ export const LAYER_Z_ORDER: readonly string[] = [
   // Search result outline — 044
   'search-area-fill',
   'search-area-line',
+  // "Find your one building" funnel — TODO-076 (prototype)
+  'funnel-out',
+  'funnel-in',
+  'funnel-winner',
   // Idealista price overlay
   'idealista-prices-dots',
   'idealista-prices-labels',

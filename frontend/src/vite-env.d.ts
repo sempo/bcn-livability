@@ -19,6 +19,11 @@ interface ImportMetaEnv {
   readonly VITE_FEATURE_FACADE_PHOTO?: string
   readonly VITE_FEATURE_ONBOARDING?: string
   readonly VITE_FEATURE_AREAS?: string
+  readonly VITE_FEATURE_ONE_BUILDING?: string
+  readonly VITE_FUNNEL_STEPS?: string
+  readonly VITE_FUNNEL_TARGET?: string
+  readonly VITE_FUNNEL_STRICTNESS?: string
+  readonly VITE_FUNNEL_MIN_DWELLINGS?: string
   readonly VITE_FLAT_AREA_M2?: string
   readonly VITE_QUIZ_FLAT_AREA_OPTIONS?: string
   readonly VITE_QUIZ_BUDGET_OPTIONS?: string

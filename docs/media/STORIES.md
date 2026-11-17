@@ -32,7 +32,7 @@ city). **Recompute with the app's own scoring and check by hand before anything 
   - Both put their conditions into one set, and the map scores every building for the mix.
   - The same works for flatmates, or for a family deciding with grandparents.
   - A number to open with: quiet and close to the centre together fit about 9.5% of the city's buildings; quiet
-    and the sea, about 6% (drafts; the sea needs the data fix below).
+    and the sea, about 6% (drafts; the sea numbers predate the beach fix of 2026-11-15 and must be recomputed).
 - **Prepare:** two or three ready pairs of opposite wishes with their result maps; a format for radio and short
   video (two people enter their wishes live and see where they would have to live).
 - **Hooks:** Valentine's Day (14 February), Sant Jordi (23 April).
@@ -61,8 +61,8 @@ city). **Recompute with the app's own scoring and check by hand before anything 
 - **Theses (drafts):** quiet and close to the centre 9.5%; the sea and the centre 3.4%; a park and a metro station
   within 5 minutes 39%; school, kindergarten and cafés within 5 minutes 54%. For each pair, the barris where it
   works.
-- **Risks:** the sea. "Beach within 15 minutes" is currently true for inland barris (Porta, Sant Andreu, la
-  Prosperitat): a data error to fix before any beach number is used.
+- **Risks:** the sea. The data error ("beach within 15 minutes" true for Porta, Sant Andreu, la Prosperitat) is fixed
+  (2026-11-15), but the drafts below were computed before it: recompute before any beach number is used.
 
 ## M5. A city scored in the browser (wave 3, technical)
 

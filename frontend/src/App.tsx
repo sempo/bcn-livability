@@ -53,6 +53,8 @@ function Map() {
 }
 
 // The dialog is only needed after a click: it stays out of the first download (bundle budget, TODO-058).
+// The funnel prototype (TODO-076) is behind a flag and `?funnel`: its code is fetched only when it opens.
+const FunnelPanel = lazy(() => import('./components/Funnel/FunnelPanel').then((m) => ({ default: m.FunnelPanel })))
 const AboutDialog = lazy(() => import('./components/About/AboutDialog').then((m) => ({ default: m.AboutDialog })))
 
 export function App() {
@@ -70,6 +72,7 @@ export function App() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const pinCount = usePinsStore((s) => s.pins.length)
   const onboardingOpen = useStore((s) => s.onboardingOpen)
+  const funnelOpen = useStore((s) => s.funnelOpen && !isMobile)
   const sheetOn = isMobile && !onboardingOpen
   useSheetFlow(sheetOn)
   useSheetMapPadding(sheetOn)
@@ -109,7 +112,7 @@ export function App() {
         <div className={features.onboarding ? 'top-panel top-panel--wide' : 'top-panel'}>
           <BrandBar />
           <SearchBox />
-          {onboardingOpen ? <OnboardingPanel /> : <FilterPanel />}
+          {funnelOpen ? <Suspense fallback={null}><FunnelPanel /></Suspense> : onboardingOpen ? <OnboardingPanel /> : <FilterPanel />}
         </div>
       )}
       {!isMobile && <MapCredit className="map-credit--desktop" />}

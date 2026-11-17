@@ -32,7 +32,8 @@ export function AreasLayer() {
   const map = useMap()
   const join = useAreaJoin()
   useStartAreaRanks()
-  const visible = useStore((s) => s.compositeVisible && hasConditions(s.compositeWeights, s.compositeRiskStrengths))
+  // Hidden while the funnel (TODO-076) is open: it draws its own buildings.
+  const visible = useStore((s) => s.compositeVisible && !s.funnelOpen && hasConditions(s.compositeWeights, s.compositeRiskStrengths))
   const ranks = useStore((s) => s.areaRanks)
   const range = useStore((s) => s.compositeColorRange)
 

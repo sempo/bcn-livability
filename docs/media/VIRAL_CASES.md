@@ -190,6 +190,55 @@ What to take from it:
    work. For us: one About section saying that time2map built the map and builds maps to order.
 4. **No pitch inside the map** in any case found. Matches the rule in [CHANNELS.md](CHANNELS.md).
 
+## What people actually passed on: results about a place (third round, 2026-11-16)
+
+Researched because the owner asked whether "a result worth forwarding" has worked elsewhere for places and homes.
+Facts come from search summaries of the linked sources unless marked "opened". Traffic figures are views or uses;
+**no source gives a count of shared results**, the evidence of sharing is anecdotal everywhere.
+
+### A. Spread by the result (the result is a name, and it is about the person)
+
+| Case | The result a person got | Size | Source |
+|---|---|---|---|
+| BuzzFeed, "What City Should You Actually Live In?" (2014) | One of nine cities: "I got Portland" | over 20 million views; no data behind it | [Nieman Lab (opened)](https://www.niemanlab.org/2014/02/are-quizzes-the-new-lists-what-buzzfeeds-latest-viral-success-means-for-publishing/) |
+| BBC, Great British Class Calculator (2013) | One of seven named classes ("Precariat", "Elite") | about 7 million in the first week, about 9 million by the end of 2014; built on a survey of 161,000 | [LSE slides](https://www.lse.ac.uk/International-Inequalities/Assets/Documents/Slides/Class-in-the-21st-century-slides.pdf), [Information is Beautiful Awards](https://www.informationisbeautifulawards.com/projects/341-the-great-british-class-calculator-what-class-are-you) |
+| BBC, "Where in Britain would you be happiest?" (2015) | A named district and a predicted life satisfaction in %, next to the place you live now | no figure found; tool retired | [Cambridge](https://www.cam.ac.uk/research/news/study-finds-gbs-most-extroverted-agreeable-and-emotionally-stable-regions) |
+| NYT, "Do You Live in a Political Bubble?" (2021) | Enter an address: a dot picture of how your 1,000 nearest neighbours voted | no figure; "Twitter deluged with screenshots" (one writer) | [FlowingData](https://flowingdata.com/2021/05/05/see-if-you-live-in-a-political-bubble/) |
+| NYT, "How Much Hotter Is Your Hometown Than When You Were Born?" (2018) | Hometown and birth year: one number about your own life | in the Most Popular module; "a lot of organic sharing" of hometown results | [journalism.co.uk](https://journalism.co.uk/news/nyt-uses-data-visualisation-to-bring-climate-change-home-literally-/s2/a727570) |
+| Wahl-O-Mat, Germany (2025) | Your answers to 38 theses: % match with each party | 26 million uses for one election | [bpb press release](https://www.bpb.de/system/files/dokument_pdf/PM_Wahl-O-Mat_zur_Bundestagswahl_2025_uebertrifft_bisherigen_Nutzungsrekord_final.pdf?download=1) |
+
+BuzzFeed's editor on why (Nieman Lab, opened): "When people share things, it's partially because of what it says about
+them. Quizzes are like the literal version of all that." Results were kept "more pleasant than dire".
+
+### B. Our format: set what matters, get the places that fit
+
+| Case | What it is | What carried it | Source |
+|---|---|---|---|
+| Close.city (2024) | Pick amenities, see walking time to the furthest of them for every block in the US. Made by one person, Nat Henry of Henry Spatial Analysis (a geodata consultancy: the same play as ours) | over 1 million page views in the first week. Local outlets each wrote "how walkable is our city" (Seattle, Boston, Detroit, Tri-Cities) | [Streetsblog Mass](https://mass.streetsblog.org/2024/04/19/close-city-maps-illustrate-inequalities-of-access-to-vital-services-across-the-boston-region), [Maps Mania](https://googlemapsmania.blogspot.com/2024/04/15-minute-us-cities.html) |
+| BBC Newsbeat, "Know Your Place" (2019) | Under-26s choose what matters, get the local authorities that fit; 11 variables | Local papers each ran their own rank ("Melton ranked worst", "Northampton one of the better") and polls "do you agree?" | [Melton Times](https://www.meltontimes.co.uk/news/politics/melton-ranked-worst-place-live-people-aged-under-26-125809), [Lynn News](https://lynnnews.co.uk/news/poll-do-you-agree-with-a-bbc-survey-which-makes-west-norfolk-below-average-for-those-under-the-age-of-26-9061331) |
+| Vancouver Magazine, "Find Your Neighbourhood" (2016) | Readers weight green space, price, schools, crime over 39 neighbourhoods | Covered by Global News, CTV, HuffPost; rerun in 2018; no traffic figure | [Global News](https://globalnews.ca/news/2591911/new-online-tool-ranks-vancouvers-best-neighbourhoods/) |
+| Ville de Rêve, France (yearly since about 2021) | A town for your criteria, from 150 public sources | The yearly ranking is re-reported by national and local press every January | [Connexion](https://www.connexionfrance.com/magazine/interview-how-we-determine-the-right-town-for-you-in-france/715074), [data.gouv.fr reuse](https://www.data.gouv.fr/reuses/65392e0999bd1e8186e699de) |
+| NYT "Where Should You Live?" (2021) | case 12 above | | |
+
+### Barcelona
+
+- Time Out (2025) and Ara ran "the best barris to live in according to ChatGPT / to an AI"; Barcelona Secreta has a
+  piece on the Hoodmaps stereotype map of the city (title only, page not read). The local press publishes barri
+  identity content that has no data behind it. No "which barri are you" tool with data was found.
+
+### What follows
+
+1. **Nothing in group B is shown to have spread through shared results.** Our format gets press, and local press
+   multiplies it place by place (this supports M3, the note per barri). It is not proof that people forward a card.
+2. **Every result in group A is a name or a picture of the person's own surroundings, never a score of an object.**
+   "I got Portland", "I am Precariat", "my bubble". It comes from a short closed list, so two people can compare.
+3. **The result can be argued with.** The class calculator and "Know Your Place" spread on "do you agree?".
+4. **The closest structural twin is the Wahl-O-Mat:** own positions in, % match with each option out. What people
+   quote is the option that came first, not the percentage.
+5. Our card says "this building: 83 for my conditions". By this evidence the forwardable unit would be the name of a
+   place the person's conditions point to ("my conditions say el Poblenou; I live in Gràcia"). Not agreed with the
+   owner; it touches decisions in STRATEGY.md (no additions beyond the two awards; no single score for a barri).
+
 ## The pattern
 
 | # | What the cases share | Where we stand |
