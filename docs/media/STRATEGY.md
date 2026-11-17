@@ -48,10 +48,10 @@ The software is not rebuilt. The right tools are made more visible.
 | Item | What | File |
 |---|---|---|
 | The card | the score named as the match with the person's conditions; the two awards (barri, city) when the building stands out, on the card and on the share picture; technical details folded | [070](../features/070-building-rank-in-barri-and-city.md) |
-| Retiree profile | replaces the investor profile on the first screen | [069](../features/069-retiree-profile-replaces-investor.md) |
+| Retiree profile | replaces the investor profile on the first screen (done) | [069](../features/069-retiree-profile-replaces-investor.md) |
 | Contacts for time2map | credit, a way to ask for a map, case-study page, "I want my city" | checklist in [LAUNCH_PLAN.md](LAUNCH_PLAN.md) |
 | Infrastructure | A1 hosting, A2 observability before any press link | ROADMAP.md |
-| Data | the inland "beach" problem (below) fixed | checklist in LAUNCH_PLAN.md |
+| Data | the inland "beach" problem fixed (done 2026-11-15, `bb7e495`); sea numbers to recompute | checklist in LAUNCH_PLAN.md |
 
 ## How it is told
 
@@ -75,6 +75,7 @@ The software is not rebuilt. The right tools are made more visible.
 | "I don't agree with this result" | wanted, but needs a way to collect answers; later |
 | Price level of the barri against the fit ("you pay for something not on your list") | borders on the price subject; not needed for the launch |
 | "Guess your barri" game | a separate product |
+| "Find your one building": rank what matters, get the single building where it meets best | proposed 2026-11-16 as the forwardable result; explored on data, not agreed; [TODO-076](../features/TODO-076-find-your-one-building.md) |
 
 ## Dropped
 
@@ -110,7 +111,7 @@ The software is not rebuilt. The right tools are made more visible.
 | A perfect building reads as mediocre when many buildings are perfect | no award when a wide group shares the top score: nothing is said rather than "among the best of 93%" (070, changed 2026-11-16) |
 | A result contradicts what residents know (night-life noise, safety are not measured) | model limits stated in the UI and on the method page; "I don't agree" later |
 | A low result is not shared | accepted; the tone of the card stays neutral, not a verdict on the person |
-| Wrong data on a public number | outlier checks before launch (the "beach" case) |
+| Wrong data on a public number | outlier checks before launch; the "beach" case is fixed and has a failing check in the pipeline |
 | "A map for buyers / investors" reading | investor profile removed; wording about fit, not about buying |
 
 ## Metrics (need A2)
@@ -134,5 +135,6 @@ buildings of Barcelona city, not the app's scoring. Redo with the app's scoring 
 - Two wishes at once: quiet (≤55 dB) and close to the centre 9.5%; quiet and the sea 6.3%; the sea and the centre
   3.4%; a park and a metro station within 5 minutes 39%; school and kindergarten plus cafés within 5 minutes 54%.
 - Fit and barri price are weakly related (correlation −0.40 for family, +0.17 to +0.31 for the others).
-- **Data problem:** "beach within 15 minutes" is true for inland barris (Porta 100%, Sant Andreu, la Prosperitat).
-  The pipeline takes every OpenStreetMap `natural=beach` polygon, so inland sand areas probably count as beaches.
+- **Data problem, fixed 2026-11-15 (`bb7e495`):** "beach within 15 minutes" was true for inland barris (Porta 100%, Sant Andreu,
+  la Prosperitat) because OpenStreetMap tags an asphalt pool deck in Nou Barris as a beach. Paved surfaces are now skipped.
+  The sea numbers above (quiet and the sea 6.3%, the sea and the centre 3.4%) predate the fix: redo them.

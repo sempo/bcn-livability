@@ -8,7 +8,7 @@ first outlet publishes**. The owner sets D-day.
 **A quiet run in December and early January, D-day in the second half of January 2027, the couple story for
 Valentine's Day.**
 
-- The product work (TODO-070, 069), the hosting (A1), the analytics (A2) and the contact route are not started.
+- The card (070), the retiree profile (069) and the beach fix are done. The hosting (A1), the analytics (A2) and most of the contact route are not started.
 - From the long weekend of 6–8 December to 6 January newsrooms are thin: bad for agreeing a date with an outlet,
   fine for a quiet run with real people.
 - The quiet run is the only way to learn, before the press sees it, whether people pass the card on and where the
@@ -23,7 +23,7 @@ Rule rather than date: D-day is about three weeks after everything in the checkl
 
 | When | What |
 |---|---|
-| D−8 to D−5 weeks | A1 hosting, A2 analytics. TODO-070 (card: explicit match, two ranks, details folded), 069 (retiree profile). The "beach" data fix |
+| D−8 to D−5 weeks | A1 hosting, A2 analytics (the only blockers still not started). 070 (card), 069 (retiree profile) and the "beach" data fix are done; recompute the sea numbers |
 | D−5 to D−3 weeks | Contact route for time2map: credit, "Want a map like this?", "I want my city", case-study page. Native read-through of CA and ES. Method page |
 | D−4 weeks | **Quiet run:** friends, two or three local groups, one post in a small community. Watch: do people reach a card, do they save or share it, what do they say is wrong |
 | D−3 weeks | Fix what the quiet run showed. Recompute the numbers for M3 and M4 with the app's scoring. First look offered to one outlet. Submit the app to the Open Data BCN and datos.gob.es reuse catalogues |
@@ -41,8 +41,8 @@ Rule rather than date: D-day is about three weeks after everything in the checkl
 
 ### The site
 
-- [ ] A1: CDN cache and our origin are live; the final domain serves the site; GitHub Pages is a cold spare
-- [ ] A2: analytics with UTM sources, error tracking, uptime alert to a phone
+- [ ] A1 ([TODO-054](../features/TODO-054-cdn-hosting-burst-traffic.md), planned, not started): CDN cache and our origin are live; the final domain serves the site; GitHub Pages is a cold spare
+- [ ] A2 ([TODO-056](../features/TODO-056-observability.md), planned, not started): analytics with UTM sources, error tracking, uptime alert to a phone
 - [ ] Load test passed at the A1 target; third-party calls are listed and each has a fallback
 - [ ] From a link to a building card in under a minute on a mid-range phone on mobile data; the card itself opens
       in under 3 seconds
@@ -52,18 +52,23 @@ Rule rather than date: D-day is about three weeks after everything in the checkl
 - [x] [070](../features/070-building-rank-in-barri-and-city.md): the score is named as the match with the
       person's conditions; an award ("better than N% of homes in the barri / in the city") where the building
       stands out; the technical details are folded; the awards are on the share picture
-- [ ] [069](../features/069-retiree-profile-replaces-investor.md): retiree profile instead of investor
-- [ ] "Beach" fixed: inland barris (Porta, Sant Andreu, la Prosperitat) must not come out as near a beach (found
-      2026-11-14; the pipeline counts every OpenStreetMap `natural=beach` polygon)
+- [x] [069](../features/069-retiree-profile-replaces-investor.md): retiree profile instead of investor (in code;
+      its ES and CA texts wait for the native read-through below)
+- [x] "Beach" fixed (2026-11-15, `bb7e495`, PR #69): an asphalt pool deck in Nou Barris was tagged
+      `natural=beach` in OpenStreetMap. The pipeline now skips paved surfaces, a check fails if Porta, Sant Andreu or
+      la Prosperitat get a beach score, and the shipped blob is cleaned (5,813 buildings). The beach is also off by
+      default in the conditions since 073. **Every sea number in M2 and M4 was computed before the fix: recompute.**
 - [ ] Native read-through of ES and CA, including the new card texts
-- [ ] Link previews verified in WhatsApp, Telegram, X, Facebook, LinkedIn
+- [ ] Link previews verified in WhatsApp, Telegram, X, Facebook, LinkedIn (built in 063; can only be checked after the first deploy on the final domain)
 
 ### Contacts for time2map
 
 The traffic is for the company: the result that counts is contacts of people who want a map made. None of this
 exists yet.
 
-- [ ] **"Made by time2map" credit** in the product, on every share picture and in any embed, linking to the company
+- [ ] **"Made by time2map" credit** in the product, on every share picture and in any embed, linking to the company.
+      Partly there: "Made by time2map" in the About dialog and "Visit time2map.com" in the brand bar. The share
+      picture prints only the site address (`livability.time2map.com`), not a credit to the company
 - [x] **A way to ask for a map**: "Want a map like this for your city or company?" in the About dialog, leading to
       time2map.com with the place in `utm_medium` ([029](../features/029-cta-subscribe-contact.md)). Still to do: point
       `VITE_CTA_URL` at the case-study page when it exists
@@ -79,7 +84,8 @@ exists yet.
 
 - [ ] Every number recomputed with the app's scoring from the shipped data version and checked by hand on ten
       buildings
-- [ ] Method page public: sources, year, model limits, what is not measured
+- [ ] Method page public: sources, year, model limits, what is not measured. Only the "Known limits" block in the
+      info dialog exists (`info.json`); no public page
 - [ ] Example cards and example couples chosen with a local's eye (no result that residents would laugh at)
 - [ ] Credits on every picture; no "official", no publisher logos; nothing built on street flooding
 - [ ] Q&A ready: who made this, who pays, why does my building score low, what is not measured, can I reuse it,
