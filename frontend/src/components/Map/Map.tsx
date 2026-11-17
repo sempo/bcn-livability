@@ -34,6 +34,7 @@ const ExclusionLayer = lazyNamed(() => import('../ExclusionLayer/ExclusionLayer'
 const ExclusionDraw = lazyNamed(() => import('../ExclusionDraw/ExclusionDraw'), 'ExclusionDraw')
 const BestZones = lazyNamed(() => import('../BestZones/BestZones'), 'BestZones')
 const IdealistaPricesLayer = lazyNamed(() => import('../IdealistaPricesLayer/IdealistaPricesLayer'), 'IdealistaPricesLayer')
+const FunnelLayer = lazyNamed(() => import('../Funnel/FunnelLayer'), 'FunnelLayer') // TODO-076 prototype
 import { features } from '../../features'
 import { PHONE_QUERY } from '../../services/phoneConfig'
 import { loadMapStyle, type MapStyle } from '../../services/mapStyle'
@@ -63,6 +64,7 @@ export function Map() {
   const mapRef = useRef<maplibregl.Map | null>(null)
   const [mapInstance, setMapInstance] = useState<maplibregl.Map | null>(null)
   const [mapStyle, setMapStyle] = useState<MapStyle | null>(null)
+  const funnelOpen = useStore((s) => s.funnelOpen)
 
   useEffect(() => {
     let live = true
@@ -219,6 +221,7 @@ export function Map() {
       {/* Layer z-order: first rendered = bottom of stack */}
       <BuildingsLayer />
       {features.areas && <AreasLayer />}
+      {features.oneBuilding && funnelOpen && <Suspense fallback={null}><FunnelLayer /></Suspense>}
       <FacadeNoiseLayer />
       <LandmarksLayer />
       {noiseEver && <NoiseLayer />}

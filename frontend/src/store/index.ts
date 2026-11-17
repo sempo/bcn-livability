@@ -12,6 +12,7 @@ import {
 } from '../services/buildings/firstVisit'
 import type { AreaRank } from '../services/areas/areaRank'
 import { allowLocals, decodeConfig, type UrlSettings } from '../services/urlConfig'
+import type { WishId } from '../services/funnel/funnelWishes'
 import {
   CONDITION_KEYS, DEFAULT_FLAT_AREA_M2, FLAT_AREA_RANGE, activeConditions, priceAfterAreaChange,
   type ConditionKey, type SettingsPatch,
@@ -81,6 +82,17 @@ export interface AppState {
   onboarded: boolean
   /** The onboarding panel is showing: first visit, or "Change" in the panel. */
   onboardingOpen: boolean
+  /** "Find your one building" funnel (TODO-076, prototype): open, the wishes picked in order, the sea within reach. */
+  funnelOpen: boolean
+  funnelPicks: WishId[]
+  funnelSea: boolean
+  setFunnelOpen: (open: boolean) => void
+  pickFunnelWish: (wish: WishId) => void
+  /** Drops the last pick ("Back"). */
+  undoFunnelWish: () => void
+  /** Drops every pick and the sea ("Start again"). */
+  resetFunnel: () => void
+  setFunnelSea: (sea: boolean) => void
   /** Row (= feature id) of the clicked building; null = no card. */
   selectedBuilding: number | null
   /** Index (`AreaRank.index`) of the area whose card is open (TODO-064); never together with a building. */
@@ -345,6 +357,15 @@ function readUrlSettings(): UrlSettings | null {
   }
 }
 
+/** `?funnel` in the address opens the "find your one building" prototype (TODO-076). */
+function hasFunnelParam(): boolean {
+  try {
+    return new URLSearchParams(window.location.search).has('funnel')
+  } catch {
+    return false
+  }
+}
+
 /** A configuration from a link is kept, so the recipient has it on the next visit too. */
 function saveUrlSettings(s: UrlSettings): void {
   persist(COMPOSITE_WEIGHTS_KEY, s.weights)
@@ -528,6 +549,15 @@ export const useStore = create<AppState>((set, get) => {
       set({ onboarded: true, onboardingOpen: false })
     },
     openOnboarding: () => set({ onboardingOpen: true }),
+    funnelOpen: features.oneBuilding && hasFunnelParam(),
+    funnelPicks: [],
+    funnelSea: false,
+    setFunnelOpen: (funnelOpen) => set({ funnelOpen }),
+    pickFunnelWish: (wish) => set((s) => (s.funnelPicks.includes(wish) ? {} : { funnelPicks: [...s.funnelPicks, wish] })),
+    undoFunnelWish: () => set((s) => ({ funnelPicks: s.funnelPicks.slice(0, -1) })),
+    resetFunnel: () => set({ funnelPicks: [], funnelSea: false, selectedBuilding: null }),
+    // The sea changes which buildings take part from the start: the picks are kept and replayed.
+    setFunnelSea: (funnelSea) => set({ funnelSea }),
     selectedBuilding: null,
     // A building and an area never have a card at the same time: the one picked last stays.
     setSelectedBuilding: (selectedBuilding) =>
