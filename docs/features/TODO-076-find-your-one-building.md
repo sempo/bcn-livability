@@ -238,7 +238,8 @@ With realistic personas el Poblenou is 15% with "locals", not 24% as with random
 
 ## Prototype (2026-11-16, branch `feat/076-funnel-prototype`)
 
-A technical prototype for the owner, to try the funnel by hand on the real data. Desktop only, not for the public.
+A technical prototype for the owner, to try the funnel by hand on the real data. Desktop only. On production since
+2026-11-17, reachable only with `?funnel` (no link to it in the UI, not announced).
 
 **Open:** `VITE_FEATURE_ONE_BUILDING=true` in `frontend/.env.local`, restart `npm run dev`, open `/?funnel`.
 
