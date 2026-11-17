@@ -21,7 +21,7 @@ They are build-time values: changing one needs a rebuild or a dev-server restart
 | `VITE_FEATURE_ONBOARDING` | first-visit panel (profiles + one sentence per condition), and the new filter panel (sentences, map layers, best areas, advanced) instead of the old controls (031, 052) | **on** | public; remove the flag and the old `CompositeControls` / `ClimateLayerControls` code next |
 | `VITE_FEATURE_AREAS` | "Your areas" tab (ranked list), `AreasLayer` (area view below z13), per-condition scores and the area ranking after each rescoring, dots only from z13 (051) | **on** | public |
 | `VITE_FEATURE_FACADE_PHOTO` | Catastro facade photo in the building card (hotlinked; the service states no terms of use) | off | TBD |
-| `VITE_FEATURE_ONE_BUILDING` | "Find your one building" funnel prototype (TODO-076): `FunnelPanel` instead of the top panel and `FunnelLayer` instead of the building colours, opened with `?funnel` in the address, desktop only; settings `VITE_FUNNEL_*` | off | local test of the idea; not for the public until agreed |
+| `VITE_FEATURE_ONE_BUILDING` | "Find your one building" funnel prototype (TODO-076): `FunnelPanel` instead of the top panel and `FunnelLayer` instead of the building colours, opened with `?funnel` in the address, desktop only; settings `VITE_FUNNEL_*` | on | on since 2026-11-17 for the owner to try on prod; reachable only with `?funnel` (no link to it in the UI), not announced |
 | `VITE_COMMERCIAL_USE` | commercial launch: turns off street flooding (layer and penalty) until its licence is confirmed (TODO-066) | off | off until licences are confirmed |
 
 The "Inside commute zone, outside exclusion zones" option of best zones is shown only when `ISOCHRONE` or
