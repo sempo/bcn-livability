@@ -1,7 +1,8 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeAll, beforeEach, vi } from 'vitest'
 import { screen, fireEvent, waitFor, within } from '@testing-library/react'
 import { FunnelPanel } from './FunnelPanel'
 import { useStore } from '../../store'
+import { loadNamespace } from '../../i18n'
 import { renderWithMantine, resetStore } from '../Conditions/testUtils'
 import { cityFixture, VIBE } from '../../services/funnel/funnelFixture'
 import { buildFunnelData } from '../../services/funnel/funnelWishes'
@@ -16,6 +17,8 @@ vi.mock('../../services/funnel/funnelData', () => ({
 const firstOpenWish = () => screen.getAllByRole('button').find((b) => b.classList.contains('funnel-panel__wish-btn') && !(b as HTMLButtonElement).disabled)!
 
 describe('FunnelPanel', () => {
+  beforeAll(() => loadNamespace('funnel')) // fetched with the panel code in the app (App.tsx)
+
   beforeEach(() => {
     resetStore()
     useStore.setState({ funnelOpen: true, funnelPicks: [], funnelSea: false })

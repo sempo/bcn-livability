@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
+import { loadNamespace } from './i18n'
 import { useMediaQuery } from '@mantine/hooks'
 import { Notification, SegmentedControl } from '@mantine/core'
 import { BrandBar } from './components/BrandBar/BrandBar'
@@ -54,7 +55,8 @@ function Map() {
 
 // The dialog is only needed after a click: it stays out of the first download (bundle budget, TODO-058).
 // The funnel prototype (TODO-076) is behind a flag and `?funnel`: its code is fetched only when it opens.
-const FunnelPanel = lazy(() => import('./components/Funnel/FunnelPanel').then((m) => ({ default: m.FunnelPanel })))
+const FunnelPanel = lazy(() => Promise.all([import('./components/Funnel/FunnelPanel'), loadNamespace('funnel')])
+  .then(([m]) => ({ default: m.FunnelPanel })))
 const AboutDialog = lazy(() => import('./components/About/AboutDialog').then((m) => ({ default: m.AboutDialog })))
 
 export function App() {

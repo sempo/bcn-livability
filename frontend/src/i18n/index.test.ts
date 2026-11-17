@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import i18n, { setLanguage, initI18n, tIn } from './index'
+import i18n, { setLanguage, initI18n, tIn, loadNamespace } from './index'
 
 describe('i18n instance', () => {
   beforeEach(async () => {
@@ -52,5 +52,34 @@ describe('i18n instance', () => {
     i18n.addResourceBundle('en', 'common', { test: { items_one: '{{count}} item', items_other: '{{count}} items' } }, true, true)
     expect(i18n.t('test.items', { count: 1 })).toBe('1 item')
     expect(i18n.t('test.items', { count: 3 })).toBe('3 items')
+  })
+})
+
+// TODO-076: the funnel texts are not in the start bundle; they come with the funnel code.
+describe('on-demand namespaces', () => {
+  beforeEach(async () => {
+    window.history.replaceState(null, '', '/')
+    localStorage.clear()
+    await initI18n()
+    await setLanguage('en')
+  })
+
+  it('leaves the funnel texts out until they are asked for, then loads them in English', async () => {
+    expect(i18n.hasResourceBundle('en', 'funnel')).toBe(false)
+    await loadNamespace('funnel')
+    expect(i18n.hasResourceBundle('en', 'funnel')).toBe(true)
+    expect(i18n.t('funnel:title')).not.toBe('title')
+  })
+
+  it('loads an asked-for namespace in the current language too', async () => {
+    await setLanguage('es')
+    await loadNamespace('funnel')
+    expect(i18n.hasResourceBundle('es', 'funnel')).toBe(true)
+  })
+
+  it('brings an asked-for namespace along when the language changes later', async () => {
+    await loadNamespace('funnel')
+    await setLanguage('ca')
+    expect(i18n.hasResourceBundle('ca', 'funnel')).toBe(true)
   })
 })
